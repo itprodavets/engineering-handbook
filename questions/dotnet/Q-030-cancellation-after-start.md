@@ -1,18 +1,12 @@
 # Q-030 — Cancellation after start
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-029-lock-new-object.md) · [Следующий →](Q-031-asynclocal-flow.md)
+[Русский](./Q-030-cancellation-after-start.md) · [English](en/Q-030-cancellation-after-start.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-030) · [Основная тема](../../topics/dotnet/cancellation.md) · [← Предыдущий](Q-029-lock-new-object.md) · [Следующий →](Q-031-asynclocal-flow.md)
 
-**Level:** Senior / Staff · **Language:** RU + EN · **Topic:** Cancellation after start
-
-## Вопрос (RU)
+## Вопрос
 
 Выведет ли программа DONE, если отменить token после запуска делегата?
 
-## Question (EN)
-
-Will the program print DONE when the token is canceled after the delegate starts?
-
-## Code challenge / Фрагмент кода
+## Фрагмент C# — попробуйте предсказать результат
 
 ```csharp
 using var cts = new CancellationTokenSource();
@@ -34,49 +28,37 @@ release.SetResult();
 await task;
 ```
 
-**Попробуй предсказать результат прежде, чем читать ответ.**
-
-**Executable lab:** [Q-030.cs](../../labs/dotnet/Q-030.cs) · [Все лаборатории](../../labs/README.md)
+### Запустить настоящий код
 
 ```bash
 dotnet run --file labs/dotnet/Q-030.cs
 ```
 
-**Run remotely after publishing:** [GitHub Actions: Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) — choose `Q-030`. The workflow reports stdout in Job Summary.
-
-**Expected / classification:** DONE.
-
-> В лаборатории код оформлен как отдельное запускаемое приложение; у некоторых заданий есть завершающий `Console.WriteLine()` или безопасный механизм дожидания continuations. Это явно отмечено в соответствующих исходниках.
+[Q-030.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-030.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
-<summary><strong>Эталонный ответ RU / Model answer EN — открыть после самостоятельного ответа</strong></summary>
-
-### RU — кратко и технически точно
+<summary>Эталонный ответ — открыть после своего ответа</summary>
 
 DONE. Token у Task.Run может предотвратить запуск, но не останавливает уже выполняющийся делегат. Код не проверяет token, поэтому продолжает работу.
 
-### EN — concise interview answer
-
-DONE. Task.Run's token can prevent the delegate from starting, but cannot forcibly stop it after execution has begun. The body never checks the token.
-
 </details>
 
-## Why / Внутренний механизм
+### Почему это работает
 
 CancellationToken; Task.Run proxy; await continuation.
 
-**Risk / ошибка:** Ложная уверенность в принудительной отмене I/O/CPU работы.
+### Риск или ошибка
 
-**Guarantee / недетерминированность:** started завершён до Cancel; делегат уже начал выполнение.
+Ложная уверенность в принудительной отмене I/O/CPU работы.
 
-**Source:** https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.run
+### Что гарантировано
 
-## Ссылки и проверка / References & verification
+started завершён до Cancel; делегат уже начал выполнение.
 
-- [Глубокая теория / Theory](../../languages/csharp/async-await.md)
-- [Как оценивать доказательность](../../docs/technical-accuracy.md)
-- [Как запускать фрагменты кода](../../docs/execution.md)
+### Документация и исходники
+
+[https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.run](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.run)
 
 ---
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-029-lock-new-object.md) · [Следующий →](Q-031-asynclocal-flow.md)
+[Русский](./Q-030-cancellation-after-start.md) · [English](en/Q-030-cancellation-after-start.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-030) · [Основная тема](../../topics/dotnet/cancellation.md) · [← Предыдущий](Q-029-lock-new-object.md) · [Следующий →](Q-031-asynclocal-flow.md)

@@ -1,0 +1,281 @@
+[
+  {
+    "term": "I/O",
+    "translation": "Ввод/вывод",
+    "definition": {
+      "ru": "Обмен данными с сетью, диском или устройством.",
+      "en": "Data exchange with a network, storage or device."
+    },
+    "example": "await socket.ReceiveAsync(...)"
+  },
+  {
+    "term": "CPU Core",
+    "translation": "Ядро CPU",
+    "definition": {
+      "ru": "Аппаратный ресурс, выполняющий машинные инструкции.",
+      "en": "Hardware resource executing machine instructions."
+    },
+    "example": "CPU-bound code"
+  },
+  {
+    "term": "OS Kernel",
+    "translation": "Ядро ОС",
+    "definition": {
+      "ru": "Часть ОС, управляющая потоками, памятью и вводом/выводом.",
+      "en": "Privileged software managing threads, memory and I/O."
+    },
+    "example": "Linux kernel"
+  },
+  {
+    "term": "Thread",
+    "translation": "Поток",
+    "definition": {
+      "ru": "Планируемый ОС поток исполнения инструкций.",
+      "en": "An OS-schedulable sequence of execution."
+    },
+    "example": "Thread.CurrentThread"
+  },
+  {
+    "term": "ThreadPool",
+    "translation": "Пул потоков",
+    "definition": {
+      "ru": "Управляемый .NET пул рабочих потоков.",
+      "en": "A runtime-managed pool of workers for queued work."
+    },
+    "example": "Task.Run(...)"
+  },
+  {
+    "term": "Task",
+    "translation": "Задача",
+    "definition": {
+      "ru": "Объект завершения операции или её результата, а не поток.",
+      "en": "An object representing the eventual completion of an operation."
+    },
+    "example": "Task<List<Order>>"
+  },
+  {
+    "term": "await",
+    "translation": "Ожидание async",
+    "definition": {
+      "ru": "Приостанавливает async-метод без обязательной блокировки потока.",
+      "en": "Suspends an async method if the awaited operation is incomplete."
+    },
+    "example": "await db.Orders.ToListAsync()"
+  },
+  {
+    "term": "Continuation",
+    "translation": "Продолжение",
+    "definition": {
+      "ru": "Код, продолжающий выполнение после завершения ожидания.",
+      "en": "Work that resumes after an awaited operation completes."
+    },
+    "example": "code after await"
+  },
+  {
+    "term": "State Machine",
+    "translation": "Машина состояний",
+    "definition": {
+      "ru": "Сгенерированное компилятором сохранение состояния async-метода.",
+      "en": "Compiler-generated mechanism retaining async execution state."
+    },
+    "example": "compiler async rewrite"
+  },
+  {
+    "term": "OS Scheduler",
+    "translation": "Планировщик ОС",
+    "definition": {
+      "ru": "Выбирает, какие готовые потоки исполняются на CPU.",
+      "en": "Selects which runnable threads execute on logical CPUs."
+    },
+    "example": "preemptive scheduling"
+  },
+  {
+    "term": "Time Slice",
+    "translation": "Квант времени",
+    "definition": {
+      "ru": "Интервал процессорного времени, после которого возможно вытеснение.",
+      "en": "Scheduling interval after which a thread may be preempted."
+    },
+    "example": "time sharing"
+  },
+  {
+    "term": "Context Switch",
+    "translation": "Переключение контекста",
+    "definition": {
+      "ru": "Смена потока на CPU с сохранением состояния.",
+      "en": "Switching execution between threads while retaining their states."
+    },
+    "example": "preemption"
+  },
+  {
+    "term": "Concurrency",
+    "translation": "Конкурентность",
+    "definition": {
+      "ru": "Продвижение нескольких задач за пересекающиеся интервалы времени.",
+      "en": "Several tasks make progress over overlapping time periods."
+    },
+    "example": "100 runnable threads"
+  },
+  {
+    "term": "Parallelism",
+    "translation": "Параллелизм",
+    "definition": {
+      "ru": "Реальное одновременное исполнение инструкций.",
+      "en": "Computations actually execute at the same instant."
+    },
+    "example": "8 logical CPUs"
+  },
+  {
+    "term": "I/O-bound",
+    "translation": "Ограничено I/O",
+    "definition": {
+      "ru": "Производительность прежде всего ограничена I/O.",
+      "en": "Performance primarily limited by I/O latency or throughput."
+    },
+    "example": "PostgreSQL network request"
+  },
+  {
+    "term": "CPU-bound",
+    "translation": "Ограничено CPU",
+    "definition": {
+      "ru": "Производительность прежде всего ограничена вычислениями.",
+      "en": "Performance primarily limited by computation."
+    },
+    "example": "large hash computation"
+  },
+  {
+    "term": "Socket",
+    "translation": "Сокет",
+    "definition": {
+      "ru": "Интерфейс ОС для сетевого обмена.",
+      "en": "An operating-system abstraction for network communication."
+    },
+    "example": "TCP connection to PostgreSQL"
+  },
+  {
+    "term": "epoll",
+    "translation": "epoll (Linux)",
+    "definition": {
+      "ru": "Механизм Linux для отслеживания готовности сокетов.",
+      "en": "Linux API to monitor file-descriptor readiness."
+    },
+    "example": "network event loop"
+  },
+  {
+    "term": "IOCP",
+    "translation": "Порты завершения I/O",
+    "definition": {
+      "ru": "Механизм Windows для обработки завершений I/O.",
+      "en": "Windows mechanism for efficient asynchronous I/O completion."
+    },
+    "example": "Windows socket I/O"
+  },
+  {
+    "term": "SMT",
+    "translation": "Многопоточность ядра",
+    "definition": {
+      "ru": "Аппаратная поддержка нескольких логических CPU на ядро.",
+      "en": "Hardware feature exposing multiple logical CPUs per physical core."
+    },
+    "example": "Hyper-Threading"
+  },
+  {
+    "term": "Task<T>",
+    "translation": "Задача с результатом",
+    "definition": {
+      "ru": "Представляет операцию, которая завершится значением T или ошибкой.",
+      "en": "Represents a future outcome that yields a value of type T."
+    },
+    "example": "Task<int> result = ..."
+  },
+  {
+    "term": "Task.Run",
+    "translation": "Запуск работы в ThreadPool",
+    "definition": {
+      "ru": "Ставит делегат в очередь для выполнения потоком ThreadPool.",
+      "en": "Queues a delegate for execution, normally on a ThreadPool worker."
+    },
+    "example": "await Task.Run(Compute)"
+  },
+  {
+    "term": "TaskScheduler",
+    "translation": "Планировщик Task",
+    "definition": {
+      "ru": "Определяет постановку и запуск задач Task, но не назначает ядра CPU.",
+      "en": "Chooses how Task work is queued and executed; not which CPU core is used."
+    },
+    "example": "TaskScheduler.Default"
+  },
+  {
+    "term": "Preemption",
+    "translation": "Вытеснение потока",
+    "definition": {
+      "ru": "Планировщик ОС приостанавливает выполняющийся поток ради другого.",
+      "en": "The OS scheduler interrupts a running thread so another can execute."
+    },
+    "example": "CPU time slice"
+  },
+  {
+    "term": "Task.Delay",
+    "translation": "Асинхронная задержка",
+    "definition": {
+      "ru": "Возвращает задачу, завершающуюся по таймеру; рабочий поток во время ожидания не блокируется.",
+      "en": "Returns a Task completed after a timer delay without occupying a worker for the wait."
+    },
+    "example": "await Task.Delay(5000)"
+  },
+  {
+    "term": "Thread.Sleep",
+    "translation": "Блокирующая задержка потока",
+    "definition": {
+      "ru": "Блокирует текущий поток на указанный интервал.",
+      "en": "Blocks the current thread for a specified interval."
+    },
+    "example": "Thread.Sleep(5000)"
+  },
+  {
+    "term": "Timer",
+    "translation": "Таймер",
+    "definition": {
+      "ru": "Позволяет ожидать истечения времени без отдельного заблокированного потока для каждого таймера.",
+      "en": "A runtime or OS mechanism that signals when a specified interval elapses."
+    },
+    "example": "Task.Delay(5000)"
+  },
+  {
+    "term": "Task.WhenAll",
+    "translation": "Ожидание всех задач",
+    "definition": {
+      "ru": "Объединяет завершение задач; не выделяет отдельные потоки и не запускает уже созданные задачи.",
+      "en": "Returns a Task that completes after all provided tasks complete."
+    },
+    "example": "await Task.WhenAll(tasks)"
+  },
+  {
+    "term": "ThreadPool starvation",
+    "translation": "Нехватка рабочих потоков",
+    "definition": {
+      "ru": "Недостаток свободных worker-потоков задерживает выполнение задач из очереди.",
+      "en": "A shortage of available workers delays queued work, often because workers are blocked."
+    },
+    "example": "Task.Run(() => Thread.Sleep(5000))"
+  },
+  {
+    "term": "Worker Thread",
+    "translation": "Рабочий поток",
+    "definition": {
+      "ru": "Поток ОС, который ThreadPool использует для выполнения задач из очереди.",
+      "en": "An OS thread used by the runtime to execute queued work."
+    },
+    "example": "ThreadPool worker executing Task.Run"
+  },
+  {
+    "term": "Thread Creation",
+    "translation": "Создание потока ОС",
+    "definition": {
+      "ru": "Создание дополнительного потока ОС; не то же, что создание объекта Task.",
+      "en": "Starting an additional OS thread, distinct from allocating a Task object."
+    },
+    "example": "new Thread(...).Start(); ThreadPool scales workers"
+  }
+]

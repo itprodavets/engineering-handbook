@@ -1,43 +1,31 @@
-# Запуск кода / Running examples
+# Запуск C#-примеров
 
-[Главная / Home](../README.md) · [Все вопросы / Questions](../questions/dotnet/README.md) · [Тема / Topic](../labs/README.md) · [Запуск / Run](execution.md)
+[Русский](execution.md) · [English](execution.en.md)
 
-## Почему не кнопка Run прямо в Markdown?
+[Главная](../README.md) · [Лаборатории](../labs/README.md) · [Интерактивная практика](https://itprodavets.github.io/engineering-handbook/#/ru/practice)
 
-GitHub renders Markdown code fences as **static text**. GitHub itself cannot execute arbitrary C# in a README or question. Поэтому у каждой задачи есть **прямая ссылка на запускаемый файл**, а для облачного выполнения настроены Codespaces и ручной GitHub Actions workflow.
+GitHub Pages не исполняет C#. На сайте можно предсказать вывод, сравнить его с эталоном, изменить код и скопировать его. **Проверка предсказания — не выполнение программы.**
 
-## Option 1 — .NET 10 CLI, local or Codespaces
+## Через GitHub Codespaces
 
-1. Установить .NET 10 SDK; проверить `dotnet --version`.
-2. Из корня репозитория выполнить:
-
-```bash
-dotnet run --file labs/dotnet/Q-024.cs
-./scripts/run-lab.sh Q-025
-```
-
-> .NET 10 **file-based apps** — это поддерживаемый Microsoft механизм запуска одиночного `*.cs` без `.csproj`; команды и SDK описаны в [официальной документации](https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps).
-
-## Option 2 — GitHub Codespaces in browser
-
-После публикации приватного репозитория открой его на github.com, выбери **Code → Codespaces → Create codespace on main**. Файл `.devcontainer/devcontainer.json` поднимает окружение .NET 10. Открой соответствующий файл `labs/dotnet/Q-024.cs`, измени код и выполни из встроенного терминала:
+[Открыть Codespaces](https://codespaces.new/itprodavets/engineering-handbook). Создай облачное окружение и в терминале выполни:
 
 ```bash
 dotnet run --file labs/dotnet/Q-024.cs
 ```
 
-[GitHub docs: C# project in Codespaces](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/setting-up-your-dotnet-project-for-codespaces).
+Если код был изменён на сайте, нажми «Копировать код», открой соответствующий `labs/dotnet/Q-###.cs` в Codespaces, замени содержимое и выполни команду. Для работы используется SDK .NET 10.
 
-## Option 3 — GitHub Actions in browser
+## Через GitHub Actions
 
-Открой вкладку **Actions → Run one lab → Run workflow** и выбери Q-024…Q-035. Workflow установит .NET 10 и запустит указанный файл. Результат появится в job log и Job Summary. Не предполагает execution внутри Markdown, но позволяет запускать код с GitHub UI.
+Открой [Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) → **Run workflow** → выбери Q-024–Q-035. Результат выводится в логах и Job Summary. **Actions выполняет только сохранённый в репозитории код, а не твои несохранённые изменения в Pages.**
 
-## Why not Polyglot Notebooks?
+## Локально
 
-[Microsoft announced deprecation of Polyglot Notebooks and .NET Interactive in 2026](https://github.com/dotnet/interactive/issues/4163); therefore this handbook uses supported .NET 10 file-based apps. If a maintained notebook kernel becomes available, it may be added as an optional view, without replacing runnable `.cs` source.
+С установленным SDK .NET 10 запусти аналогичную команду из корня репозитория. Результаты конкурентных примеров могут быть недетерминированными; нельзя считать один запуск доказательством отсутствия race condition.
 
-## Secure execution
+## О публикации Pages
 
-Запускай только проверенный код. Примеры не требуют секретов, API-ключей или доступа к production БД. Недетерминированные примеры проверяются по допустимым свойствам, а не конкретному числу.
+Для приватных репозиториев GitHub Pages требует соответствующего тарифа GitHub. В Settings → Pages выбери Source → GitHub Actions. **Опубликованная Pages-страница обычно публична даже при приватном исходном репозитории.** В сайт не включены личные ответы, оценки и секреты.
 
-[Главная / Home](../README.md) · [Все вопросы / Questions](../questions/dotnet/README.md) · [Тема / Topic](../labs/README.md) · [Запуск / Run](execution.md)
+[Документация GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) · [C# file-based apps (.NET 10)](https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps)

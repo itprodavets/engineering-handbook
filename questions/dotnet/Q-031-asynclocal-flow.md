@@ -1,18 +1,12 @@
 # Q-031 — AsyncLocal flow
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-030-cancellation-after-start.md) · [Следующий →](Q-032-configureawait-thread-id.md)
+[Русский](./Q-031-asynclocal-flow.md) · [English](en/Q-031-asynclocal-flow.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-031) · [Основная тема](../../topics/dotnet/execution-context.md) · [← Предыдущий](Q-030-cancellation-after-start.md) · [Следующий →](Q-032-configureawait-thread-id.md)
 
-**Level:** Senior / Staff · **Language:** RU + EN · **Topic:** AsyncLocal flow
-
-## Вопрос (RU)
+## Вопрос
 
 Что напечатает Task.Run — X или null?
 
-## Question (EN)
-
-Does Task.Run print X or null?
-
-## Code challenge / Фрагмент кода
+## Фрагмент C# — попробуйте предсказать результат
 
 ```csharp
 var trace = new AsyncLocal<string>();
@@ -23,49 +17,37 @@ await Task.Run(() =>
 });
 ```
 
-**Попробуй предсказать результат прежде, чем читать ответ.**
-
-**Executable lab:** [Q-031.cs](../../labs/dotnet/Q-031.cs) · [Все лаборатории](../../labs/README.md)
+### Запустить настоящий код
 
 ```bash
 dotnet run --file labs/dotnet/Q-031.cs
 ```
 
-**Run remotely after publishing:** [GitHub Actions: Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) — choose `Q-031`. The workflow reports stdout in Job Summary.
-
-**Expected / classification:** X.
-
-> В лаборатории код оформлен как отдельное запускаемое приложение; у некоторых заданий есть завершающий `Console.WriteLine()` или безопасный механизм дожидания continuations. Это явно отмечено в соответствующих исходниках.
+[Q-031.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-031.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
-<summary><strong>Эталонный ответ RU / Model answer EN — открыть после самостоятельного ответа</strong></summary>
-
-### RU — кратко и технически точно
+<summary>Эталонный ответ — открыть после своего ответа</summary>
 
 X. ExecutionContext захватывается при планировании работы в ThreadPool, и AsyncLocal распространяется через него, независимо от конкретного worker.
 
-### EN — concise interview answer
-
-X. ExecutionContext normally flows into Task.Run, carrying AsyncLocal values across worker threads.
-
 </details>
 
-## Why / Внутренний механизм
+### Почему это работает
 
 ExecutionContext; AsyncLocal logical context flow.
 
-**Risk / ошибка:** Контекст может незаметно переносить данные; ThreadStatic ведёт себя иначе.
+### Риск или ошибка
 
-**Guarantee / недетерминированность:** При стандартном ExecutionContext flow без SuppressFlow — X.
+Контекст может незаметно переносить данные; ThreadStatic ведёт себя иначе.
 
-**Source:** https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/executioncontext-synchronizationcontext
+### Что гарантировано
 
-## Ссылки и проверка / References & verification
+При стандартном ExecutionContext flow без SuppressFlow — X.
 
-- [Глубокая теория / Theory](../../languages/csharp/async-await.md)
-- [Как оценивать доказательность](../../docs/technical-accuracy.md)
-- [Как запускать фрагменты кода](../../docs/execution.md)
+### Документация и исходники
+
+[https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/executioncontext-synchronizationcontext](https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/executioncontext-synchronizationcontext)
 
 ---
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-030-cancellation-after-start.md) · [Следующий →](Q-032-configureawait-thread-id.md)
+[Русский](./Q-031-asynclocal-flow.md) · [English](en/Q-031-asynclocal-flow.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-031) · [Основная тема](../../topics/dotnet/execution-context.md) · [← Предыдущий](Q-030-cancellation-after-start.md) · [Следующий →](Q-032-configureawait-thread-id.md)

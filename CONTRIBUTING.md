@@ -1,14 +1,30 @@
-# Contributing / Добавление материалов
+# Как расширять справочник
 
-[Главная / Home](README.md) · [Все вопросы / Questions](questions/dotnet/README.md) · [Тема / Topic](docs/technical-accuracy.md) · [Запуск / Run](docs/execution.md)
+[Русский](CONTRIBUTING.md) · [English](CONTRIBUTING.en.md)
 
-- Новый вопрос получает следующий свободный ID, новый Markdown в `questions/dotnet/`, ссылки в README и индексе.
-- К каждому вопросу обязательны **RU и EN формулировки**, короткие эталонные ответы, уровень гарантии и ссылки на исследование механизмов.
-- Для ловушек — runnable `.cs` в `labs/dotnet/`, команда `dotnet run --file ...`, а также проверка безопасного ожидаемого результата.
-- Не переносить личные оценки, исходные ответы и секреты из Google Sheets в репозиторий. Progress stays in private tracker.
-- При несоответствии теории исходникам текущего .NET: обновить комментарии и ссылку на версию, не утверждать неподтверждённые bytes/CPU/threads.
-- Проверка качества: `python3 scripts/check_links.py` и на SDK10 `python3 scripts/check_labs.py`.
+[Главная](README.md) · [Интерактивная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/home)
 
-[Семь обязательных пунктов точного разбора](docs/technical-accuracy.md)
+## Одно объяснение — одна тема
 
-[Главная / Home](README.md) · [Все вопросы / Questions](questions/dotnet/README.md) · [Тема / Topic](docs/technical-accuracy.md) · [Запуск / Run](docs/execution.md)
+Если понятие уже описано в `content/lessons.json`, дополняй **существующую тему**. Повторные вопросы добавляй как задачи для закрепления. Не создавай вторую основную тему с тем же механизмом.
+
+## Единый источник данных
+
+- `content/lessons.json` — основная теория RU/EN и принадлежность вопросов к темам.
+- `content/questions.json` — вопросы RU/EN, ответы и исходные фрагменты.
+- `content/glossary.json` — технические определения в двух языках.
+- `labs/dotnet/*.cs` — действительно запускаемые C#-примеры.
+- `site/assets/` — веб-интерфейс (никаких приватных данных).
+
+Не редактируй сгенерированные Markdown-файлы напрямую: они пересоздаются командой:
+
+```bash
+python3 scripts/build_site.py
+python3 scripts/check_links.py
+python3 scripts/check_site.py
+node --check site/assets/app.js
+```
+
+Для новых языков и платформ добавляй отдельные разделы и одну основную тему на уникальный механизм. Используй постоянные идентификаторы вопросов и ссылки на примеры для закрепления.
+
+**Важно:** личные ответы, оценки и секреты в репозиторий не добавляются.

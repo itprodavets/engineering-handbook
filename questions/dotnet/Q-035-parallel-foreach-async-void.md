@@ -1,18 +1,12 @@
 # Q-035 — Parallel.ForEach async void
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-034-semaphore-waitasync.md)
+[Русский](./Q-035-parallel-foreach-async-void.md) · [English](en/Q-035-parallel-foreach-async-void.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-035) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-034-semaphore-waitasync.md)
 
-**Level:** Senior / Staff · **Language:** RU + EN · **Topic:** Parallel.ForEach async void
-
-## Вопрос (RU)
+## Вопрос
 
 Ждёт ли Parallel.ForEach завершения async-лямбд и какой вывод гарантирован?
 
-## Question (EN)
-
-Does Parallel.ForEach wait for async lambda continuations, and what output is guaranteed?
-
-## Code challenge / Фрагмент кода
+## Фрагмент C# — попробуйте предсказать результат
 
 ```csharp
 var gate = new TaskCompletionSource(
@@ -27,49 +21,37 @@ gate.SetResult();
 // X могут появиться позже, а программа — завершиться.
 ```
 
-**Попробуй предсказать результат прежде, чем читать ответ.**
-
-**Executable lab:** [Q-035.cs](../../labs/dotnet/Q-035.cs) · [Все лаборатории](../../labs/README.md)
+### Запустить настоящий код
 
 ```bash
 dotnet run --file labs/dotnet/Q-035.cs
 ```
 
-**Run remotely after publishing:** [GitHub Actions: Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) — choose `Q-035`. The workflow reports stdout in Job Summary.
-
-**Expected / classification:** A печатается первой; X позже не гарантированы..
-
-> В лаборатории код оформлен как отдельное запускаемое приложение; у некоторых заданий есть завершающий `Console.WriteLine()` или безопасный механизм дожидания continuations. Это явно отмечено в соответствующих исходниках.
+[Q-035.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-035.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
-<summary><strong>Эталонный ответ RU / Model answer EN — открыть после самостоятельного ответа</strong></summary>
-
-### RU — кратко и технически точно
+<summary>Эталонный ответ — открыть после своего ответа</summary>
 
 Лямбда приводится к async void для Action<T>. Parallel.ForEach считает итерацию завершённой, когда делегат вернулся на await; оставшиеся continuations не дожидается. Используй Parallel.ForEachAsync или Task.WhenAll.
 
-### EN — concise interview answer
-
-The lambda becomes async void because Parallel.ForEach accepts Action<T>. The loop returns after delegates yield at await and does not await their continuations. Use Parallel.ForEachAsync or WhenAll.
-
 </details>
 
-## Why / Внутренний механизм
+### Почему это работает
 
 async void; Action<T>; compiler state machine; ThreadPool continuation.
 
-**Risk / ошибка:** Утрата ожидания завершения, исключения вне обычной Task-цепочки, аварийное завершение процесса.
+### Риск или ошибка
 
-**Guarantee / недетерминированность:** A раньше X; дальнейший вывод недетерминирован без явного ожидания.
+Утрата ожидания завершения, исключения вне обычной Task-цепочки, аварийное завершение процесса.
 
-**Source:** https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs
+### Что гарантировано
 
-## Ссылки и проверка / References & verification
+A раньше X; дальнейший вывод недетерминирован без явного ожидания.
 
-- [Глубокая теория / Theory](../../languages/csharp/async-await.md)
-- [Как оценивать доказательность](../../docs/technical-accuracy.md)
-- [Как запускать фрагменты кода](../../docs/execution.md)
+### Документация и исходники
+
+[https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs](https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs)
 
 ---
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-034-semaphore-waitasync.md)
+[Русский](./Q-035-parallel-foreach-async-void.md) · [English](en/Q-035-parallel-foreach-async-void.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-035) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-034-semaphore-waitasync.md)

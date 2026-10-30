@@ -17,7 +17,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - run: python3 scripts/check_links.py
+      - name: Validate generated localization and canonical structure
+        run: |
+          python3 scripts/build_site.py --check
+          python3 scripts/check_site.py
+          python3 scripts/check_links.py
+          node --check site/assets/app.js
 
   dotnet:
     name: .NET 10 runnable examples

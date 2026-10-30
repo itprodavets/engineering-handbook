@@ -1,18 +1,12 @@
 # Q-032 — ConfigureAwait(false)
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-031-asynclocal-flow.md) · [Следующий →](Q-033-startnew-nested-task.md)
+[Русский](./Q-032-configureawait-thread-id.md) · [English](en/Q-032-configureawait-thread-id.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-032) · [Основная тема](../../topics/dotnet/execution-context.md) · [← Предыдущий](Q-031-asynclocal-flow.md) · [Следующий →](Q-033-startnew-nested-task.md)
 
-**Level:** Senior / Staff · **Language:** RU + EN · **Topic:** ConfigureAwait(false)
-
-## Вопрос (RU)
+## Вопрос
 
 Изменится ли managed thread id на await CompletedTask.ConfigureAwait(false)?
 
-## Question (EN)
-
-Does awaiting CompletedTask.ConfigureAwait(false) change the managed thread ID?
-
-## Code challenge / Фрагмент кода
+## Фрагмент C# — попробуйте предсказать результат
 
 ```csharp
 int before = Environment.CurrentManagedThreadId;
@@ -21,49 +15,37 @@ Console.WriteLine(
     before == Environment.CurrentManagedThreadId);
 ```
 
-**Попробуй предсказать результат прежде, чем читать ответ.**
-
-**Executable lab:** [Q-032.cs](../../labs/dotnet/Q-032.cs) · [Все лаборатории](../../labs/README.md)
+### Запустить настоящий код
 
 ```bash
 dotnet run --file labs/dotnet/Q-032.cs
 ```
 
-**Run remotely after publishing:** [GitHub Actions: Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) — choose `Q-032`. The workflow reports stdout in Job Summary.
-
-**Expected / classification:** True.
-
-> В лаборатории код оформлен как отдельное запускаемое приложение; у некоторых заданий есть завершающий `Console.WriteLine()` или безопасный механизм дожидания continuations. Это явно отмечено в соответствующих исходниках.
+[Q-032.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-032.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
-<summary><strong>Эталонный ответ RU / Model answer EN — открыть после самостоятельного ответа</strong></summary>
-
-### RU — кратко и технически точно
+<summary>Эталонный ответ — открыть после своего ответа</summary>
 
 True. Task уже завершена, поэтому метод не приостанавливается. ConfigureAwait(false) не запускает новый поток.
 
-### EN — concise interview answer
-
-True. The Task is already completed, so the await continues synchronously. ConfigureAwait(false) does not force a thread switch.
-
 </details>
 
-## Why / Внутренний механизм
+### Почему это работает
 
 Task awaiter; IsCompleted; SynchronizationContext (захват не нужен).
 
-**Risk / ошибка:** Путаница между отключением возврата в контекст и переключением потока.
+### Риск или ошибка
 
-**Guarantee / недетерминированность:** Гарантировано для завершённой Task в приведённом коде.
+Путаница между отключением возврата в контекст и переключением потока.
 
-**Source:** https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth
+### Что гарантировано
 
-## Ссылки и проверка / References & verification
+Гарантировано для завершённой Task в приведённом коде.
 
-- [Глубокая теория / Theory](../../languages/csharp/async-await.md)
-- [Как оценивать доказательность](../../docs/technical-accuracy.md)
-- [Как запускать фрагменты кода](../../docs/execution.md)
+### Документация и исходники
+
+[https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth](https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth)
 
 ---
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-031-asynclocal-flow.md) · [Следующий →](Q-033-startnew-nested-task.md)
+[Русский](./Q-032-configureawait-thread-id.md) · [English](en/Q-032-configureawait-thread-id.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-032) · [Основная тема](../../topics/dotnet/execution-context.md) · [← Предыдущий](Q-031-asynclocal-flow.md) · [Следующий →](Q-033-startnew-nested-task.md)

@@ -1,0 +1,737 @@
+[
+  {
+    "id": "Q-001",
+    "slug": "Q-001-async-io-scalability",
+    "title": "Async / I/O",
+    "q": {
+      "ru": "Почему ToListAsync() масштабируется лучше, чем Task.Run(() => ToList()), при 1 000 одновременных HTTP-запросов?",
+      "en": "Why does ToListAsync() scale better than Task.Run(() => ToList()) under 1,000 concurrent HTTP requests?"
+    },
+    "a": {
+      "ru": "ToListAsync() использует асинхронный I/O: при незавершённом чтении await сохраняет продолжение и освобождает рабочий поток. Task.Run() отправляет синхронный ToList() в ThreadPool, где поток блокируется при ожидании БД; возможен ThreadPool starvation.",
+      "en": "ToListAsync() uses asynchronous I/O: when data is not ready, await suspends the method and releases the worker. Task.Run() queues synchronous I/O onto the ThreadPool, keeping a worker blocked and increasing the risk of thread pool starvation."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "await; Task.Run; ThreadPool; I/O; starvation"
+  },
+  {
+    "id": "Q-002",
+    "slug": "Q-002-thread-id-after-await",
+    "title": "Async / потоки",
+    "q": {
+      "ru": "Всегда ли совпадают Environment.CurrentManagedThreadId до и после await ToListAsync()? Если они разные, создал ли await новый поток?",
+      "en": "Must Environment.CurrentManagedThreadId be the same before and after await ToListAsync()? If not, did await create a new thread?"
+    },
+    "a": {
+      "ru": "Нет. В ASP.NET Core продолжение после await может выполняться на другом ThreadPool-потоке. await сам по себе не создаёт поток и не гарантирует переключение; завершённая операция может продолжиться синхронно.",
+      "en": "No. In ASP.NET Core, the continuation may execute on a different ThreadPool thread. await neither creates a thread nor guarantees a thread switch; an already completed task may continue synchronously."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Continuation; ThreadPool; SynchronizationContext"
+  },
+  {
+    "id": "Q-003",
+    "slug": "Q-003-what-is-io",
+    "title": "Основы I/O",
+    "q": {
+      "ru": "Что означает аббревиатура I/O и какой вид I/O происходит при обращении к PostgreSQL?",
+      "en": "What does I/O stand for, and what kind of I/O occurs when querying PostgreSQL?"
+    },
+    "a": {
+      "ru": "I/O = Input/Output (ввод/вывод), обмен с сетью, диском или устройством. Обращение к PostgreSQL обычно включает сетевой I/O по TCP; асинхронное ожидание ответа не требует блокировать worker.",
+      "en": "I/O stands for Input/Output: exchanging data with networks, storage or devices. A PostgreSQL call typically involves network I/O over TCP, and an asynchronous wait does not require a blocked worker thread."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Input/Output; network I/O; TCP socket"
+  },
+  {
+    "id": "Q-004",
+    "slug": "Q-004-async-postgres-pipeline",
+    "title": "CLR / ОС / сеть",
+    "q": {
+      "ru": "Что происходит внутри .NET, ОС и CPU между отправкой асинхронного SQL-запроса и получением результата?",
+      "en": "What happens inside .NET, the OS kernel and CPU between sending an asynchronous SQL query and receiving the result?"
+    },
+    "a": {
+      "ru": "Npgsql отправляет SQL через сокет. Если ответ не готов, await сохраняет continuation и освобождает worker; ОС отслеживает готовность сокета (например, epoll на Linux). При получении данных .NET возобновляет обработку, а Npgsql/EF Core читают и материализуют объекты с использованием CPU.",
+      "en": "Npgsql sends SQL over a socket. If the response is pending, await suspends the method and frees the worker while the OS monitors socket readiness (for example, epoll on Linux). Once data arrives, .NET resumes processing and Npgsql/EF Core read and materialize the result using CPU time."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Npgsql; socket; epoll; continuation; materialization"
+  },
+  {
+    "id": "Q-005",
+    "slug": "Q-005-cpu-during-io",
+    "title": "CPU vs I/O",
+    "q": {
+      "ru": "PostgreSQL выполняет SQL 5 секунд. Что делает ядро CPU нашего .NET-сервера при await ToListAsync()?",
+      "en": "PostgreSQL takes five seconds to execute a query. What does the .NET server's CPU core do while awaiting ToListAsync()?"
+    },
+    "a": {
+      "ru": "Ядро CPU не привязано к ожидающему запросу: ОС может выполнять другие потоки или оставить его простаивать. CPU расходуется до ожидания на подготовку/отправку SQL и после него на приём, чтение и материализацию данных.",
+      "en": "The CPU core is not reserved for the waiting request: the OS may run other threads or leave it idle. CPU time is still required before the wait to prepare/send SQL and afterwards to read and materialize the result."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "CPU-bound; I/O-bound; OS Scheduler"
+  },
+  {
+    "id": "Q-006",
+    "slug": "Q-006-hundred-threads-eight-cores",
+    "title": "OS Scheduler",
+    "q": {
+      "ru": "Как 8 физических ядер CPU могут выполнять работу 100 готовых к исполнению потоков?",
+      "en": "How can eight physical CPU cores handle 100 runnable threads?"
+    },
+    "a": {
+      "ru": "Планировщик ОС распределяет процессорное время и может вытеснить незавершённый поток, сохранив его контекст, чтобы выполнить другой. Без SMT одновременно выполняются максимум 8 потоков, но 100 могут продвигаться по очереди.",
+      "en": "The OS scheduler shares CPU time among runnable threads. It can preempt an unfinished thread, save its execution context and run another. Without SMT, up to eight threads execute simultaneously, but all 100 can make progress over time."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "OS Scheduler; preemption; context switch; SMT; concurrency"
+  },
+  {
+    "id": "Q-007",
+    "slug": "Q-007-threadpool-vs-os-scheduler",
+    "title": "ThreadPool / Scheduler",
+    "q": {
+      "ru": "Чем отличается .NET ThreadPool от планировщика ОС? Кто решает, на каком ядре выполняется поток?",
+      "en": "What is the difference between the .NET ThreadPool and the OS scheduler? Who decides which CPU core runs a thread?"
+    },
+    "a": {
+      "ru": "ThreadPool управляет очередями задач и количеством рабочих потоков .NET. Планировщик ОС назначает готовые ОС-потоки логическим процессорам, может вытеснять и переносить их между ядрами. Task — не то же самое, что Thread.",
+      "en": "The ThreadPool manages queued work and .NET worker threads. The OS scheduler assigns runnable OS threads to logical processors and may preempt or migrate them. A Task is not a Thread."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "ThreadPool; OS Scheduler; Task vs Thread"
+  },
+  {
+    "id": "Q-008",
+    "slug": "Q-008-task-vs-thread",
+    "title": "Task / Thread",
+    "q": {
+      "ru": "Чем Task отличается от Thread? Создаёт ли Task новый поток и что делает await?",
+      "en": "What is the difference between Task and Thread in .NET? Does a Task create a new thread, and what does await do?"
+    },
+    "a": {
+      "ru": "Thread — планируемый ОС поток исполнения. Task — объект, представляющий завершение операции (и результат в Task<T>); он не обязан иметь собственный поток. Task.Run обычно запускает работу на ThreadPool, а await при незавершённом I/O приостанавливает метод без блокировки рабочего потока.",
+      "en": "A Thread is an OS-scheduled execution path. A Task represents an operation's completion (and a result with Task<T>), not a dedicated thread. Task.Run usually queues work to the ThreadPool; awaiting incomplete asynchronous I/O suspends the method without blocking its worker."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Task; Task<T>; Thread; Task.Run; await; ThreadPool"
+  },
+  {
+    "id": "Q-009",
+    "slug": "Q-009-task-delay-vs-thread-sleep",
+    "title": "Task.Delay / Thread.Sleep",
+    "q": {
+      "ru": "Что произойдёт с ThreadPool, если одновременно запустить 10 000 Task.Delay(5000) и 10 000 Task.Run(() => Thread.Sleep(5000))?",
+      "en": "What happens to the ThreadPool when 10,000 Task.Delay(5000) operations run versus 10,000 Task.Run(() => Thread.Sleep(5000)) operations?"
+    },
+    "a": {
+      "ru": "Task.Delay создаёт 10 000 ожидающих операций с таймерами, но 0 рабочих потоков блокируется специально ради этих задержек. Task.Run помещает 10 000 делегатов в очередь; каждый выполняемый Thread.Sleep блокирует 1 worker на 5 секунд. ThreadPool может использовать существующие или создавать дополнительные потоки; точное число не фиксировано.",
+      "en": "10,000 Task.Delay operations require zero dedicated blocked worker threads while their timers are pending. Task.Run queues 10,000 delegates; each executing Thread.Sleep blocks one worker for five seconds. The ThreadPool may reuse idle workers or create additional ones; the exact count is workload-dependent."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Task.Delay; Thread.Sleep; timers; starvation; ThreadPool queue"
+  },
+  {
+    "id": "Q-010",
+    "slug": "Q-010-task-whenall-execution",
+    "title": "Task.WhenAll / execution",
+    "q": {
+      "ru": "Создаёт ли Task.WhenAll новые потоки и запускает ли сам переданные ему задачи?",
+      "en": "Does Task.WhenAll create threads or start the tasks passed to it?"
+    },
+    "a": {
+      "ru": "Нет. Task.WhenAll создаёт задачу, которая завершается, когда завершились все переданные задачи; потоки он не создаёт. Task.Delay запускает таймер при вызове, Task.Run ставит делегат в очередь при вызове; при ленивом Select эти вызовы выполняются при перечислении Task.WhenAll.",
+      "en": "No. Task.WhenAll returns an aggregate Task that completes when all supplied tasks finish; it neither creates threads nor starts existing tasks. Task.Delay schedules its timer when invoked; Task.Run queues its delegate when invoked. With lazy Select, those calls occur as WhenAll enumerates the sequence."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Task.WhenAll; IEnumerable; deferred execution; TaskScheduler"
+  },
+  {
+    "id": "Q-011",
+    "slug": "Q-011-threadpool-worker-creation",
+    "title": "ThreadPool / создание потоков",
+    "q": {
+      "ru": "Что означает «ThreadPool может создать дополнительный поток» при вызове Task.Run и почему это не означает 10 000 потоков для 10 000 Task?",
+      "en": "What does it mean when the ThreadPool creates an additional thread, and why do 10,000 Tasks not imply 10,000 threads?"
+    },
+    "a": {
+      "ru": "ThreadPool сначала использует имеющиеся свободные worker-потоки. Если работы в очереди больше, чем могут обработать доступные workers, пул может создать дополнительные ОС-потоки в рамках своих ограничений. Task.Delay не выделяет отдельный заблокированный поток на каждый таймер; конкретное число новых потоков зависит от нагрузки и состояния пула.",
+      "en": "The ThreadPool first reuses available workers. If queued work exceeds available worker capacity, it may create additional OS threads within its limits. A Task.Delay timer does not reserve a blocked worker per delay; the number of new workers depends on the workload and current pool state."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Worker thread; OS thread creation; work queue; thread reuse"
+  },
+  {
+    "id": "Q-012",
+    "slug": "Q-012-async-starts-synchronously",
+    "title": "Async / first await",
+    "q": {
+      "ru": "Запускает ли вызов async Task-метода новый поток или начинает работу синхронно?",
+      "en": "Does calling an async Task method start a new thread or run synchronously at first?"
+    },
+    "a": {
+      "ru": "Вызов начинает исполнять тело на текущем потоке до первого await незавершённой операции. Компилятор генерирует state machine, но async не означает запуск в ThreadPool.",
+      "en": "It executes on the calling thread until the first await of an incomplete awaitable. The compiler generates a state machine; async alone does not queue work to the ThreadPool."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "async; state machine; await; initial synchronous path"
+  },
+  {
+    "id": "Q-013",
+    "slug": "Q-013-completed-await-and-scheduling",
+    "title": "Await / completed task",
+    "q": {
+      "ru": "Всегда ли await приостанавливает метод, выделяет worker или переключает поток?",
+      "en": "Does await always suspend, allocate a worker, or switch threads?"
+    },
+    "a": {
+      "ru": "Нет. Для уже завершённого awaitable GetAwaiter().IsCompleted позволяет продолжить выполнение синхронно. Незавершённый await регистрирует continuation; новый поток при этом не создаётся самим await.",
+      "en": "No. An already completed awaitable continues synchronously. An incomplete await registers a continuation and suspends the method; await itself does not create a thread."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "awaiter; IsCompleted; continuation; thread identity"
+  },
+  {
+    "id": "Q-014",
+    "slug": "Q-014-whenany-faulted-task",
+    "title": "Task.WhenAny / faults",
+    "q": {
+      "ru": "Выбрасывает ли await Task.WhenAny ошибку первой упавшей задачи и отменяет ли остальные?",
+      "en": "Does awaiting Task.WhenAny throw the winning task's exception or cancel the other tasks?"
+    },
+    "a": {
+      "ru": "Нет. WhenAny возвращает успешно завершённую Task<Task>, результат которой — первая завершившаяся задача, в том числе faulted. Для ошибки нужен await возвращённой внутренней Task; остальные задачи продолжаются, если не отменены отдельно.",
+      "en": "No. WhenAny completes successfully with the first completed task, even if it faulted. Await that inner task to observe its exception; the remaining tasks continue unless canceled separately."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "WhenAny; winner; faulted; cancellation"
+  },
+  {
+    "id": "Q-015",
+    "slug": "Q-015-whenall-multiple-exceptions",
+    "title": "Task.WhenAll / exceptions",
+    "q": {
+      "ru": "Как Task.WhenAll обрабатывает несколько faulted Task и что выбрасывает await?",
+      "en": "How does Task.WhenAll handle several faulted tasks and what does await throw?"
+    },
+    "a": {
+      "ru": "WhenAll завершается Faulted и хранит исключения всех упавших задач в aggregate Exception.InnerExceptions. Обычный await выбрасывает одно исключение; для полного набора надо изучить свойство Exception у общей Task.",
+      "en": "The aggregate task is Faulted and preserves all task failures in Exception.InnerExceptions. A regular await throws one exception; inspect the aggregate task for the complete set."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "WhenAll; AggregateException; faulted; await"
+  },
+  {
+    "id": "Q-016",
+    "slug": "Q-016-sync-over-async-deadlocks",
+    "title": "Sync-over-async / blocking",
+    "q": {
+      "ru": "Почему .Result и .Wait() опасны в ASP.NET Core? Будет ли обязательно deadlock?",
+      "en": "Why are .Result and .Wait() dangerous in ASP.NET Core? Is a deadlock guaranteed?"
+    },
+    "a": {
+      "ru": ".Result и .Wait() блокируют вызывающий поток до завершения Task, увеличивая риск ThreadPool starvation. Deadlock не гарантирован: классический случай связан с однопоточным SynchronizationContext; стандартный ASP.NET Core его не устанавливает.",
+      "en": "They block the caller and can cause ThreadPool starvation. Deadlock is not inevitable: the classic case involves a single-threaded SynchronizationContext, which standard ASP.NET Core does not install."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "Result; Wait; deadlock; ASP.NET Core; starvation"
+  },
+  {
+    "id": "Q-017",
+    "slug": "Q-017-configureawait-and-context",
+    "title": "ConfigureAwait / contexts",
+    "q": {
+      "ru": "Что именно меняет ConfigureAwait(false)? Подавляет ли он ExecutionContext?",
+      "en": "What exactly does ConfigureAwait(false) change? Does it suppress ExecutionContext?"
+    },
+    "a": {
+      "ru": "Для обычного Task-await он отключает возврат continuation в захваченный SynchronizationContext/нестандартный TaskScheduler. Он не создаёт поток и не отключает распространение ExecutionContext или AsyncLocal.",
+      "en": "For standard Task awaiting it avoids capturing SynchronizationContext or a non-default TaskScheduler for the continuation. It neither creates a thread nor suppresses ExecutionContext or AsyncLocal flow."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "ConfigureAwait; SynchronizationContext; ExecutionContext; AsyncLocal"
+  },
+  {
+    "id": "Q-018",
+    "slug": "Q-018-cancellationtoken-taskrun",
+    "title": "CancellationToken",
+    "q": {
+      "ru": "Прерывает ли CancellationToken выполняющуюся Task.Run и автоматически ли попадает в делегат?",
+      "en": "Can CancellationToken forcibly stop a running Task.Run, and is it passed to the delegate automatically?"
+    },
+    "a": {
+      "ru": "Нет. Отмена кооперативная; Task.Run(token) может не допустить запуск, если задача ещё не началась, но не останавливает уже выполняющийся код и не передаёт token в делегат автоматически.",
+      "en": "No. Cancellation is cooperative. Task.Run(token) can prevent execution before a task starts, but does not interrupt running code or automatically pass the token into the delegate."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "CancellationToken; cooperative; Task.Run"
+  },
+  {
+    "id": "Q-019",
+    "slug": "Q-019-valuetask-consumption",
+    "title": "ValueTask / reuse",
+    "q": {
+      "ru": "Почему ValueTask<T> нельзя всегда await-ить дважды и всегда ли он экономит память?",
+      "en": "Why isn't it always safe to await ValueTask<T> twice, and does it always save memory?"
+    },
+    "a": {
+      "ru": "ValueTask<T> — struct, который может хранить готовый результат, Task или IValueTaskSource. Источник может допускать только одно потребление; выгода по аллокациям зависит от частоты синхронного завершения и использования API.",
+      "en": "ValueTask<T> is a struct that can wrap a result, Task, or IValueTaskSource. A source may support only one consumption; allocation savings depend on synchronous completions and usage patterns."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "ValueTask<T>; IValueTaskSource; AsTask"
+  },
+  {
+    "id": "Q-020",
+    "slug": "Q-020-await-inside-lock",
+    "title": "lock / async mutex",
+    "q": {
+      "ru": "Почему await запрещён в lock и чем отличается SemaphoreSlim.WaitAsync()?",
+      "en": "Why is await prohibited inside lock, and how does SemaphoreSlim.WaitAsync differ?"
+    },
+    "a": {
+      "ru": "Компилятор выдаёт CS1996: нельзя приостановить async-метод внутри lock. SemaphoreSlim.WaitAsync даёт ожидаемое без блокировки потока получение разрешения; Release обязателен, обычно в finally. SemaphoreSlim не обеспечивает автоматической рекурсивности.",
+      "en": "The compiler reports CS1996 for await inside lock. SemaphoreSlim.WaitAsync awaits a permit without blocking a worker; release it in finally. SemaphoreSlim is not automatically reentrant."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "lock; CS1996; SemaphoreSlim; WaitAsync; Release"
+  },
+  {
+    "id": "Q-021",
+    "slug": "Q-021-volatile-vs-interlocked",
+    "title": "volatile / atomicity",
+    "q": {
+      "ru": "Почему volatile counter++ небезопасен и чем Interlocked.Increment отличается от lock?",
+      "en": "Why is volatile counter++ unsafe, and how do Interlocked.Increment and lock differ?"
+    },
+    "a": {
+      "ru": "volatile управляет доступом/упорядочиванием чтений и записей, но ++ остаётся read-modify-write. Interlocked.Increment выполняет атомарное изменение одного значения, а lock защищает произвольную критическую секцию.",
+      "en": "volatile affects memory access and ordering but does not make read-modify-write atomic. Interlocked.Increment atomically changes one variable; lock protects a critical section."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "volatile; Interlocked; atomicity; critical section"
+  },
+  {
+    "id": "Q-022",
+    "slug": "Q-022-taskcompletionsource-continuations",
+    "title": "TaskCompletionSource / continuation",
+    "q": {
+      "ru": "Почему SetResult под lock может вызвать неожиданный код и как помогает RunContinuationsAsynchronously?",
+      "en": "Why can SetResult under a lock run unexpected code, and what does RunContinuationsAsynchronously change?"
+    },
+    "a": {
+      "ru": "Продолжения Task могут выполняться синхронно при SetResult, включая код под удерживаемой вызывающим потоком блокировкой. TaskCreationOptions.RunContinuationsAsynchronously исключает синхронное встраивание продолжений, помогая уменьшить опасность lock inversion/reentrancy.",
+      "en": "Task continuations may run inline when SetResult completes the task, including while the caller holds a lock. RunContinuationsAsynchronously prevents inline execution of continuations and mitigates reentrancy or lock-inversion hazards."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "TaskCompletionSource; continuations; RunContinuationsAsynchronously"
+  },
+  {
+    "id": "Q-023",
+    "slug": "Q-023-asynclocal-executioncontext",
+    "title": "AsyncLocal / ExecutionContext",
+    "q": {
+      "ru": "Почему AsyncLocal<T> сохраняет значение при Task.Run на другом потоке, а ThreadStatic — нет?",
+      "en": "Why does AsyncLocal<T> flow through Task.Run to another thread while ThreadStatic does not?"
+    },
+    "a": {
+      "ru": "AsyncLocal<T> хранится в логическом ExecutionContext, который по умолчанию распространяется через асинхронные переходы и Task.Run. ThreadStatic привязан к конкретному потоку ОС/CLR, поэтому при смене потока значение не переносится.",
+      "en": "AsyncLocal<T> belongs to the logical ExecutionContext, which normally flows through async work and Task.Run. ThreadStatic is tied to a specific physical thread and does not follow thread changes."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "",
+    "terms": "AsyncLocal; ThreadStatic; ExecutionContext; context flow"
+  },
+  {
+    "id": "Q-024",
+    "slug": "Q-024-completed-await-output",
+    "title": "Completed await",
+    "q": {
+      "ru": "Какой вывод и почему? async-метод содержит await уже завершённой Task.",
+      "en": "What is the output and why? The awaited Task is already complete."
+    },
+    "a": {
+      "ru": "ABC. CompletedTask уже завершена, поэтому await не приостанавливает метод и B печатается до возврата в вызывающий код.",
+      "en": "ABC. The awaited Task is already complete, so the method continues synchronously and prints B before the caller prints C."
+    },
+    "code": "async Task PrintAsync()\n{\n    Console.Write(\"A\");\n    await Task.CompletedTask;\n    Console.Write(\"B\");\n}\nvar task = PrintAsync();\nConsole.Write(\"C\");\nawait task;",
+    "lab": "labs/dotnet/Q-024.cs",
+    "expected": "ABC.",
+    "mechanism": "Roslyn state machine; IsCompleted = true; без обязательного ThreadPool worker.",
+    "risk": "Нельзя считать, что каждый async-вызов запускается в фоне или переключает поток.",
+    "guarantee": "Гарантировано для уже завершённой Task.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs",
+    "terms": ""
+  },
+  {
+    "id": "Q-025",
+    "slug": "Q-025-incomplete-await-output",
+    "title": "Incomplete await gate",
+    "q": {
+      "ru": "Какой вывод и почему? Метод ожидает незавершённую TaskCompletionSource.",
+      "en": "What is the output? The method awaits an incomplete TaskCompletionSource."
+    },
+    "a": {
+      "ru": "ACB. Метод печатает A, приостанавливается на незавершённом await; вызывающий код печатает C, затем SetResult разрешает продолжение с B.",
+      "en": "ACB. The method prints A and suspends; the caller prints C, then SetResult allows the continuation to print B."
+    },
+    "code": "var gate = new TaskCompletionSource(\n    TaskCreationOptions.RunContinuationsAsynchronously);\n\nasync Task PrintAsync()\n{\n    Console.Write(\"A\");\n    await gate.Task;\n    Console.Write(\"B\");\n}\nvar task = PrintAsync();\nConsole.Write(\"C\");\ngate.SetResult();\nawait task;",
+    "lab": "labs/dotnet/Q-025.cs",
+    "expected": "ACB.",
+    "mechanism": "Async state machine; continuation; RunContinuationsAsynchronously; нет thread-per-wait.",
+    "risk": "Не путать приостановку метода с остановкой/созданием worker thread.",
+    "guarantee": "Порядок A→C→B задан незавершённой gate и последовательностью вызовов.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth",
+    "terms": ""
+  },
+  {
+    "id": "Q-026",
+    "slug": "Q-026-whenany-faulted-output",
+    "title": "WhenAny faulted",
+    "q": {
+      "ru": "Что напечатает код и выбросит ли await Task.WhenAny исключение?",
+      "en": "What does it print, and does awaiting WhenAny throw the winning task's exception?"
+    },
+    "a": {
+      "ru": "True. WhenAny возвращает завершившуюся Task независимо от Faulted; ошибка станет видна при await winner.",
+      "en": "True. WhenAny completes with the faulted winner but does not throw its exception; awaiting winner would rethrow it."
+    },
+    "code": "var failed = Task.FromException(\n    new InvalidOperationException(\"boom\"));\nvar winner = await Task.WhenAny(\n    failed, Task.Delay(Timeout.Infinite));\nConsole.WriteLine(winner.IsFaulted);",
+    "lab": "labs/dotnet/Q-026.cs",
+    "expected": "True; исключение не выбрасывается на этом await..",
+    "mechanism": "Task<Task>; статус Faulted у winner, RanToCompletion у WhenAny.",
+    "risk": "Исключение ошибочно считают обработанным; оставшиеся операции не отменяются автоматически.",
+    "guarantee": "Гарантировано: вторая Task никогда не завершается.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany",
+    "terms": ""
+  },
+  {
+    "id": "Q-027",
+    "slug": "Q-027-whenall-exceptions-count",
+    "title": "WhenAll exceptions",
+    "q": {
+      "ru": "Сколько исключений в Exception.InnerExceptions при двух завершившихся с ошибкой Task?",
+      "en": "How many exceptions are stored by WhenAll when two input Tasks fault?"
+    },
+    "a": {
+      "ru": "2. WhenAll агрегирует обе ошибки в своей Exception; обычный await сам выбрасывает одно исключение, а не весь AggregateException.",
+      "en": "2. WhenAll stores both failures in its aggregate Exception. A regular await rethrows one exception; inspect the Task for all failures."
+    },
+    "code": "var all = Task.WhenAll(\n    Task.FromException(\n        new InvalidOperationException(\"A\")),\n    Task.FromException(\n        new ArgumentException(\"B\")));\ntry\n{\n    await all;\n}\ncatch (Exception)\n{\n    Console.WriteLine(all.Exception!.InnerExceptions.Count);\n}",
+    "lab": "labs/dotnet/Q-027.cs",
+    "expected": "2.",
+    "mechanism": "Task Exception property; AggregateException; awaiter GetResult.",
+    "risk": "Потеря диагностики нескольких одновременных ошибок.",
+    "guarantee": "Гарантировано две ошибки, порядок конкретных типов не нужен.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall",
+    "terms": ""
+  },
+  {
+    "id": "Q-028",
+    "slug": "Q-028-lost-update-race",
+    "title": "Lost update",
+    "q": {
+      "ru": "Всегда ли итог counter равен 10 000? Почему?",
+      "en": "Is counter always 10,000? Why or why not?"
+    },
+    "a": {
+      "ru": "counter++ не атомарен: параллельные workers могут потерять обновления. Исправление — Interlocked.Increment(ref counter) либо корректная синхронизация.",
+      "en": "The result may be 10,000 or lower. Incrementing is not atomic, and competing workers can overwrite one another. Use Interlocked.Increment."
+    },
+    "code": "int counter = 0;\nawait Task.WhenAll(\n    Enumerable.Range(0, 10_000)\n        .Select(_ => Task.Run(() => counter++)));\nConsole.WriteLine(counter);",
+    "lab": "labs/dotnet/Q-028.cs",
+    "expected": "Неопределённый итог: может быть 10 000 или меньше..",
+    "mechanism": "Shared heap/closure; read-modify-write; OS scheduling; memory model.",
+    "risk": "Race condition и потерянные инкременты. Число потоков не равно числу Task.",
+    "guarantee": "Нет гарантии точного итогового значения без синхронизации.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked",
+    "terms": ""
+  },
+  {
+    "id": "Q-029",
+    "slug": "Q-029-lock-new-object",
+    "title": "Wrong lock object",
+    "q": {
+      "ru": "Защищает ли lock(new object()) переменную counter от гонки?",
+      "en": "Does lock(new object()) protect counter from concurrent increments?"
+    },
+    "a": {
+      "ru": "Каждая задача создаёт свой объект блокировки. Общей взаимной блокировки нет; для защиты нужен один общий lock-объект или Interlocked.Increment.",
+      "en": "No. Each task locks a different freshly allocated object. Mutual exclusion requires a shared lock instance or an atomic increment."
+    },
+    "code": "int counter = 0;\nawait Task.WhenAll(\n    Enumerable.Range(0, 10_000).Select(_ =>\n        Task.Run(() =>\n        {\n            lock (new object())\n                counter++;\n        })));\nConsole.WriteLine(counter);",
+    "lab": "labs/dotnet/Q-029.cs",
+    "expected": "Нет; итог не гарантированно равен 10 000..",
+    "mechanism": "Roslyn lock → Monitor for object; по одной уникальной синхронизации на вызов.",
+    "risk": "Race condition из-за отсутствия общего объекта синхронизации. Фактическое число heap allocations зависит от JIT-оптимизаций и требует измерения.",
+    "guarantee": "Нет общей блокировки; численный результат недетерминирован.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock",
+    "terms": ""
+  },
+  {
+    "id": "Q-030",
+    "slug": "Q-030-cancellation-after-start",
+    "title": "Cancellation after start",
+    "q": {
+      "ru": "Выведет ли программа DONE, если отменить token после запуска делегата?",
+      "en": "Will the program print DONE when the token is canceled after the delegate starts?"
+    },
+    "a": {
+      "ru": "DONE. Token у Task.Run может предотвратить запуск, но не останавливает уже выполняющийся делегат. Код не проверяет token, поэтому продолжает работу.",
+      "en": "DONE. Task.Run's token can prevent the delegate from starting, but cannot forcibly stop it after execution has begun. The body never checks the token."
+    },
+    "code": "using var cts = new CancellationTokenSource();\nvar started = new TaskCompletionSource(\n    TaskCreationOptions.RunContinuationsAsynchronously);\nvar release = new TaskCompletionSource(\n    TaskCreationOptions.RunContinuationsAsynchronously);\n\nvar task = Task.Run(async () =>\n{\n    started.SetResult();\n    await release.Task;\n    Console.Write(\"DONE\");\n}, cts.Token);\n\nawait started.Task;\ncts.Cancel();\nrelease.SetResult();\nawait task;",
+    "lab": "labs/dotnet/Q-030.cs",
+    "expected": "DONE.",
+    "mechanism": "CancellationToken; Task.Run proxy; await continuation.",
+    "risk": "Ложная уверенность в принудительной отмене I/O/CPU работы.",
+    "guarantee": "started завершён до Cancel; делегат уже начал выполнение.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.run",
+    "terms": ""
+  },
+  {
+    "id": "Q-031",
+    "slug": "Q-031-asynclocal-flow",
+    "title": "AsyncLocal flow",
+    "q": {
+      "ru": "Что напечатает Task.Run — X или null?",
+      "en": "Does Task.Run print X or null?"
+    },
+    "a": {
+      "ru": "X. ExecutionContext захватывается при планировании работы в ThreadPool, и AsyncLocal распространяется через него, независимо от конкретного worker.",
+      "en": "X. ExecutionContext normally flows into Task.Run, carrying AsyncLocal values across worker threads."
+    },
+    "code": "var trace = new AsyncLocal<string>();\ntrace.Value = \"X\";\nawait Task.Run(() =>\n{\n    Console.Write(trace.Value);\n});",
+    "lab": "labs/dotnet/Q-031.cs",
+    "expected": "X.",
+    "mechanism": "ExecutionContext; AsyncLocal logical context flow.",
+    "risk": "Контекст может незаметно переносить данные; ThreadStatic ведёт себя иначе.",
+    "guarantee": "При стандартном ExecutionContext flow без SuppressFlow — X.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/executioncontext-synchronizationcontext",
+    "terms": ""
+  },
+  {
+    "id": "Q-032",
+    "slug": "Q-032-configureawait-thread-id",
+    "title": "ConfigureAwait(false)",
+    "q": {
+      "ru": "Изменится ли managed thread id на await CompletedTask.ConfigureAwait(false)?",
+      "en": "Does awaiting CompletedTask.ConfigureAwait(false) change the managed thread ID?"
+    },
+    "a": {
+      "ru": "True. Task уже завершена, поэтому метод не приостанавливается. ConfigureAwait(false) не запускает новый поток.",
+      "en": "True. The Task is already completed, so the await continues synchronously. ConfigureAwait(false) does not force a thread switch."
+    },
+    "code": "int before = Environment.CurrentManagedThreadId;\nawait Task.CompletedTask.ConfigureAwait(false);\nConsole.WriteLine(\n    before == Environment.CurrentManagedThreadId);",
+    "lab": "labs/dotnet/Q-032.cs",
+    "expected": "True.",
+    "mechanism": "Task awaiter; IsCompleted; SynchronizationContext (захват не нужен).",
+    "risk": "Путаница между отключением возврата в контекст и переключением потока.",
+    "guarantee": "Гарантировано для завершённой Task в приведённом коде.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth",
+    "terms": ""
+  },
+  {
+    "id": "Q-033",
+    "slug": "Q-033-startnew-nested-task",
+    "title": "StartNew nested Task",
+    "q": {
+      "ru": "Каков тип задачи и ждёт ли один await outer завершения внутренней асинхронной операции?",
+      "en": "What is the task type, and does awaiting outer once wait for the inner async operation?"
+    },
+    "a": {
+      "ru": "StartNew с Func<Task> возвращает Task<Task>. await outer даёт inner, но не гарантирует её завершение; нужен await inner или outer.Unwrap().",
+      "en": "StartNew(Func<Task>) yields Task<Task>. Awaiting the outer task returns the inner task and does not guarantee its completion. Await inner or use Unwrap()."
+    },
+    "code": "Task<Task> outer = Task.Factory.StartNew<Task>(\n    async () => await Task.Delay(100));\n\nTask inner = await outer;\n// Завершён ли inner здесь — не гарантировано.\nawait inner;",
+    "lab": "labs/dotnet/Q-033.cs",
+    "expected": "Task<Task>; первый await ждёт только outer..",
+    "mechanism": "Generic Task<TResult>; nested await; compiler async lambda.",
+    "risk": "Преждевременное завершение операции и потеря исключений внутренней задачи.",
+    "guarantee": "Тип Task<Task> гарантирован; завершённость inner после outer зависит от времени.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskextensions.unwrap",
+    "terms": ""
+  },
+  {
+    "id": "Q-034",
+    "slug": "Q-034-semaphore-waitasync",
+    "title": "Semaphore nonreentrant",
+    "q": {
+      "ru": "Что напечатает second.IsCompleted после повторного WaitAsync без Release?",
+      "en": "What does second.IsCompleted print after another WaitAsync without Release?"
+    },
+    "a": {
+      "ru": "False. Первый Wait уменьшил счётчик с 1 до 0; второй ждёт разрешения. SemaphoreSlim не рекурсивный mutex: await второго до Release привёл бы к зависанию.",
+      "en": "False. The first Wait reduces the count to zero, so the second WaitAsync is pending. Awaiting the second before Release would deadlock this flow."
+    },
+    "code": "using var semaphore = new SemaphoreSlim(1, 1);\nawait semaphore.WaitAsync();\n\nTask second = semaphore.WaitAsync();\nConsole.WriteLine(second.IsCompleted);\n\nsemaphore.Release();\nawait second;\nsemaphore.Release();",
+    "lab": "labs/dotnet/Q-034.cs",
+    "expected": "False.",
+    "mechanism": "SemaphoreSlim count, task waiter, asynchronous queue.",
+    "risk": "Self-deadlock; лишний Release → SemaphoreFullException при maxCount=1.",
+    "guarantee": "False до Release при одиночном владении семафором.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync",
+    "terms": ""
+  },
+  {
+    "id": "Q-035",
+    "slug": "Q-035-parallel-foreach-async-void",
+    "title": "Parallel.ForEach async void",
+    "q": {
+      "ru": "Ждёт ли Parallel.ForEach завершения async-лямбд и какой вывод гарантирован?",
+      "en": "Does Parallel.ForEach wait for async lambda continuations, and what output is guaranteed?"
+    },
+    "a": {
+      "ru": "Лямбда приводится к async void для Action<T>. Parallel.ForEach считает итерацию завершённой, когда делегат вернулся на await; оставшиеся continuations не дожидается. Используй Parallel.ForEachAsync или Task.WhenAll.",
+      "en": "The lambda becomes async void because Parallel.ForEach accepts Action<T>. The loop returns after delegates yield at await and does not await their continuations. Use Parallel.ForEachAsync or WhenAll."
+    },
+    "code": "var gate = new TaskCompletionSource(\n    TaskCreationOptions.RunContinuationsAsynchronously);\nParallel.ForEach(new[] { 1, 2, 3 }, async _ =>\n{\n    await gate.Task;\n    Console.Write(\"X\");\n});\nConsole.Write(\"A\");\ngate.SetResult();\n// X могут появиться позже, а программа — завершиться.",
+    "lab": "labs/dotnet/Q-035.cs",
+    "expected": "A печатается первой; X позже не гарантированы..",
+    "mechanism": "async void; Action<T>; compiler state machine; ThreadPool continuation.",
+    "risk": "Утрата ожидания завершения, исключения вне обычной Task-цепочки, аварийное завершение процесса.",
+    "guarantee": "A раньше X; дальнейший вывод недетерминирован без явного ожидания.",
+    "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs",
+    "terms": ""
+  }
+]

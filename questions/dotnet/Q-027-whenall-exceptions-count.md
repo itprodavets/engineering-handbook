@@ -1,18 +1,12 @@
 # Q-027 — WhenAll exceptions
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-026-whenany-faulted-output.md) · [Следующий →](Q-028-lost-update-race.md)
+[Русский](./Q-027-whenall-exceptions-count.md) · [English](en/Q-027-whenall-exceptions-count.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-027) · [Основная тема](../../topics/dotnet/task-composition.md) · [← Предыдущий](Q-026-whenany-faulted-output.md) · [Следующий →](Q-028-lost-update-race.md)
 
-**Level:** Senior / Staff · **Language:** RU + EN · **Topic:** WhenAll exceptions
-
-## Вопрос (RU)
+## Вопрос
 
 Сколько исключений в Exception.InnerExceptions при двух завершившихся с ошибкой Task?
 
-## Question (EN)
-
-How many exceptions are stored by WhenAll when two input Tasks fault?
-
-## Code challenge / Фрагмент кода
+## Фрагмент C# — попробуйте предсказать результат
 
 ```csharp
 var all = Task.WhenAll(
@@ -30,49 +24,37 @@ catch (Exception)
 }
 ```
 
-**Попробуй предсказать результат прежде, чем читать ответ.**
-
-**Executable lab:** [Q-027.cs](../../labs/dotnet/Q-027.cs) · [Все лаборатории](../../labs/README.md)
+### Запустить настоящий код
 
 ```bash
 dotnet run --file labs/dotnet/Q-027.cs
 ```
 
-**Run remotely after publishing:** [GitHub Actions: Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) — choose `Q-027`. The workflow reports stdout in Job Summary.
-
-**Expected / classification:** 2.
-
-> В лаборатории код оформлен как отдельное запускаемое приложение; у некоторых заданий есть завершающий `Console.WriteLine()` или безопасный механизм дожидания continuations. Это явно отмечено в соответствующих исходниках.
+[Q-027.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-027.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
-<summary><strong>Эталонный ответ RU / Model answer EN — открыть после самостоятельного ответа</strong></summary>
-
-### RU — кратко и технически точно
+<summary>Эталонный ответ — открыть после своего ответа</summary>
 
 2. WhenAll агрегирует обе ошибки в своей Exception; обычный await сам выбрасывает одно исключение, а не весь AggregateException.
 
-### EN — concise interview answer
-
-2. WhenAll stores both failures in its aggregate Exception. A regular await rethrows one exception; inspect the Task for all failures.
-
 </details>
 
-## Why / Внутренний механизм
+### Почему это работает
 
 Task Exception property; AggregateException; awaiter GetResult.
 
-**Risk / ошибка:** Потеря диагностики нескольких одновременных ошибок.
+### Риск или ошибка
 
-**Guarantee / недетерминированность:** Гарантировано две ошибки, порядок конкретных типов не нужен.
+Потеря диагностики нескольких одновременных ошибок.
 
-**Source:** https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall
+### Что гарантировано
 
-## Ссылки и проверка / References & verification
+Гарантировано две ошибки, порядок конкретных типов не нужен.
 
-- [Глубокая теория / Theory](../../languages/csharp/async-await.md)
-- [Как оценивать доказательность](../../docs/technical-accuracy.md)
-- [Как запускать фрагменты кода](../../docs/execution.md)
+### Документация и исходники
+
+[https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall)
 
 ---
 
-[Главная / Home](../../README.md) · [Все вопросы / Questions](README.md) · [Тема / Topic](../../languages/csharp/async-await.md) · [Запуск / Run](../../docs/execution.md) · [← Предыдущий](Q-026-whenany-faulted-output.md) · [Следующий →](Q-028-lost-update-race.md)
+[Русский](./Q-027-whenall-exceptions-count.md) · [English](en/Q-027-whenall-exceptions-count.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-027) · [Основная тема](../../topics/dotnet/task-composition.md) · [← Предыдущий](Q-026-whenany-faulted-output.md) · [Следующий →](Q-028-lost-update-race.md)
