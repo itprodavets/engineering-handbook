@@ -10,7 +10,7 @@ When it helps—and why it is not always faster.
 
 ValueTask<T> is a value type that may represent a synchronous result, a Task<T>, or an IValueTaskSource<T>. It can avoid allocations when operations frequently complete synchronously, but introduces usage constraints.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. For an already available result, ValueTask<T> can hold it without a separate Task<T>.
 2. For pending work, ValueTask<T> may wrap a Task or a reusable source.

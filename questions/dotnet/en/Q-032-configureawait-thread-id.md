@@ -6,7 +6,7 @@
 
 Does awaiting CompletedTask.ConfigureAwait(false) change the managed thread ID?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 int before = Environment.CurrentManagedThreadId;

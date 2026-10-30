@@ -8,6 +8,8 @@
 
 ## Изучаемые темы
 
+### .NET / C#
+
 - [Жизненный цикл async/await](topics/dotnet/async-lifecycle.md) — 8 вопросов и упражнений
 - [ThreadPool и планировщик ОС](topics/dotnet/threadpool-scheduling.md) — 6 вопросов и упражнений
 - [Композиция Task и ошибки](topics/dotnet/task-composition.md) — 5 вопросов и упражнений
@@ -17,9 +19,10 @@
 - [ValueTask<T> и стоимость ожидания](topics/dotnet/valuetask.md) — 1 вопросов и упражнений
 - [Блокировки и sync-over-async](topics/dotnet/sync-over-async.md) — 1 вопросов и упражнений
 
+
 ## Практика и код
 
-- [Вопросы и ответы](questions/dotnet/README.md)
+- [.NET / C# — Вопросы](questions/dotnet/README.md)
 - [Запускаемые лаборатории](labs/README.md)
 - [Открыть Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 - [Запустить выбранный пример через Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml)
@@ -34,10 +37,10 @@ dotnet run --file labs/dotnet/Q-024.cs
 
 ## Следующие направления
 
-Go, Kafka, PostgreSQL, Kubernetes, Linux, system design. Разделы будут заполняться по мере прохождения — без дублирования теории.
+Go, Kafka, PostgreSQL, Kubernetes, Linux, System Design. Разделы будут заполняться по мере прохождения — без дублирования теории.
 
 ## Личный прогресс
 
 Результаты личных ответов и оценки — в приватной Google Таблице, не в репозитории. Браузерная платформа сохраняет отметки только локально на устройстве. GitHub Pages может быть публичным даже при приватном репозитории.
 
-[Как вносить изменения](CONTRIBUTING.md)
+[Добавлять темы прямо из чата](docs/chat-authoring.md) · [Как вносить изменения](CONTRIBUTING.md)

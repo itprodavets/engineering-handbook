@@ -6,7 +6,7 @@
 
 Will the program print DONE when the token is canceled after the delegate starts?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 using var cts = new CancellationTokenSource();

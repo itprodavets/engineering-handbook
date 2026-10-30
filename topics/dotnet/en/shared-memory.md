@@ -10,7 +10,7 @@ Races, atomicity, locks, Interlocked and SemaphoreSlim.
 
 Concurrent Tasks can mutate the same object. Task.WhenAll only waits for completion; it does not make operations atomic. Synchronization protects shared-state invariants, not a particular “thread”.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. counter++ reads, computes, and writes; competing threads can lose an update.
 2. Interlocked.Increment atomically changes one value; lock enforces mutual exclusion over a critical section.

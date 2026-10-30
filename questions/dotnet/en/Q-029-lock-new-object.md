@@ -6,7 +6,7 @@
 
 Does lock(new object()) protect counter from concurrent increments?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 int counter = 0;

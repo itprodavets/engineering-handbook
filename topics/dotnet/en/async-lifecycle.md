@@ -10,7 +10,7 @@ From a C# method call to I/O completion and continuation.
 
 async/await composes incomplete operations without requiring the caller’s thread to block. It does not create parallelism or make PostgreSQL run faster. Awaiting a completed operation may not suspend at all.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. Roslyn lowers the async method into a state machine with MoveNext, awaiters, and saved state.
 2. Execution starts on the calling thread until an await encounters an incomplete operation.

@@ -1,0 +1,47 @@
+{
+  "id": "go-gmp-scheduler",
+  "track": "go",
+  "stage": "execution",
+  "title": {
+    "ru": "Планировщик Go: G/M/P",
+    "en": "Go scheduler: G/M/P"
+  },
+  "desc": {
+    "ru": "Схема пользовательского и системного планирования.",
+    "en": "How user-space and OS scheduling interact."
+  },
+  "overview": {
+    "ru": "Заменить проверенным эталонным определением.",
+    "en": "Replace with a verified canonical definition."
+  },
+  "mechanism": [
+    {
+      "ru": "Проверенный шаг механизма 1.",
+      "en": "Verified mechanism step 1."
+    }
+  ],
+  "resources": [
+    {
+      "name": {
+        "ru": "Память",
+        "en": "Memory"
+      },
+      "detail": {
+        "ru": "Какие объекты и стеки занимают память.",
+        "en": "Which objects and stacks consume memory."
+      }
+    }
+  ],
+  "risks": [
+    {
+      "ru": "Ограничение и условие возникновения ошибки.",
+      "en": "A failure mode and the conditions under which it occurs."
+    }
+  ],
+  "questions": [
+    36
+  ],
+  "refs": [
+    "https://go.dev/doc/"
+  ]
+}

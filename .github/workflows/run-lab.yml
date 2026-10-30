@@ -8,6 +8,7 @@ on:
         required: true
         type: string
         default: Q-024
+        # The lab runner validates Q-### and requires a committed .cs file.
 
 permissions:
   contents: read

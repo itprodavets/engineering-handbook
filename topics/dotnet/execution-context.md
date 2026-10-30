@@ -10,7 +10,7 @@ SynchronizationContext, TaskScheduler, AsyncLocal и ConfigureAwait.
 
 Операция await может захватывать контекст продолжения. ExecutionContext переносит логический контекст (например, AsyncLocal), в отличие от ThreadStatic. ConfigureAwait(false) не отменяет ExecutionContext.
 
-## Механизм: от C# до ОС
+## Механизм: от языка и runtime до ОС
 
 1. AsyncLocal<T> течёт через стандартный ExecutionContext, который Task.Run обычно захватывает.
 2. ConfigureAwait(false) не пытается вернуться в захваченный SynchronizationContext или нестандартный TaskScheduler.

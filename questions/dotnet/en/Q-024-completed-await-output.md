@@ -6,7 +6,7 @@
 
 What is the output and why? The awaited Task is already complete.
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 async Task PrintAsync()

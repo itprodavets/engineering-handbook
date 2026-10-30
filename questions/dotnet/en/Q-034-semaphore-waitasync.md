@@ -6,7 +6,7 @@
 
 What does second.IsCompleted print after another WaitAsync without Release?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 using var semaphore = new SemaphoreSlim(1, 1);

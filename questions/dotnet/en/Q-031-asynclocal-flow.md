@@ -6,7 +6,7 @@
 
 Does Task.Run print X or null?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 var trace = new AsyncLocal<string>();

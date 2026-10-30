@@ -10,7 +10,7 @@ SynchronizationContext, TaskScheduler, AsyncLocal and ConfigureAwait.
 
 Await may capture a continuation context. ExecutionContext carries logical values such as AsyncLocal, unlike ThreadStatic. ConfigureAwait(false) does not suppress ExecutionContext flow.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. AsyncLocal<T> flows through ExecutionContext, which Task.Run normally captures.
 2. ConfigureAwait(false) avoids marshaling continuations back to a captured SynchronizationContext or non-default TaskScheduler.

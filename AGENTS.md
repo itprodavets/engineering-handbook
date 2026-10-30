@@ -1,14 +1,17 @@
-# Engineering Handbook — instructions for AI collaborators
+# Agent instructions — Engineering Handbook
 
-## When the user asks to add content from ChatGPT
+This is a **public-safe**, bilingual, source-controlled learning handbook. Keep the source of truth in `content/*.json`, not in generated Markdown or `site/data/*.json`.
 
-1. Read content/lessons.json and content/questions.json first. One mechanism has one canonical lesson: improve it instead of duplicating theory.
-2. Create separate Russian and English explanations. Distinguish language/API guarantees, runtime and OS implementation, resource use, concurrency risks and measurements.
-3. Assign the next global Q-### identifier, link it to exactly one lesson, and use code challenges only as reinforcement.
-4. Put runnable examples in labs/ and verify their behavior; do not claim that GitHub Markdown or Pages executes source code.
-5. Update canonical JSON, regenerate RU/EN Markdown and Pages data with python3 scripts/build_site.py, then run the build, link and code checks.
-6. For a first Go, Kafka or other new track, extend generator routes and technology-specific examples in the same scoped change. Never put Go/Kafka content inside .NET topic folders.
-7. Commit a coherent change, verify CI, and link the exact lesson and commit in chat.
-8. Do not publish personal answers, grades, secret tokens or private business context. They belong outside public GitHub.
+## When a user asks in ChatGPT to add or revise a lesson
 
-[Инструкция RU](docs/chat-authoring.md) · [Guide EN](docs/chat-authoring.en.md) · [Technical accuracy](docs/technical-accuracy.md)
+1. Read `content/lessons.json`, `content/questions.json`, existing topic pages, and `docs/technical-accuracy.md`. Check for conceptual overlap **before** writing anything.
+2. **One mechanism → one canonical lesson.** Improve an existing lesson rather than duplicating it. Related interview questions and puzzles are reinforcement linked to that one lesson.
+3. Add Russian and English fields together; do not mix explanatory prose across languages. Use precise definitions at the compiler, runtime, OS, CPU, memory and concurrency levels when relevant. Distinguish guarantees, implementation-specific behavior and measured behavior. Do not invent quantitative resource estimates.
+4. Each new question gets the next global stable `Q-###` identifier. Each Q belongs to exactly one lesson in `content/lessons.json`. Questions with runnable code should use `kind: "reinforcement"`, a matching lab file and verification where deterministic. Questions without labs may be review questions.
+5. New lessons use a stable unique slug `id`, `track` such as `dotnet`, `go`, `kafka`, `postgresql`, and `stage` (`execution`, `concurrency`, `reliability`, or a new meaningful stage). Do not create empty placeholder lessons.
+6. Add actual examples in `labs/<track>/`, e.g. `.cs` for .NET or `.go` for Go; never claim browser JS has executed a snippet. Include real run commands when supported. Never put secrets or personal answers/grades in this repo.
+7. Regenerate with `python3 scripts/build_site.py`, then run `python3 scripts/build_site.py --check`, `python3 scripts/check_site.py`, `python3 scripts/check_links.py`, and `node --check site/assets/app.js`. Run relevant language labs or verify CI; report anything not executed.
+8. Make a coherent Git commit (or one PR for the complete scope), verify the updated files on GitHub, and link the relevant lesson/question/commit to the user. Avoid repeated micro-PRs.
+9. Personal scores and user answers belong only in the separately connected private Google Sheet. Do not sync them into public GitHub or Pages.
+
+References: [Chat-based authoring (RU)](docs/chat-authoring.md) · [English](docs/chat-authoring.en.md) · [Technical accuracy](docs/technical-accuracy.md).

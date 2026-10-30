@@ -10,7 +10,7 @@ Who schedules work items and who selects CPU cores.
 
 A Task represents an operation; a Thread is an OS-scheduled execution context with a stack. The ThreadPool schedules work items on workers, while the OS scheduler assigns threads to logical CPUs. Task.Run does not imply thread creation.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. Task.Run queues a delegate through TaskScheduler.Default / ThreadPool; an existing worker may execute it.
 2. If workers are insufficient, the ThreadPool can add them according to runtime heuristics and limits.

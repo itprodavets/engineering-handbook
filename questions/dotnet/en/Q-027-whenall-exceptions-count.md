@@ -6,7 +6,7 @@
 
 How many exceptions are stored by WhenAll when two input Tasks fault?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 var all = Task.WhenAll(

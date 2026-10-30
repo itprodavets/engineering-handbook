@@ -1,4 +1,4 @@
-# Основные темы C# / .NET
+# Основные темы .NET / C#
 
 [Русский](README.md) · [English](en/README.md)
 

@@ -1,4 +1,4 @@
-# C# / .NET questions and exercises
+# .NET / C# questions and exercises
 
 [Русский](README.md) · [English](README.en.md)
 

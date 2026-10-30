@@ -6,7 +6,7 @@
 
 Does Parallel.ForEach wait for async lambda continuations, and what output is guaranteed?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 var gate = new TaskCompletionSource(

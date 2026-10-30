@@ -1,4 +1,4 @@
-# Canonical C# / .NET lessons
+# Canonical .NET / C# lessons
 
 [Русский](../README.md) · [English](README.md)
 

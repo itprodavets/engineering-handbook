@@ -10,7 +10,7 @@ Why .Result and .Wait() are risky and where deadlocks come from.
 
 Synchronously waiting for a Task blocks the caller even if the pending operation is asynchronous I/O. In servers, blocked workers reduce ThreadPool capacity.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. Task.Wait and Task.Result keep the calling thread blocked until completion, failure or cancellation.
 2. Deadlock is possible when a continuation requires the same context that the synchronous wait is blocking.

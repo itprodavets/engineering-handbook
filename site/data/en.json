@@ -18,6 +18,7 @@
         "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth",
         "https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/task-asynchronous-programming-model"
       ],
+      "track": "dotnet",
       "title": "The async/await execution lifecycle",
       "desc": "From a C# method call to I/O completion and continuation.",
       "overview": "async/await composes incomplete operations without requiring the caller’s thread to block. It does not create parallelism or make PostgreSQL run faster. Awaiting a completed operation may not suspend at all.",
@@ -61,6 +62,7 @@
         "https://learn.microsoft.com/en-us/dotnet/standard/threading/the-managed-thread-pool",
         "https://learn.microsoft.com/en-us/dotnet/core/diagnostics/debug-threadpool-starvation"
       ],
+      "track": "dotnet",
       "title": "ThreadPool and the OS scheduler",
       "desc": "Who schedules work items and who selects CPU cores.",
       "overview": "A Task represents an operation; a Thread is an OS-scheduled execution context with a stack. The ThreadPool schedules work items on workers, while the OS scheduler assigns threads to logical CPUs. Task.Run does not imply thread creation.",
@@ -103,6 +105,7 @@
         "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall",
         "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany"
       ],
+      "track": "dotnet",
       "title": "Task composition and exceptions",
       "desc": "WhenAny, WhenAll, nested Tasks, and observing failures.",
       "overview": "Task.WhenAll represents the joint completion of supplied tasks; WhenAny yields the first completed Task regardless of its status. Task<Task> requires separating outer and inner completion.",
@@ -142,6 +145,7 @@
         "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked",
         "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock"
       ],
+      "track": "dotnet",
       "title": "Shared memory and synchronization",
       "desc": "Races, atomicity, locks, Interlocked and SemaphoreSlim.",
       "overview": "Concurrent Tasks can mutate the same object. Task.WhenAll only waits for completion; it does not make operations atomic. Synchronization protects shared-state invariants, not a particular “thread”.",
@@ -185,6 +189,7 @@
         "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/executioncontext-synchronizationcontext",
         "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskcreationoptions"
       ],
+      "track": "dotnet",
       "title": "Continuations and execution contexts",
       "desc": "SynchronizationContext, TaskScheduler, AsyncLocal and ConfigureAwait.",
       "overview": "Await may capture a continuation context. ExecutionContext carries logical values such as AsyncLocal, unlike ThreadStatic. ConfigureAwait(false) does not suppress ExecutionContext flow.",
@@ -219,6 +224,7 @@
       "refs": [
         "https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads"
       ],
+      "track": "dotnet",
       "title": "Cancellation of asynchronous work",
       "desc": "What CancellationToken actually does and does not do.",
       "overview": "CancellationToken is a cooperative signal. It is not Thread.Abort: running code must observe cancellation, and I/O APIs must support it.",
@@ -252,6 +258,7 @@
       "refs": [
         "https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2012"
       ],
+      "track": "dotnet",
       "title": "ValueTask<T> and allocation trade-offs",
       "desc": "When it helps—and why it is not always faster.",
       "overview": "ValueTask<T> is a value type that may represent a synchronous result, a Task<T>, or an IValueTaskSource<T>. It can avoid allocations when operations frequently complete synchronously, but introduces usage constraints.",
@@ -284,6 +291,7 @@
       "refs": [
         "https://learn.microsoft.com/en-us/dotnet/core/diagnostics/debug-threadpool-starvation"
       ],
+      "track": "dotnet",
       "title": "Blocking and sync-over-async",
       "desc": "Why .Result and .Wait() are risky and where deadlocks come from.",
       "overview": "Synchronously waiting for a Task blocks the caller even if the pending operation is asynchronous I/O. In servers, blocked workers reduce ThreadPool capacity.",
@@ -323,6 +331,10 @@
       "source": "",
       "terms": "await; Task.Run; ThreadPool; I/O; starvation",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-001-async-io-scalability.md"
@@ -340,6 +352,10 @@
       "source": "",
       "terms": "Continuation; ThreadPool; SynchronizationContext",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "execution-context",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-002-thread-id-after-await.md"
@@ -357,6 +373,10 @@
       "source": "",
       "terms": "Input/Output; network I/O; TCP socket",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-003-what-is-io.md"
@@ -374,6 +394,10 @@
       "source": "",
       "terms": "Npgsql; socket; epoll; continuation; materialization",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-004-async-postgres-pipeline.md"
@@ -391,6 +415,10 @@
       "source": "",
       "terms": "CPU-bound; I/O-bound; OS Scheduler",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-005-cpu-during-io.md"
@@ -408,6 +436,10 @@
       "source": "",
       "terms": "OS Scheduler; preemption; context switch; SMT; concurrency",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "threadpool-scheduling",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-006-hundred-threads-eight-cores.md"
@@ -425,6 +457,10 @@
       "source": "",
       "terms": "ThreadPool; OS Scheduler; Task vs Thread",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "threadpool-scheduling",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-007-threadpool-vs-os-scheduler.md"
@@ -442,6 +478,10 @@
       "source": "",
       "terms": "Task; Task<T>; Thread; Task.Run; await; ThreadPool",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "threadpool-scheduling",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-008-task-vs-thread.md"
@@ -459,6 +499,10 @@
       "source": "",
       "terms": "Task.Delay; Thread.Sleep; timers; starvation; ThreadPool queue",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "threadpool-scheduling",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-009-task-delay-vs-thread-sleep.md"
@@ -476,6 +520,10 @@
       "source": "",
       "terms": "Task.WhenAll; IEnumerable; deferred execution; TaskScheduler",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "threadpool-scheduling",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-010-task-whenall-execution.md"
@@ -493,6 +541,10 @@
       "source": "",
       "terms": "Worker thread; OS thread creation; work queue; thread reuse",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "threadpool-scheduling",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-011-threadpool-worker-creation.md"
@@ -510,6 +562,10 @@
       "source": "",
       "terms": "async; state machine; await; initial synchronous path",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-012-async-starts-synchronously.md"
@@ -527,6 +583,10 @@
       "source": "",
       "terms": "awaiter; IsCompleted; continuation; thread identity",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-013-completed-await-and-scheduling.md"
@@ -544,6 +604,10 @@
       "source": "",
       "terms": "WhenAny; winner; faulted; cancellation",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "task-composition",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-014-whenany-faulted-task.md"
@@ -561,6 +625,10 @@
       "source": "",
       "terms": "WhenAll; AggregateException; faulted; await",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "task-composition",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-015-whenall-multiple-exceptions.md"
@@ -578,6 +646,10 @@
       "source": "",
       "terms": "Result; Wait; deadlock; ASP.NET Core; starvation",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "sync-over-async",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-016-sync-over-async-deadlocks.md"
@@ -595,6 +667,10 @@
       "source": "",
       "terms": "ConfigureAwait; SynchronizationContext; ExecutionContext; AsyncLocal",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "execution-context",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-017-configureawait-and-context.md"
@@ -612,6 +688,10 @@
       "source": "",
       "terms": "CancellationToken; cooperative; Task.Run",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "cancellation",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-018-cancellationtoken-taskrun.md"
@@ -629,6 +709,10 @@
       "source": "",
       "terms": "ValueTask<T>; IValueTaskSource; AsTask",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "valuetask",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-019-valuetask-consumption.md"
@@ -646,6 +730,10 @@
       "source": "",
       "terms": "lock; CS1996; SemaphoreSlim; WaitAsync; Release",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "shared-memory",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-020-await-inside-lock.md"
@@ -663,6 +751,10 @@
       "source": "",
       "terms": "volatile; Interlocked; atomicity; critical section",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "shared-memory",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-021-volatile-vs-interlocked.md"
@@ -680,6 +772,10 @@
       "source": "",
       "terms": "TaskCompletionSource; continuations; RunContinuationsAsynchronously",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "execution-context",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-022-taskcompletionsource-continuations.md"
@@ -697,6 +793,10 @@
       "source": "",
       "terms": "AsyncLocal; ThreadStatic; ExecutionContext; context flow",
       "lab": null,
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "",
+      "checkOutput": null,
       "lesson": "execution-context",
       "kind": "review",
       "markdown": "questions/dotnet/en/Q-023-asynclocal-executioncontext.md"
@@ -714,6 +814,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs",
       "terms": "",
       "lab": "labs/dotnet/Q-024.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-024.cs",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-024-completed-await-output.md"
@@ -731,6 +835,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth",
       "terms": "",
       "lab": "labs/dotnet/Q-025.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-025.cs",
+      "checkOutput": null,
       "lesson": "async-lifecycle",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-025-incomplete-await-output.md"
@@ -748,6 +856,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany",
       "terms": "",
       "lab": "labs/dotnet/Q-026.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-026.cs",
+      "checkOutput": null,
       "lesson": "task-composition",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-026-whenany-faulted-output.md"
@@ -765,6 +877,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall",
       "terms": "",
       "lab": "labs/dotnet/Q-027.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-027.cs",
+      "checkOutput": null,
       "lesson": "task-composition",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-027-whenall-exceptions-count.md"
@@ -782,6 +898,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked",
       "terms": "",
       "lab": "labs/dotnet/Q-028.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-028.cs",
+      "checkOutput": null,
       "lesson": "shared-memory",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-028-lost-update-race.md"
@@ -799,6 +919,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock",
       "terms": "",
       "lab": "labs/dotnet/Q-029.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-029.cs",
+      "checkOutput": null,
       "lesson": "shared-memory",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-029-lock-new-object.md"
@@ -816,6 +940,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.run",
       "terms": "",
       "lab": "labs/dotnet/Q-030.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-030.cs",
+      "checkOutput": null,
       "lesson": "cancellation",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-030-cancellation-after-start.md"
@@ -833,6 +961,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/executioncontext-synchronizationcontext",
       "terms": "",
       "lab": "labs/dotnet/Q-031.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-031.cs",
+      "checkOutput": null,
       "lesson": "execution-context",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-031-asynclocal-flow.md"
@@ -850,6 +982,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth",
       "terms": "",
       "lab": "labs/dotnet/Q-032.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-032.cs",
+      "checkOutput": null,
       "lesson": "execution-context",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-032-configureawait-thread-id.md"
@@ -867,6 +1003,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskextensions.unwrap",
       "terms": "",
       "lab": "labs/dotnet/Q-033.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-033.cs",
+      "checkOutput": null,
       "lesson": "task-composition",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-033-startnew-nested-task.md"
@@ -884,6 +1024,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync",
       "terms": "",
       "lab": "labs/dotnet/Q-034.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-034.cs",
+      "checkOutput": null,
       "lesson": "shared-memory",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-034-semaphore-waitasync.md"
@@ -901,6 +1045,10 @@
       "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs",
       "terms": "",
       "lab": "labs/dotnet/Q-035.cs",
+      "track": "dotnet",
+      "codeLanguage": "csharp",
+      "runCommand": "dotnet run --file labs/dotnet/Q-035.cs",
+      "checkOutput": null,
       "lesson": "shared-memory",
       "kind": "reinforcement",
       "markdown": "questions/dotnet/en/Q-035-parallel-foreach-async-void.md"
@@ -1097,6 +1245,6 @@
   "meta": {
     "questionCount": 35,
     "lessonCount": 8,
-    "version": 1
+    "version": 2
   }
 }

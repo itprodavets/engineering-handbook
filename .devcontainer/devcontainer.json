@@ -8,5 +8,10 @@
       ]
     }
   },
-  "postCreateCommand": "dotnet --info"
+  "postCreateCommand": "dotnet --info",
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "latest"
+    }
+  }
 }

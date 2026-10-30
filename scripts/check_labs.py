@@ -1,26 +1,44 @@
 #!/usr/bin/env python3
-"""Run registered .NET 10 snippets and check deterministic outputs where defined."""
+"""Run all registered .NET 10 file-based C# labs; assert deterministic cases."""
 from pathlib import Path
-import json, subprocess, shutil, re, sys
+import json
+import shutil
+import subprocess
+import sys
+import re
 ROOT=Path(__file__).resolve().parents[1]
-if not shutil.which("dotnet"): sys.exit("dotnet not found: .NET 10 SDK is required")
-questions=json.loads((ROOT/"content/questions.json").read_text(encoding="utf-8"))
-fixed={"Q-024":"ABC","Q-025":"ACB","Q-026":"True","Q-027":"2","Q-030":"DONE","Q-031":"X","Q-032":"True","Q-033":"Outer awaited\nInner awaited","Q-034":"False","Q-035":"AXXX"}
-labs=[q for q in questions if q.get("lab") and q["lab"].startswith("labs/dotnet/") and q["lab"].endswith(".cs")]
+if not shutil.which('dotnet'):
+    sys.exit('dotnet not found: .NET 10 SDK is required to compile/run labs')
+questions=json.loads((ROOT/'content/questions.json').read_text(encoding='utf-8'))
+lessons=json.loads((ROOT/'content/lessons.json').read_text(encoding='utf-8'))
+track_of={f'Q-{int(n):03d}':l.get('track','dotnet') for l in lessons for n in l['questions']}
+# Legacy baseline assertions for the first 12 labs; new labs should specify verify.
+fixed={
+ 'Q-024':'ABC','Q-025':'ACB','Q-026':'True','Q-027':'2',
+ 'Q-030':'DONE','Q-031':'X','Q-032':'True',
+ 'Q-033':'Outer awaited\nInner awaited','Q-034':'False','Q-035':'AXXX'
+}
+labs=[q for q in questions if q.get('lab') and q['lab'].endswith('.cs') and track_of.get(q['id'])=='dotnet']
 for q in labs:
-    path=ROOT/q["lab"]
-    if not path.is_file(): sys.exit(f"{q['id']}: missing {q['lab']}")
-    p=subprocess.run(["dotnet","run","--file",q["lab"]],cwd=ROOT,capture_output=True,text=True,timeout=120)
-    got=p.stdout.strip()
-    if p.returncode: sys.exit(f"{q['id']}: compile/run failed ({p.returncode})\nstdout: {got}\nstderr: {p.stderr}")
-    verify=q.get("verify")
+    qid=q['id']; lab=q['lab']
+    if not (ROOT/lab).is_file():
+        sys.exit(f'{qid}: lab file does not exist: {lab}')
+    result=subprocess.run(['dotnet','run','--file',lab],cwd=ROOT,text=True,capture_output=True,timeout=120)
+    actual=result.stdout.strip()
+    if result.returncode:
+        sys.exit(f'{qid}: dotnet failed ({result.returncode})\nstdout: {actual}\nstderr: {result.stderr}')
+    verify=q.get('verify')
     if verify:
-        if verify.get("mode")=="exact":
-            if got!=verify["output"]: sys.exit(f"{q['id']}: expected {verify['output']!r}, got {got!r}")
-        elif verify.get("mode")=="integer-range":
-            if not re.fullmatch(r"[-+]?[0-9]+",got) or not verify["min"]<=int(got)<=verify["max"]: sys.exit(f"{q['id']}: output outside expected range: {got!r}")
-        elif verify.get("mode")!="run-only": sys.exit(f"{q['id']}: unrecognized verification mode")
-    elif q["id"] in fixed and got!=fixed[q["id"]]: sys.exit(f"{q['id']}: expected {fixed[q['id']]!r}, got {got!r}")
-    elif q["id"] in ("Q-028","Q-029") and (not got.isdigit() or not 1<=int(got)<=10000): sys.exit(f"{q['id']}: unexpected counter value {got!r}")
-    print(f"PASS {q['id']}: "+got.replace("\n"," / "))
-print(f"PASS: {len(labs)} registered .NET labs compiled and executed")
+        if verify['mode']=='exact' and actual!=verify['output']:
+            sys.exit(f'{qid}: expected {verify["output"]!r}, got {actual!r}')
+        elif verify['mode']=='integer-range':
+            if not re.fullmatch(r'[-+]?[0-9]+',actual) or not (verify['min']<=int(actual)<=verify['max']):
+                sys.exit(f'{qid}: expected integer within {verify["min"]}..{verify["max"]}, got {actual!r}')
+        elif verify['mode'] not in ('exact','integer-range','run-only'):
+            sys.exit(f'{qid}: unknown verify mode {verify["mode"]}')
+    elif qid in fixed and actual!=fixed[qid]:
+        sys.exit(f'{qid}: expected {fixed[qid]!r}, got {actual!r}')
+    elif qid in ('Q-028','Q-029') and (not re.fullmatch(r'[0-9]+',actual) or not (1<=int(actual)<=10000)):
+        sys.exit(f'{qid}: expected integer in 1..10000, got {actual!r}')
+    print(f'PASS {qid}: {actual.replace(chr(10)," / ")}')
+print(f'PASS: {len(labs)} registered .NET 10 labs compiled and executed.')

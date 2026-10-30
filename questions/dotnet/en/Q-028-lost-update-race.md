@@ -6,7 +6,7 @@
 
 Is counter always 10,000? Why or why not?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 int counter = 0;

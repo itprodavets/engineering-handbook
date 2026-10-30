@@ -1,0 +1,22 @@
+{
+  "id": "Q-036",
+  "slug": "Q-036-go-scheduler-example",
+  "title": "Go scheduler",
+  "kind": "review",
+  "q": {
+    "ru": "Вопрос с точными предпосылками?",
+    "en": "A precise, self-contained question?"
+  },
+  "a": {
+    "ru": "Краткий технический ответ с механизмом.",
+    "en": "Concise technical answer explaining the mechanism."
+  },
+  "code": "",
+  "lab": null,
+  "expected": "",
+  "mechanism": "",
+  "risk": "",
+  "guarantee": "",
+  "source": "https://go.dev/doc/",
+  "terms": "goroutine; scheduler"
+}

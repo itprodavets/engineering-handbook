@@ -6,7 +6,7 @@
 
 What is the output? The method awaits an incomplete TaskCompletionSource.
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 var gate = new TaskCompletionSource(

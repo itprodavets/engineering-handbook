@@ -6,7 +6,7 @@
 
 What is the task type, and does awaiting outer once wait for the inner async operation?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 Task<Task> outer = Task.Factory.StartNew<Task>(

@@ -10,7 +10,7 @@ WhenAny, WhenAll, nested Tasks, and observing failures.
 
 Task.WhenAll represents the joint completion of supplied tasks; WhenAny yields the first completed Task regardless of its status. Task<Task> requires separating outer and inner completion.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. Task.WhenAny returns the winning Task; await the winner to observe its exception.
 2. Task.WhenAll becomes Faulted if one or more input tasks fault.

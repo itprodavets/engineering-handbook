@@ -10,7 +10,7 @@ What CancellationToken actually does and does not do.
 
 CancellationToken is a cooperative signal. It is not Thread.Abort: running code must observe cancellation, and I/O APIs must support it.
 
-## Mechanics: C# to OS
+## Mechanics: language/runtime to OS
 
 1. Task.Run with an already canceled token may avoid starting the delegate.
 2. After a delegate starts, a token does not forcibly interrupt CPU instructions.

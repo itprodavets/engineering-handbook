@@ -18,7 +18,7 @@ dotnet run --file labs/dotnet/Q-024.cs
 
 ## Через GitHub Actions
 
-Открой [Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) → **Run workflow** → введи ID зарегистрированного примера, например `Q-024`. Результат выводится в логах и Job Summary. **Actions выполняет только сохранённый в репозитории код, а не твои несохранённые изменения в Pages.**
+Открой [Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) → **Run workflow** → введи ID зарегистрированной лаборатории, например `Q-024`. Результат выводится в логах и Job Summary. **Actions выполняет только сохранённый в репозитории код, а не твои несохранённые изменения в Pages.**
 
 ## Локально
 

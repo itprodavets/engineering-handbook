@@ -6,7 +6,7 @@
 
 What does it print, and does awaiting WhenAny throw the winning task's exception?
 
-## C# challenge — predict the outcome first
+## .NET / C# challenge — predict the outcome first
 
 ```csharp
 var failed = Task.FromException(

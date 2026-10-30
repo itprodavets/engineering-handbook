@@ -6,7 +6,7 @@
 
 Что напечатает second.IsCompleted после повторного WaitAsync без Release?
 
-## Фрагмент C# — попробуйте предсказать результат
+## Фрагмент .NET / C# — попробуйте предсказать результат
 
 ```csharp
 using var semaphore = new SemaphoreSlim(1, 1);
