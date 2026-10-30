@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+.vs/
+.vscode/.ropeproject/
+.idea/
+*.user
+*.suo
+.DS_Store
+.pytest_cache/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example

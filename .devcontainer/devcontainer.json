@@ -1,0 +1,12 @@
+{
+  "name": "Engineering Handbook — .NET 10 labs",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:1-10.0",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp"
+      ]
+    }
+  },
+  "postCreateCommand": "dotnet --info"
+}

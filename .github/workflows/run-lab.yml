@@ -1,0 +1,48 @@
+name: Run one lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      question:
+        description: Select a C# code challenge
+        required: true
+        type: choice
+        default: Q-024
+        options:
+          - Q-024
+          - Q-025
+          - Q-026
+          - Q-027
+          - Q-028
+          - Q-029
+          - Q-030
+          - Q-031
+          - Q-032
+          - Q-033
+          - Q-034
+          - Q-035
+
+permissions:
+  contents: read
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Execute selected snippet
+        env:
+          QUESTION: ${{ inputs.question }}
+        run: |
+          set -euo pipefail
+          echo "Executing ${QUESTION}"
+          ./scripts/run-lab.sh "${QUESTION}" | tee result.txt
+          {
+            echo "## ${QUESTION} — output"
+            echo '```text'
+            cat result.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
