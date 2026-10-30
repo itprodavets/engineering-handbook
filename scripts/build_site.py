@@ -74,6 +74,10 @@ def write_output(path: Path, content: str, check: bool, changed: list[str]):
     content = content.rstrip() + "\n"
     if check:
         if not path.exists() or path.read_text(encoding="utf-8") != content:
+            if path.name in ("README.md", "README.en.md") and path.parent == ROOT:
+                import difflib
+                current = path.read_text(encoding="utf-8") if path.exists() else ""
+                print("\\n".join(list(difflib.unified_diff(current.splitlines(), content.splitlines(), fromfile="committed", tofile="generated", lineterm=""))[:90]))
             changed.append(str(path.relative_to(ROOT)))
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
