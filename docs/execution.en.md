@@ -18,7 +18,7 @@ To run an edited snippet, click **Copy code** on the website, paste it into the 
 
 ## GitHub Actions
 
-Open [Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) → **Run workflow** → select Q-024–Q-035. Output appears in the job logs and Job Summary. **Actions runs the committed code, not unsaved edits in Pages.**
+Open [Run one lab](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) → **Run workflow** → enter a registered lab ID, such as `Q-024`. Output appears in the job logs and Job Summary. **Actions runs the committed code, not unsaved edits in Pages.**
 
 ## Local execution
 

@@ -2,12 +2,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 question="${1:-}"
-case "$question" in
-  Q-024|Q-025|Q-026|Q-027|Q-028|Q-029|Q-030|Q-031|Q-032|Q-033|Q-034|Q-035)
-    dotnet run --file "labs/dotnet/${question}.cs"
-    ;;
-  *)
-    echo "Usage: ./scripts/run-lab.sh Q-024..Q-035" >&2
-    exit 2
-    ;;
-esac
+if [[ ! "$question" =~ ^Q-[0-9]{3,}$ ]]; then
+  echo "Usage: ./scripts/run-lab.sh Q-024 (or another registered .NET lab ID)" >&2
+  exit 2
+fi
+lab="labs/dotnet/${question}.cs"
+if [[ ! -f "$lab" ]]; then
+  echo "No .NET lab file found: $lab" >&2
+  exit 2
+fi
+dotnet run --file "$lab"

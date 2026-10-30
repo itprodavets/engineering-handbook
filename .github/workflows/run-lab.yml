@@ -6,21 +6,8 @@ on:
       question:
         description: Select a C# code challenge
         required: true
-        type: choice
+        type: string
         default: Q-024
-        options:
-          - Q-024
-          - Q-025
-          - Q-026
-          - Q-027
-          - Q-028
-          - Q-029
-          - Q-030
-          - Q-031
-          - Q-032
-          - Q-033
-          - Q-034
-          - Q-035
 
 permissions:
   contents: read
