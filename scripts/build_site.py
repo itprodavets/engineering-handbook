@@ -129,8 +129,8 @@ def lesson_file(lesson,lang,questions):
     doc += [f"- **{r['name'][lang]}:** {r['detail'][lang]}" for r in t["resources"]]
     doc += ["",f"## {headings['pitfalls']}",""]
     doc += bullets([r[lang] for r in t["risks"]]).splitlines()
-    core=[q for q in questions if int(q['id'][2:])<24 and int(q['id'][2:]) in t['questions']]
-    pract=[q for q in questions if int(q['id'][2:])>=24 and int(q['id'][2:]) in t['questions']]
+    core=[q for q in questions if not q.get('lab') and int(q['id'][2:]) in t['questions']]
+    pract=[q for q in questions if bool(q.get('lab')) and int(q['id'][2:]) in t['questions']]
     doc += ["",f"## {headings['exercises']}",""]
     doc += [f"- [{q['id']}: {q['q'][lang]}]({q_link(q)})" for q in core]
     doc += ["",f"## {headings['practice']}",""]
@@ -155,7 +155,7 @@ def index_file(lessons, questions, lang):
         doc += [f"## {t['title'][lang]}","",f"[{'Основная тема' if ru else 'Canonical lesson'}]({'../../topics/dotnet/' if ru else '../../topics/dotnet/en/'}{t['id']}.md)",""]
         for q in questions:
             if int(q['id'][2:]) not in t['questions']:continue
-            ispractice=int(q['id'][2:])>=24
+            ispractice=bool(q.get('lab'))
             tag=" — закрепление" if ru else " — reinforcement"
             doc += [f"- [{q['id']}]({prefix}{pth(q)}): {q['q'][lang]}{tag if ispractice else ''}"]
         doc += [""]
@@ -206,8 +206,9 @@ def build(check=False):
     lessons=json.loads(LESSONS.read_text(encoding="utf-8"))
     qmap={q["id"]:q for q in questions}
     lesson_map={n:t for t in lessons for n in t["questions"]}
-    assert len(questions)==35 and len(lessons)==8
-    assert sorted(lesson_map)==list(range(1,36))
+    ids=[int(q['id'][2:]) for q in questions]
+    assert ids and len(ids)==len(set(ids)) and len(lessons)>0
+    assert sorted(lesson_map)==sorted(ids)
     for i,q in enumerate(questions):
         lid=lesson_map[int(q['id'][2:])]
         prev_q=questions[i-1] if i else None
@@ -233,7 +234,7 @@ def build(check=False):
             site_lessons.append(l)
         site_questions=[]
         for q in questions:
-            site_questions.append({'id':q['id'],'title':q['title'] if lang=='ru' else lesson_map[int(q['id'][2:])]['title']['en'], 'question':q['q'][lang], 'answer':q['a'][lang], 'code':safe_code(q['code'],lang), 'expected':q['expected'] if lang=='ru' else '', 'mechanism':q['mechanism'] if lang=='ru' else '', 'risk':q['risk'] if lang=='ru' else '', 'guarantee':q['guarantee'] if lang=='ru' else '', 'source':q['source'], 'terms':q['terms'], 'lab':q['lab'], 'lesson':lesson_map[int(q['id'][2:])]['id'], 'kind':'reinforcement' if int(q['id'][2:])>=24 else 'review', 'markdown': 'questions/dotnet/'+('en/' if lang=='en' else '')+pth(q)})
+            site_questions.append({'id':q['id'],'title':q['title'] if lang=='ru' else lesson_map[int(q['id'][2:])]['title']['en'], 'question':q['q'][lang], 'answer':q['a'][lang], 'code':safe_code(q['code'],lang), 'expected':q['expected'] if lang=='ru' else '', 'mechanism':q['mechanism'] if lang=='ru' else '', 'risk':q['risk'] if lang=='ru' else '', 'guarantee':q['guarantee'] if lang=='ru' else '', 'source':q['source'], 'terms':q['terms'], 'lab':q['lab'], 'lesson':lesson_map[int(q['id'][2:])]['id'], 'kind':'reinforcement' if bool(q.get('lab')) else 'review', 'markdown': 'questions/dotnet/'+('en/' if lang=='en' else '')+pth(q)})
         payload={'language':lang,'lessons':site_lessons,'questions':site_questions,'glossary':glossary_entries(lang),'meta':{'questionCount':len(questions),'lessonCount':len(lessons),'version':1}}
         write_output(SITE/"data"/(lang+".json"),json.dumps(payload,ensure_ascii=False,indent=2),check,changed)
     if check:

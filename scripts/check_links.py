@@ -16,12 +16,11 @@ for page in files:
         target=(page.parent/dest).resolve()
         if not target.is_relative_to(ROOT) or not target.is_file():
             errors.append(f'{page.relative_to(ROOT)} -> {dest}: missing local target')
-for i in range(1,36):
-    glob=list((ROOT/'questions'/'dotnet').glob(f'Q-{i:03d}-*.md'))
-    if len(glob)!=1:errors.append(f'Q-{i:03d}: expected one question Markdown, got {len(glob)}')
-for i in range(24,36):
-    path=ROOT/'labs'/'dotnet'/f'Q-{i:03d}.cs'
-    if not path.is_file():errors.append(f'{path}: missing code lab')
+import json
+for q in json.loads((ROOT/'content/questions.json').read_text(encoding='utf-8')):
+    glob=list((ROOT/'questions'/'dotnet').glob(q['slug']+'.md'))
+    if len(glob)!=1:errors.append(f'{q["id"]}: missing question Markdown')
+    if q.get('lab') and not (ROOT/q['lab']).is_file():errors.append(f'{q["id"]}: missing lab {q["lab"]}')
 if errors:
     print('\n'.join(errors));sys.exit(1)
 print(f'PASS: {len(files)} Markdown pages, 35 questions, 12 labs, and local links validated.')

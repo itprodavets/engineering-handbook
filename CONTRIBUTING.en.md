@@ -4,6 +4,8 @@
 
 [Home](README.en.md) · [Interactive platform](https://itprodavets.github.io/engineering-handbook/#/en/home)
 
+[How to add content from ChatGPT](docs/chat-authoring.en.md)
+
 ## One core explanation per concept
 
 If a concept already exists in `content/lessons.json`, extend that **canonical lesson**. Add related questions as reinforcement challenges. Do not create a second lesson with duplicated theory.

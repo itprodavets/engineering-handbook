@@ -9,23 +9,24 @@ loads={l:json.loads((ROOT/'site/data'/f'{l}.json').read_text()) for l in ('ru','
 for lang,data in loads.items():
   lessons=data['lessons']; questions=data['questions']; glossary=data['glossary']
   ids=[q['id'] for q in questions]
-  if ids!=['Q-'+str(n).zfill(3) for n in range(1,36)]:errors.append(f'{lang}: question IDs mismatch')
-  if len(lessons)!=8:errors.append(f'{lang}: expected 8 canonical lessons')
-  if len(glossary)!=31:errors.append(f'{lang}: expected 31 terms, got {len(glossary)}')
+  source_questions=json.loads((ROOT/'content/questions.json').read_text())
+  if ids!=[q['id'] for q in source_questions]:errors.append(f'{lang}: question IDs mismatch')
+  if len(lessons)!=len(json.loads((ROOT/'content/lessons.json').read_text())):errors.append(f'{lang}: lesson count mismatch')
+  if len(glossary)!=len(json.loads((ROOT/'content/glossary.json').read_text())):errors.append(f'{lang}: glossary count mismatch')
   mapping={}
   for lesson in lessons:
     if not lesson.get('overview') or not lesson.get('mechanism') or not lesson.get('resources'):errors.append(f'{lang}: incomplete {lesson["id"]}')
     for i in lesson['questions']:
       if i in mapping:errors.append(f'{lang}: duplicate Q-{i:03d}: {mapping[i]} and {lesson["id"]}')
       mapping[i]=lesson['id']
-  if sorted(mapping)!=list(range(1,36)):errors.append(f'{lang}: canonical lesson mapping has gaps')
+  if sorted(mapping)!=sorted(int(q['id'][2:]) for q in source_questions):errors.append(f'{lang}: canonical lesson mapping has gaps')
   for q in questions:
-    i=int(q['id'][2:]);expect_kind='reinforcement' if i>=24 else 'review'
+    i=int(q['id'][2:]);source_q=next(s for s in source_questions if s['id']==q['id']);expect_kind='reinforcement' if source_q.get('lab') else 'review'
     if q['kind']!=expect_kind:errors.append(f'{lang}: {q["id"]} wrong kind')
     if q['lesson']!=mapping.get(i):errors.append(f'{lang}: {q["id"]} wrong lesson')
     if not q['question'] or not q['answer']:errors.append(f'{lang}: {q["id"]} no answer')
-    if i>=24 and (not q['lab'] or not q['code']):errors.append(f'{lang}: {q["id"]} no lab')
-    if i<24 and q['lab']:errors.append(f'{lang}: {q["id"]} unexpected lab')
+    if expect_kind=='reinforcement' and (not q['lab'] or not q['code']):errors.append(f'{lang}: {q["id"]} no lab')
+    if expect_kind=='review' and q['lab']:errors.append(f'{lang}: {q["id"]} unexpected lab')
     if not (ROOT/q['markdown']).is_file():errors.append(f'{lang}: {q["id"]} bad markdown path')
   if lang=='en':
     for lesson in lessons:
