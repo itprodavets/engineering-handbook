@@ -213,7 +213,7 @@ def root_readme(lessons,lang):
     site=f"{BASE}/#/{lang}/home"
     doc=[title,"",toggle,"",('**Интерактивный учебник:** [открыть платформу](%s).'%site if ru else '**Interactive course:** [Open the learning app](%s).'%site),"",('Учебник по устройству языков, runtime, многопоточности, инфраструктуре и распределённым системам. Теория хранится отдельно от упражнений; один механизм — одна основная тема.' if ru else 'A technical learning handbook covering languages, runtimes, concurrency, infrastructure, and distributed systems. One canonical lesson per concept, with separate reinforcement exercises.'),"",('## Изучаемые темы' if ru else '## Curriculum'),""]
     catalog=json.loads((ROOT/"content/catalog.json").read_text(encoding="utf-8"))
-    doc += ["| Направление | Темы |" if ru else "| Area | Topics |","|---|---|"]
+    doc += ["","| Направление | Темы |" if ru else "| Area | Topics |","|---|---|"]
     for group in catalog:
         path="catalog/"+("en/" if not ru else "")+group["id"]+".md"
         names=", ".join(track["title"][lang] for track in group["tracks"])
