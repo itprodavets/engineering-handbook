@@ -1245,6 +1245,271 @@
   "meta": {
     "questionCount": 35,
     "lessonCount": 8,
-    "version": 2
-  }
+    "version": 2,
+    "categoryCount": 10
+  },
+  "catalog": [
+    {
+      "id": "programming-languages",
+      "title": "Programming languages",
+      "description": "Syntax, types, memory, concurrency, and developer tooling.",
+      "tracks": [
+        {
+          "id": "dotnet",
+          "title": "C# / .NET"
+        },
+        {
+          "id": "go",
+          "title": "Go"
+        },
+        {
+          "id": "python",
+          "title": "Python"
+        },
+        {
+          "id": "typescript",
+          "title": "TypeScript / JavaScript"
+        },
+        {
+          "id": "rust",
+          "title": "Rust"
+        },
+        {
+          "id": "java",
+          "title": "Java"
+        }
+      ]
+    },
+    {
+      "id": "databases",
+      "title": "Databases and storage",
+      "description": "SQL, transactions, indexes, query plans, and search.",
+      "tracks": [
+        {
+          "id": "postgresql",
+          "title": "PostgreSQL"
+        },
+        {
+          "id": "sql",
+          "title": "SQL / query optimization"
+        },
+        {
+          "id": "redis",
+          "title": "Redis"
+        },
+        {
+          "id": "sqlite",
+          "title": "SQLite"
+        },
+        {
+          "id": "search-engines",
+          "title": "Search / Elasticsearch"
+        },
+        {
+          "id": "vector-databases",
+          "title": "Vector databases"
+        }
+      ]
+    },
+    {
+      "id": "ai-llm-rag",
+      "title": "AI, LLM, and RAG",
+      "description": "Models, embeddings, RAG, agents, MCP, and evaluations.",
+      "tracks": [
+        {
+          "id": "llm",
+          "title": "LLMs and transformers"
+        },
+        {
+          "id": "rag",
+          "title": "Retrieval-Augmented Generation"
+        },
+        {
+          "id": "agents",
+          "title": "AI agents"
+        },
+        {
+          "id": "embeddings",
+          "title": "Embeddings and retrieval"
+        },
+        {
+          "id": "mcp",
+          "title": "Model Context Protocol"
+        },
+        {
+          "id": "llm-evaluation",
+          "title": "LLM evaluation"
+        }
+      ]
+    },
+    {
+      "id": "messaging-streaming",
+      "title": "Messaging and streaming",
+      "description": "Kafka, queues, events, offsets, and delivery guarantees.",
+      "tracks": [
+        {
+          "id": "kafka",
+          "title": "Apache Kafka"
+        },
+        {
+          "id": "rabbitmq",
+          "title": "RabbitMQ"
+        },
+        {
+          "id": "nats",
+          "title": "NATS"
+        },
+        {
+          "id": "stream-processing",
+          "title": "Stream processing"
+        }
+      ]
+    },
+    {
+      "id": "distributed-systems",
+      "title": "Distributed systems",
+      "description": "Consistency, remote calls, replication, and reliability.",
+      "tracks": [
+        {
+          "id": "distributed-systems",
+          "title": "Distributed algorithms"
+        },
+        {
+          "id": "grpc",
+          "title": "gRPC / Protocol Buffers"
+        },
+        {
+          "id": "consistency",
+          "title": "Consistency"
+        },
+        {
+          "id": "resilience",
+          "title": "Retry, backpressure, circuit breaker"
+        }
+      ]
+    },
+    {
+      "id": "runtimes-systems",
+      "title": "Runtimes, OS, and memory",
+      "description": "Compilers, JIT, GC, schedulers, and CPU architecture.",
+      "tracks": [
+        {
+          "id": "clr",
+          "title": "CLR / JIT / GC"
+        },
+        {
+          "id": "go-runtime",
+          "title": "Go runtime"
+        },
+        {
+          "id": "jvm",
+          "title": "JVM"
+        },
+        {
+          "id": "os-internals",
+          "title": "OS and virtual memory"
+        }
+      ]
+    },
+    {
+      "id": "software-architecture",
+      "title": "Software architecture and system design",
+      "description": "DDD, architectural patterns, APIs, and system design.",
+      "tracks": [
+        {
+          "id": "system-design",
+          "title": "System design"
+        },
+        {
+          "id": "ddd",
+          "title": "DDD / Clean Architecture"
+        },
+        {
+          "id": "design-patterns",
+          "title": "Design patterns"
+        },
+        {
+          "id": "api-design",
+          "title": "API design"
+        }
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "title": "Infrastructure and operations",
+      "description": "Linux, containers, Kubernetes, cloud, networking, CI/CD, and observability.",
+      "tracks": [
+        {
+          "id": "linux",
+          "title": "Linux"
+        },
+        {
+          "id": "docker",
+          "title": "Docker / OCI"
+        },
+        {
+          "id": "kubernetes",
+          "title": "Kubernetes"
+        },
+        {
+          "id": "cloud",
+          "title": "Cloud / networking"
+        },
+        {
+          "id": "cicd",
+          "title": "CI/CD"
+        },
+        {
+          "id": "observability",
+          "title": "OpenTelemetry / observability"
+        }
+      ]
+    },
+    {
+      "id": "computer-science",
+      "title": "Algorithms and computer science",
+      "description": "Data structures, complexity, memory model, and performance.",
+      "tracks": [
+        {
+          "id": "algorithms",
+          "title": "Algorithms"
+        },
+        {
+          "id": "data-structures",
+          "title": "Data structures"
+        },
+        {
+          "id": "concurrency",
+          "title": "Concurrency and memory"
+        },
+        {
+          "id": "performance",
+          "title": "Performance engineering"
+        }
+      ]
+    },
+    {
+      "id": "security-quality",
+      "title": "Security and quality",
+      "description": "Testing, application security, and verification strategies.",
+      "tracks": [
+        {
+          "id": "testing",
+          "title": "Testing / property-based testing"
+        },
+        {
+          "id": "application-security",
+          "title": "OWASP / application security"
+        },
+        {
+          "id": "cryptography",
+          "title": "Cryptography"
+        },
+        {
+          "id": "reliability-testing",
+          "title": "Load / chaos testing"
+        }
+      ]
+    }
+  ]
 }

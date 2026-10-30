@@ -15,3 +15,5 @@ This is a **public-safe**, bilingual, source-controlled learning handbook. Keep 
 9. Personal scores and user answers belong only in the separately connected private Google Sheet. Do not sync them into public GitHub or Pages.
 
 References: [Chat-based authoring (RU)](docs/chat-authoring.md) · [English](docs/chat-authoring.en.md) · [Technical accuracy](docs/technical-accuracy.md).
+
+New categories are registered in `content/catalog.json`; keep the knowledge map and Pages data synchronized. See [repository layout](docs/repository-layout.md) and [storage design](docs/storage.md). Do not add private user scores to public content.

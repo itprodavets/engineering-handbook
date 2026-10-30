@@ -33,3 +33,7 @@ New languages and platforms should introduce their own curricula with one canoni
 [How to add new topics from chat](docs/chat-authoring.en.md). After updating canonical JSON and running the generator, new topics and questions appear in localized navigation and Pages automatically. Do not edit `site/data` directly.
 
 New technologies use the lesson's `track` (for example `go` or `kafka`). Question IDs remain global; `kind: "review"` is a knowledge question and `kind: "reinforcement"` is a code or applied exercise. Keep executable examples and their run commands separate from theory.
+
+## Categories
+
+Register new technology tracks in [`content/catalog.json`](content/catalog.json). The generator updates README, RU/EN category pages and Pages datasets. [Repository layout](docs/repository-layout.en.md).

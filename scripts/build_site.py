@@ -212,6 +212,13 @@ def root_readme(lessons,lang):
     toggle="[Русский](README.md) · [English](README.en.md)"
     site=f"{BASE}/#/{lang}/home"
     doc=[title,"",toggle,"",('**Интерактивный учебник:** [открыть платформу](%s).'%site if ru else '**Interactive course:** [Open the learning app](%s).'%site),"",('Учебник по устройству языков, runtime, многопоточности, инфраструктуре и распределённым системам. Теория хранится отдельно от упражнений; один механизм — одна основная тема.' if ru else 'A technical learning handbook covering languages, runtimes, concurrency, infrastructure, and distributed systems. One canonical lesson per concept, with separate reinforcement exercises.'),"",('## Изучаемые темы' if ru else '## Curriculum'),""]
+    catalog=json.loads((ROOT/"content/catalog.json").read_text(encoding="utf-8"))
+    doc += ["| Направление | Темы |" if ru else "| Area | Topics |","|---|---|"]
+    for group in catalog:
+        path="catalog/"+("en/" if not ru else "")+group["id"]+".md"
+        names=", ".join(track["title"][lang] for track in group["tracks"])
+        doc.append("| ["+group["title"][lang]+"]("+path+") | "+names+" |")
+    doc += ["","[Полный каталог](catalog/README.md)" if ru else "[Full catalog](catalog/README.en.md)",""]
     tracks = list(dict.fromkeys(track_of(t) for t in lessons))
     for track in tracks:
         doc += [f"### {title_of_track(track)}", ""]
@@ -222,8 +229,40 @@ def root_readme(lessons,lang):
     doc += ["",('## Практика и код' if ru else '## Practical challenges and code'),""]
     doc += [f"- [{title_of_track(track)} — {'Вопросы' if ru else 'Questions'}](questions/{track}/{'README.md' if ru else 'README.en.md'})" for track in tracks]
     doc += [f"- [{'Запускаемые лаборатории' if ru else 'Runnable C# labs'}](labs/{'README.md' if ru else 'README.en.md'})",f"- [{'Открыть Codespaces' if ru else 'Open Codespaces'}](https://codespaces.new/itprodavets/engineering-handbook)",f"- [{'Запустить выбранный пример через Actions' if ru else 'Run a selected lab through Actions'}]({REPO}/actions/workflows/run-lab.yml)","",('## Как запустить C#' if ru else '## Running C#'),"","```bash","dotnet run --file labs/dotnet/Q-024.cs","```","",('Сама страница GitHub Pages не компилирует C#. Для настоящего запуска используй Codespaces или GitHub Actions; интерактивная проверка ответов в браузере — это сравнение с эталоном, а не исполнение C#.' if ru else 'GitHub Pages does not compile C#. Use Codespaces or GitHub Actions for actual execution; in-browser answer checking compares your prediction against the reference, not executed C#.'),"",('## Следующие направления' if ru else '## Planned learning tracks'),"",(future_text+'. Разделы будут заполняться по мере прохождения — без дублирования теории.' if ru else future_text+'. New tracks are added when their first verified canonical lesson is ready.'),"",('## Личный прогресс' if ru else '## Learning progress'),"",('Результаты личных ответов и оценки — в приватной Google Таблице, не в репозитории. Браузерная платформа сохраняет отметки только локально на устройстве. GitHub Pages может быть публичным даже при приватном репозитории.' if ru else 'Personal answers and scores remain in the private Google Sheet, not in this repository. The browser app saves progress only on your device. GitHub Pages may be publicly reachable even when the repository is private.'),"",f"[{'Добавлять темы прямо из чата' if ru else 'Add topics from ChatGPT'}](docs/{'chat-authoring.md' if ru else 'chat-authoring.en.md'}) · [{'Как вносить изменения' if ru else 'Contributing'}]({'CONTRIBUTING.md' if ru else 'CONTRIBUTING.en.md'})",""]
+    doc += ["",("[Структура репозитория](docs/repository-layout.md) · [Почему без SQLite](docs/storage.md) · [Бенчмарки](benchmarks/README.md)" if ru else "[Repository layout](docs/repository-layout.en.md) · [Why no SQLite](docs/storage.en.md) · [Benchmarks](benchmarks/README.en.md)"),""]
     return "\n".join(doc)
 
+
+
+def catalog_index_file(catalog,lang):
+    ru=lang=="ru"
+    lines=["# Каталог знаний" if ru else "# Knowledge catalog","",
+           "[Русский](README.md) · [English](README.en.md)","",
+           "[Главная](../README.md)" if ru else "[Home](../README.en.md)","",""]
+    for group in catalog:
+        path=("en/" if not ru else "")+group["id"]+".md"
+        lines += ["## ["+group["title"][lang]+"]("+path+")","",group["description"][lang],""]
+    return "\n".join(lines)
+
+def catalog_area_file(group,lessons,lang):
+    ru=lang=="ru"
+    fname=group["id"]+".md"
+    toggle="[Русский]("+fname+") · [English](en/"+fname+")" if ru else "[Русский](../"+fname+") · [English]("+fname+")"
+    nav="[Главная](../README.md) · [Каталог](README.md)" if ru else "[Home](../../README.en.md) · [Catalog](../README.en.md)"
+    lines=["# "+group["title"][lang],"",toggle,"",nav,"",group["description"][lang],"",
+           "## Технологии" if ru else "## Technologies",""]
+    for track in group["tracks"]:
+        lines += ["### "+track["title"][lang],""]
+        found=[x for x in lessons if x.get("track","dotnet")==track["id"]]
+        if found:
+            for lesson in found:
+                dest=("../" if ru else "../../")+"topics/"+track["id"]+"/"+("" if ru else "en/")+lesson["id"]+".md"
+                lines += ["- ["+lesson["title"][lang]+"]("+dest+")"]
+        else:
+            lines += ["Запланировано — уроков пока нет." if ru else "Planned — no published lessons yet."]
+        lines.append("")
+    lines += ["---","",toggle]
+    return "\n".join(lines)
 
 def glossary_entries(lang):
     entries=json.loads((ROOT/'content/glossary.json').read_text(encoding='utf-8'))
@@ -293,6 +332,14 @@ def build(check=False):
     write_output(ROOT / "README.md",root_readme(lessons,"ru"),check,changed)
     write_output(ROOT / "README.en.md",root_readme(lessons,"en"),check,changed)
 
+    catalog=json.loads((ROOT/"content/catalog.json").read_text(encoding="utf-8"))
+    write_output(ROOT/"catalog"/"README.md",catalog_index_file(catalog,"ru"),check,changed)
+    write_output(ROOT/"catalog"/"README.en.md",catalog_index_file(catalog,"en"),check,changed)
+    for group in catalog:
+        write_output(ROOT/"catalog"/(group["id"]+".md"),catalog_area_file(group,lessons,"ru"),check,changed)
+        write_output(ROOT/"catalog"/"en"/(group["id"]+".md"),catalog_area_file(group,lessons,"en"),check,changed)
+
+
     for lang in ("ru","en"):
         site_lessons = []
         for t in lessons:
@@ -327,6 +374,8 @@ def build(check=False):
                 'markdown':f"questions/{track}/"+('en/' if lang=='en' else '')+pth(q)
             })
         payload={'language':lang,'lessons':site_lessons,'questions':site_questions,'glossary':glossary_entries(lang),'meta':{'questionCount':len(questions),'lessonCount':len(lessons),'version':2}}
+        payload['catalog']=[{'id':g['id'],'title':g['title'][lang],'description':g['description'][lang],'tracks':[{'id':t['id'],'title':t['title'][lang]} for t in g['tracks']]} for g in catalog]
+        payload['meta']['categoryCount']=len(catalog)
         write_output(SITE / 'data' / (lang+'.json'),json.dumps(payload,ensure_ascii=False,indent=2),check,changed)
     if check:
         if changed:

@@ -1245,6 +1245,271 @@
   "meta": {
     "questionCount": 35,
     "lessonCount": 8,
-    "version": 2
-  }
+    "version": 2,
+    "categoryCount": 10
+  },
+  "catalog": [
+    {
+      "id": "programming-languages",
+      "title": "Языки программирования",
+      "description": "Синтаксис, типы, память, конкурентность и инструменты разработки.",
+      "tracks": [
+        {
+          "id": "dotnet",
+          "title": "C# / .NET"
+        },
+        {
+          "id": "go",
+          "title": "Go"
+        },
+        {
+          "id": "python",
+          "title": "Python"
+        },
+        {
+          "id": "typescript",
+          "title": "TypeScript / JavaScript"
+        },
+        {
+          "id": "rust",
+          "title": "Rust"
+        },
+        {
+          "id": "java",
+          "title": "Java"
+        }
+      ]
+    },
+    {
+      "id": "databases",
+      "title": "Базы данных и хранение",
+      "description": "SQL, транзакции, индексы, планы запросов и поиск.",
+      "tracks": [
+        {
+          "id": "postgresql",
+          "title": "PostgreSQL"
+        },
+        {
+          "id": "sql",
+          "title": "SQL / Query Optimization"
+        },
+        {
+          "id": "redis",
+          "title": "Redis"
+        },
+        {
+          "id": "sqlite",
+          "title": "SQLite"
+        },
+        {
+          "id": "search-engines",
+          "title": "Search / Elasticsearch"
+        },
+        {
+          "id": "vector-databases",
+          "title": "Векторные БД"
+        }
+      ]
+    },
+    {
+      "id": "ai-llm-rag",
+      "title": "AI, LLM и RAG",
+      "description": "Модели, embeddings, RAG, агенты, MCP и оценка качества.",
+      "tracks": [
+        {
+          "id": "llm",
+          "title": "LLM и трансформеры"
+        },
+        {
+          "id": "rag",
+          "title": "Retrieval-Augmented Generation"
+        },
+        {
+          "id": "agents",
+          "title": "AI Agents"
+        },
+        {
+          "id": "embeddings",
+          "title": "Embeddings и поиск"
+        },
+        {
+          "id": "mcp",
+          "title": "Model Context Protocol"
+        },
+        {
+          "id": "llm-evaluation",
+          "title": "LLM Evaluation"
+        }
+      ]
+    },
+    {
+      "id": "messaging-streaming",
+      "title": "Очереди и потоковая обработка",
+      "description": "Kafka, очереди, события, offsets и гарантии доставки.",
+      "tracks": [
+        {
+          "id": "kafka",
+          "title": "Apache Kafka"
+        },
+        {
+          "id": "rabbitmq",
+          "title": "RabbitMQ"
+        },
+        {
+          "id": "nats",
+          "title": "NATS"
+        },
+        {
+          "id": "stream-processing",
+          "title": "Stream Processing"
+        }
+      ]
+    },
+    {
+      "id": "distributed-systems",
+      "title": "Распределённые системы",
+      "description": "Согласованность, сетевые вызовы, репликация и отказоустойчивость.",
+      "tracks": [
+        {
+          "id": "distributed-systems",
+          "title": "Распределённые алгоритмы"
+        },
+        {
+          "id": "grpc",
+          "title": "gRPC / Protocol Buffers"
+        },
+        {
+          "id": "consistency",
+          "title": "Согласованность"
+        },
+        {
+          "id": "resilience",
+          "title": "Retry, Backpressure, Circuit Breaker"
+        }
+      ]
+    },
+    {
+      "id": "runtimes-systems",
+      "title": "Runtime, ОС и память",
+      "description": "Компиляторы, JIT, GC, планировщики и архитектура CPU.",
+      "tracks": [
+        {
+          "id": "clr",
+          "title": "CLR / JIT / GC"
+        },
+        {
+          "id": "go-runtime",
+          "title": "Go Runtime"
+        },
+        {
+          "id": "jvm",
+          "title": "JVM"
+        },
+        {
+          "id": "os-internals",
+          "title": "ОС и виртуальная память"
+        }
+      ]
+    },
+    {
+      "id": "software-architecture",
+      "title": "Архитектура и System Design",
+      "description": "DDD, архитектурные паттерны, API и проектирование систем.",
+      "tracks": [
+        {
+          "id": "system-design",
+          "title": "System Design"
+        },
+        {
+          "id": "ddd",
+          "title": "DDD / Clean Architecture"
+        },
+        {
+          "id": "design-patterns",
+          "title": "Паттерны"
+        },
+        {
+          "id": "api-design",
+          "title": "API Design"
+        }
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "title": "Инфраструктура и эксплуатация",
+      "description": "Linux, контейнеры, Kubernetes, облако, сети, CI/CD и наблюдаемость.",
+      "tracks": [
+        {
+          "id": "linux",
+          "title": "Linux"
+        },
+        {
+          "id": "docker",
+          "title": "Docker / OCI"
+        },
+        {
+          "id": "kubernetes",
+          "title": "Kubernetes"
+        },
+        {
+          "id": "cloud",
+          "title": "Cloud / Networking"
+        },
+        {
+          "id": "cicd",
+          "title": "CI/CD"
+        },
+        {
+          "id": "observability",
+          "title": "OpenTelemetry / Observability"
+        }
+      ]
+    },
+    {
+      "id": "computer-science",
+      "title": "Алгоритмы и Computer Science",
+      "description": "Структуры данных, сложность, модель памяти и производительность.",
+      "tracks": [
+        {
+          "id": "algorithms",
+          "title": "Алгоритмы"
+        },
+        {
+          "id": "data-structures",
+          "title": "Структуры данных"
+        },
+        {
+          "id": "concurrency",
+          "title": "Конкурентность и память"
+        },
+        {
+          "id": "performance",
+          "title": "Performance Engineering"
+        }
+      ]
+    },
+    {
+      "id": "security-quality",
+      "title": "Безопасность и качество",
+      "description": "Тестирование, безопасность приложений и стратегии проверки.",
+      "tracks": [
+        {
+          "id": "testing",
+          "title": "Testing / Property-Based Testing"
+        },
+        {
+          "id": "application-security",
+          "title": "OWASP / Application Security"
+        },
+        {
+          "id": "cryptography",
+          "title": "Криптография"
+        },
+        {
+          "id": "reliability-testing",
+          "title": "Load / Chaos Testing"
+        }
+      ]
+    }
+  ]
 }

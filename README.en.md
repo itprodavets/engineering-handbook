@@ -8,6 +8,21 @@ A technical learning handbook covering languages, runtimes, concurrency, infrast
 
 ## Curriculum
 
+| Area | Topics |
+|---|---|
+| [Programming languages](catalog/en/programming-languages.md) | C# / .NET, Go, Python, TypeScript / JavaScript, Rust, Java |
+| [Databases and storage](catalog/en/databases.md) | PostgreSQL, SQL / query optimization, Redis, SQLite, Search / Elasticsearch, Vector databases |
+| [AI, LLM, and RAG](catalog/en/ai-llm-rag.md) | LLMs and transformers, Retrieval-Augmented Generation, AI agents, Embeddings and retrieval, Model Context Protocol, LLM evaluation |
+| [Messaging and streaming](catalog/en/messaging-streaming.md) | Apache Kafka, RabbitMQ, NATS, Stream processing |
+| [Distributed systems](catalog/en/distributed-systems.md) | Distributed algorithms, gRPC / Protocol Buffers, Consistency, Retry, backpressure, circuit breaker |
+| [Runtimes, OS, and memory](catalog/en/runtimes-systems.md) | CLR / JIT / GC, Go runtime, JVM, OS and virtual memory |
+| [Software architecture and system design](catalog/en/software-architecture.md) | System design, DDD / Clean Architecture, Design patterns, API design |
+| [Infrastructure and operations](catalog/en/infrastructure.md) | Linux, Docker / OCI, Kubernetes, Cloud / networking, CI/CD, OpenTelemetry / observability |
+| [Algorithms and computer science](catalog/en/computer-science.md) | Algorithms, Data structures, Concurrency and memory, Performance engineering |
+| [Security and quality](catalog/en/security-quality.md) | Testing / property-based testing, OWASP / application security, Cryptography, Load / chaos testing |
+
+[Full catalog](catalog/README.en.md)
+
 ### .NET / C#
 
 - [The async/await execution lifecycle](topics/dotnet/en/async-lifecycle.md) — 8 questions and exercises
@@ -44,3 +59,5 @@ Go, Kafka, PostgreSQL, Kubernetes, Linux, System Design. New tracks are added wh
 Personal answers and scores remain in the private Google Sheet, not in this repository. The browser app saves progress only on your device. GitHub Pages may be publicly reachable even when the repository is private.
 
 [Add topics from ChatGPT](docs/chat-authoring.en.md) · [Contributing](CONTRIBUTING.en.md)
+
+[Repository layout](docs/repository-layout.en.md) · [Why no SQLite](docs/storage.en.md) · [Benchmarks](benchmarks/README.en.md)
