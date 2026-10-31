@@ -126,4 +126,4 @@ Async end-to-end, pagination, max concurrency ниже/равно лимита �
 
 ---
 
-[← Назад](async-memory-and-allocations.md) · [Русский](async-production-capstone.md) · [English](en/async-production-capstone.md)
+[← Назад](async-memory-and-allocations.md) · [Далее →](async-before-await.md) · [Русский](async-production-capstone.md) · [English](en/async-production-capstone.md)

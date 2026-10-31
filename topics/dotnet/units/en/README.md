@@ -12,6 +12,7 @@ One mechanism, one canonical explanation; questions reinforce it.
 - [From PostgreSQL to epoll/IOCP and continuations](async-socket-pipeline.md) — Trace SQL, sockets, the OS kernel, and resumption in C#.
 - [Memory, state machines and async allocation cost](async-memory-and-allocations.md) — Measure real async costs without inventing object sizes.
 - [Production case: p99 latency and ThreadPool starvation](async-production-capstone.md) — Learn to prove the cause of latency and design a justified fix.
+- [Before async/await: APM, EAP and TAP](async-before-await.md) — Explain how asynchronous I/O worked before async/await and reason correctly about callbacks.
 
 ## [ThreadPool and the OS scheduler](../../en/threadpool-scheduling.md)
 
@@ -26,7 +27,9 @@ One mechanism, one canonical explanation; questions reinforce it.
 
 ## [Shared memory and synchronization](../../en/shared-memory.md)
 
-- [Atomicity, volatile and Interlocked](atomicity-and-memory-visibility.md) — Understand read-modify-write and memory visibility.
+- [Race conditions, data races and lost updates](race-condition-vs-data-race.md) — Detect violated invariants; distinguish scheduling races from unsynchronized memory accesses.
+- [volatile, Interlocked and atomic read-modify-write](atomicity-and-memory-visibility.md) — Distinguish single-operation atomicity, acquire/release and by-reference updates.
+- [CompareExchange, CAS loops and the stock ≥ 0 invariant](compare-exchange-cas-loop.md) — Understand what CAS changes via ref, what previous returns and why contention requires retries.
 - [Monitor locks and SemaphoreSlim](mutual-exclusion-and-semaphores.md) — Distinguish thread blocking from asynchronous permit waiting.
 - [Why Parallel.ForEach(async ...) is dangerous](parallel-foreach-async-void.md) — Explain why async void continuations escape loop completion.
 

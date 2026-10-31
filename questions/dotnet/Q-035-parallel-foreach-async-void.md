@@ -1,6 +1,6 @@
 # Q-035 — Parallel.ForEach async void
 
-[Русский](./Q-035-parallel-foreach-async-void.md) · [English](en/Q-035-parallel-foreach-async-void.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-035) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-034-semaphore-waitasync.md)
+[Русский](./Q-035-parallel-foreach-async-void.md) · [English](en/Q-035-parallel-foreach-async-void.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-035) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-034-semaphore-waitasync.md) · [Следующий →](Q-036-apm-eap-tap-history.md)
 
 ## Вопрос
 
@@ -54,4 +54,4 @@ A раньше X; дальнейший вывод недетерминирова
 
 ---
 
-[Русский](./Q-035-parallel-foreach-async-void.md) · [English](en/Q-035-parallel-foreach-async-void.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-035) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-034-semaphore-waitasync.md)
+[Русский](./Q-035-parallel-foreach-async-void.md) · [English](en/Q-035-parallel-foreach-async-void.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-035) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-034-semaphore-waitasync.md) · [Следующий →](Q-036-apm-eap-tap-history.md)

@@ -36,11 +36,14 @@ async/await composes incomplete operations without requiring the caller’s thre
 - [Q-005: PostgreSQL takes five seconds to execute a query. What does the .NET server's CPU core do while awaiting ToListAsync()?](../../../questions/dotnet/en/Q-005-cpu-during-io.md)
 - [Q-012: Does calling an async Task method start a new thread or run synchronously at first?](../../../questions/dotnet/en/Q-012-async-starts-synchronously.md)
 - [Q-013: Does await always suspend, allocate a worker, or switch threads?](../../../questions/dotnet/en/Q-013-completed-await-and-scheduling.md)
+- [Q-037: Why can NetworkStream.BeginRead scale better than Task.Run(() => stream.Read(...))?](../../../questions/dotnet/en/Q-037-apm-vs-taskrun-read.md)
 
 ## Reinforcement challenges
 
 - [Q-024: What is the output and why? The awaited Task is already complete.](../../../questions/dotnet/en/Q-024-completed-await-output.md)
 - [Q-025: What is the output? The method awaits an incomplete TaskCompletionSource.](../../../questions/dotnet/en/Q-025-incomplete-await-output.md)
+- [Q-036: How was asynchronous I/O performed before async/await, and when did APM, EAP and TAP appear?](../../../questions/dotnet/en/Q-036-apm-eap-tap-history.md)
+- [Q-038: What does a callback print if invoked inline before assigning result = BeginRead(...)?](../../../questions/dotnet/en/Q-038-inline-apm-callback-captured-result.md)
 
 ## Primary references
 

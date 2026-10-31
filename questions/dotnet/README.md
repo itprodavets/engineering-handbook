@@ -18,6 +18,9 @@
 - [Q-013](Q-013-completed-await-and-scheduling.md): Всегда ли await приостанавливает метод, выделяет worker или переключает поток?
 - [Q-024](Q-024-completed-await-output.md): Какой вывод и почему? async-метод содержит await уже завершённой Task. — закрепление
 - [Q-025](Q-025-incomplete-await-output.md): Какой вывод и почему? Метод ожидает незавершённую TaskCompletionSource. — закрепление
+- [Q-036](Q-036-apm-eap-tap-history.md): Как выполняли асинхронный I/O до async/await и в какие годы появились APM, EAP и TAP? — закрепление
+- [Q-037](Q-037-apm-vs-taskrun-read.md): Почему NetworkStream.BeginRead может масштабироваться лучше, чем Task.Run(() => stream.Read(...))?
+- [Q-038](Q-038-inline-apm-callback-captured-result.md): Что напечатает callback, если он вызван inline до завершения присваивания result = BeginRead(...)? — закрепление
 
 ## ThreadPool и планировщик ОС
 
@@ -50,6 +53,15 @@
 - [Q-029](Q-029-lock-new-object.md): Защищает ли lock(new object()) переменную counter от гонки? — закрепление
 - [Q-034](Q-034-semaphore-waitasync.md): Что напечатает second.IsCompleted после повторного WaitAsync без Release? — закрепление
 - [Q-035](Q-035-parallel-foreach-async-void.md): Ждёт ли Parallel.ForEach завершения async-лямбд и какой вывод гарантирован? — закрепление
+- [Q-039](Q-039-race-condition-vs-data-race.md): Чем отличается Race Condition от Data Race и может ли логическая гонка возникнуть без data race?
+- [Q-040](Q-040-lost-update-two-task-run.md): Какие значения возможны после двух Task.Run(() => state.Value++) и await Task.WhenAll, если Value=0? — закрепление
+- [Q-041](Q-041-volatile-does-not-make-plus-plus-atomic.md): Почему volatile int Value не делает Value++ атомарным и что реально гарантирует volatile в C#?
+- [Q-042](Q-042-interlocked-increment-ref.md): Что гарантирует Interlocked.Increment(ref int) и почему ref не связан со ссылочной природой Counter? — закрепление
+- [Q-043](Q-043-check-then-act-stock-negative.md): Может ли stock стать -1 при Volatile.Read(stock)>0 и последующем Interlocked.Decrement, если stock=1? — закрепление
+- [Q-044](Q-044-compareexchange-returns-prior.md): При stock=1 что вернёт CompareExchange(ref stock,0,1) и чему станет равен stock? — закрепление
+- [Q-045](Q-045-two-buyers-single-item-cas.md): Могут ли оба потока успешно выполнить CompareExchange(ref stock,0,1) при stock=1? — закрепление
+- [Q-046](Q-046-two-buyers-stock-three-single-cas.md): Если stock=3, два потока выполняют CompareExchange(ref stock,2,3). Сколько покупок успешны и что возвращают оба CAS? — закрепление
+- [Q-047](Q-047-cas-loop-five-buyers.md): Как CAS-loop ведёт себя при stock=3 и двух покупателях, а затем stock=1 и пяти покупателях? — закрепление
 
 ## Continuation и контексты
 

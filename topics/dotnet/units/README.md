@@ -12,6 +12,7 @@
 - [От PostgreSQL до epoll/IOCP и continuation](async-socket-pipeline.md) — Проследить реальную цепочку SQL, сокета, ядра ОС и возвращения в C#.
 - [Память, state machine и стоимость асинхронности](async-memory-and-allocations.md) — Проверить реальную стоимость async без выдуманных размеров объектов.
 - [Production-разбор: p99 latency и ThreadPool starvation](async-production-capstone.md) — Научиться подтверждать причину задержек и проектировать исправление.
+- [Асинхронность до async/await: APM, EAP и TAP](async-before-await.md) — Объяснять, почему неблокирующее I/O существовало без async/await, и правильно анализировать callback.
 
 ## [ThreadPool и планировщик ОС](../threadpool-scheduling.md)
 
@@ -26,7 +27,9 @@
 
 ## [Разделяемая память и синхронизация](../shared-memory.md)
 
-- [Атомарность, volatile и Interlocked](atomicity-and-memory-visibility.md) — Понимать read-modify-write и модель видимости памяти.
+- [Race Condition, Data Race и Lost Update](race-condition-vs-data-race.md) — Находить ошибку в инварианте, отличать гонку порядка событий от несинхронизированных обращений к памяти.
+- [volatile, Interlocked и атомарный RMW](atomicity-and-memory-visibility.md) — Различать атомарность одного действия, acquire/release и операции с ref.
+- [CompareExchange, CAS-loop и инвариант stock ≥ 0](compare-exchange-cas-loop.md) — Понимать, что меняет CAS через ref, что возвращает previous и почему повторная попытка нужна при конкуренции.
 - [Monitor lock и SemaphoreSlim](mutual-exclusion-and-semaphores.md) — Различать блокировку потока и асинхронное ожидание разрешения.
 - [Почему Parallel.ForEach(async ...) опасен](parallel-foreach-async-void.md) — Объяснять потерю управления продолжениями async void.
 

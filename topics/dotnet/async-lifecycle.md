@@ -36,11 +36,14 @@ async/await — способ компоновать незавершённые �
 - [Q-005: PostgreSQL выполняет SQL 5 секунд. Что делает ядро CPU нашего .NET-сервера при await ToListAsync()?](../../questions/dotnet/Q-005-cpu-during-io.md)
 - [Q-012: Запускает ли вызов async Task-метода новый поток или начинает работу синхронно?](../../questions/dotnet/Q-012-async-starts-synchronously.md)
 - [Q-013: Всегда ли await приостанавливает метод, выделяет worker или переключает поток?](../../questions/dotnet/Q-013-completed-await-and-scheduling.md)
+- [Q-037: Почему NetworkStream.BeginRead может масштабироваться лучше, чем Task.Run(() => stream.Read(...))?](../../questions/dotnet/Q-037-apm-vs-taskrun-read.md)
 
 ## Закрепление на коде
 
 - [Q-024: Какой вывод и почему? async-метод содержит await уже завершённой Task.](../../questions/dotnet/Q-024-completed-await-output.md)
 - [Q-025: Какой вывод и почему? Метод ожидает незавершённую TaskCompletionSource.](../../questions/dotnet/Q-025-incomplete-await-output.md)
+- [Q-036: Как выполняли асинхронный I/O до async/await и в какие годы появились APM, EAP и TAP?](../../questions/dotnet/Q-036-apm-eap-tap-history.md)
+- [Q-038: Что напечатает callback, если он вызван inline до завершения присваивания result = BeginRead(...)?](../../questions/dotnet/Q-038-inline-apm-callback-captured-result.md)
 
 ## Первоисточники
 

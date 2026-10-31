@@ -1,6 +1,6 @@
 # Q-035 — Shared memory and synchronization
 
-[Русский](../Q-035-parallel-foreach-async-void.md) · [English](./Q-035-parallel-foreach-async-void.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-035) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-034-semaphore-waitasync.md)
+[Русский](../Q-035-parallel-foreach-async-void.md) · [English](./Q-035-parallel-foreach-async-void.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-035) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-034-semaphore-waitasync.md) · [Next →](Q-036-apm-eap-tap-history.md)
 
 ## Question
 
@@ -46,4 +46,4 @@ async void; Action<T>; compiler state machine; ThreadPool continuation.
 
 ---
 
-[Русский](../Q-035-parallel-foreach-async-void.md) · [English](./Q-035-parallel-foreach-async-void.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-035) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-034-semaphore-waitasync.md)
+[Русский](../Q-035-parallel-foreach-async-void.md) · [English](./Q-035-parallel-foreach-async-void.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-035) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-034-semaphore-waitasync.md) · [Next →](Q-036-apm-eap-tap-history.md)

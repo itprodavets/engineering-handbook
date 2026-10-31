@@ -46,4 +46,4 @@ finally { semaphore.Release(); }
 
 ---
 
-[← Назад](atomicity-and-memory-visibility.md) · [Далее →](parallel-foreach-async-void.md) · [Русский](mutual-exclusion-and-semaphores.md) · [English](en/mutual-exclusion-and-semaphores.md)
+[← Назад](compare-exchange-cas-loop.md) · [Далее →](parallel-foreach-async-void.md) · [Русский](mutual-exclusion-and-semaphores.md) · [English](en/mutual-exclusion-and-semaphores.md)

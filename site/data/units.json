@@ -1039,6 +1039,200 @@
     ]
   },
   {
+    "id": "async-before-await",
+    "lesson": "async-lifecycle",
+    "level": "internals",
+    "title": {
+      "ru": "Асинхронность до async/await: APM, EAP и TAP",
+      "en": "Before async/await: APM, EAP and TAP"
+    },
+    "goal": {
+      "ru": "Объяснять, почему неблокирующее I/O существовало без async/await, и правильно анализировать callback.",
+      "en": "Explain how asynchronous I/O worked before async/await and reason correctly about callbacks."
+    },
+    "definition": {
+      "ru": "Асинхронное I/O — способность начать операцию и обработать результат позже без обязательного удержания потока на всё время ожидания. async/await (C# 5, 2012) — синтаксис и компиляторное преобразование над awaitable; он не изобрёл асинхронность. APM (Begin/End, IAsyncResult), EAP (события) и TAP (Task, с .NET 4) существовали раньше.",
+      "en": "Asynchronous I/O starts work and handles completion later without necessarily blocking a thread throughout the wait. C# 5 async/await (2012) is compiler-supported syntax over awaitables; it did not invent asynchronous I/O. APM (Begin/End, IAsyncResult), EAP (events), and TAP (Task, introduced with .NET 4) preceded it."
+    },
+    "steps": [
+      {
+        "ru": "В APM BeginRead инициирует чтение, а EndRead извлекает результат или ошибку; callback может выполниться inline до возврата из BeginRead.",
+        "en": "In APM, BeginRead initiates a read; EndRead obtains its result or exception; a callback may run inline before BeginRead returns."
+      },
+      {
+        "ru": "При настоящем незавершённом сетевом I/O операция ожидает готовности сокета через ОС/runtime; отдельный заблокированный worker на каждый ожидающий сокет не требуется.",
+        "en": "For genuinely pending asynchronous socket I/O, the OS/runtime tracks readiness; one dedicated blocked worker per waiting socket is unnecessary."
+      },
+      {
+        "ru": "У некоторых реализаций Stream APM может использовать блокирующий Read через worker; название BeginRead само по себе не гарантирует nonblocking I/O.",
+        "en": "Some Stream implementations may implement APM by offloading blocking Read; the name BeginRead alone does not guarantee nonblocking I/O."
+      },
+      {
+        "ru": "Task.Run(() => stream.Read(...)) переносит синхронное чтение в ThreadPool и может удерживать worker заблокированным.",
+        "en": "Task.Run(() => stream.Read(...)) offloads blocking I/O onto a ThreadPool worker, which may remain blocked."
+      },
+      {
+        "ru": "TAP и async/await упрощают композицию операций: компилятор генерирует state machine и continuation, не заменяя подсистему I/O ОС.",
+        "en": "TAP and async/await simplify composition: the compiler generates state machines and continuations but does not replace OS I/O facilities."
+      }
+    ],
+    "resources": {
+      "ru": "Сокеты, сетевые буферы, состояние операции и callback; CPU при инициации и обработке завершения. Количество worker-потоков зависит от реализации и нагрузки.",
+      "en": "Sockets, network buffers, operation state and callbacks; CPU on initiation/completion. Worker thread usage depends on implementation and load."
+    },
+    "pitfalls": {
+      "ru": "Не вызывай EndRead раньше завершения на потоке, который должен оставаться свободным: он может блокировать. Не захватывай переменную результата BeginRead в callback, который потенциально выполнится inline; используй аргумент ar.",
+      "en": "Calling EndRead before completion can block. Do not assume an outer assignment has completed when an APM callback runs inline; use its ar argument."
+    },
+    "code": "stream.BeginRead(buffer, 0, buffer.Length, ar => { int n = stream.EndRead(ar); /* process n bytes */ }, null);",
+    "codeLanguage": "csharp",
+    "questions": [
+      36,
+      37,
+      38
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/interop-with-other-asynchronous-patterns-and-types",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.beginread",
+      "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/",
+      "https://devblogs.microsoft.com/dotnet/how-async-await-really-works/"
+    ],
+    "chapters": [
+      {
+        "id": "historical-interfaces",
+        "title": {
+          "ru": "Три поколения API",
+          "en": "Three generations of APIs"
+        },
+        "body": {
+          "ru": "APM был представлен в .NET Framework 1.0: BeginX/EndX и IAsyncResult. EAP стал распространён в .NET 2.0: метод XAsync + событие XCompleted. .NET 4 принёс Task-based Asynchronous Pattern (TAP), Task, TaskCompletionSource и адаптеры Task.Factory.FromAsync. C# 5 в 2012 добавил async/await как более понятное описание последовательных продолжений. Это разные уровни: API и синтаксис.",
+          "en": "APM arrived with .NET Framework 1.0: BeginX/EndX and IAsyncResult. EAP appeared with .NET 2.0: XAsync plus XCompleted events. .NET 4 introduced Task, TaskCompletionSource, TAP and Task.Factory.FromAsync adapters. C# 5 added async/await in 2012. Distinguish the API abstraction from language syntax."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "apm-lifecycle",
+        "title": {
+          "ru": "BeginRead, callback и EndRead",
+          "en": "BeginRead, callback and EndRead"
+        },
+        "body": {
+          "ru": "BeginRead инициирует чтение, возвращая IAsyncResult. При завершении вызывается AsyncCallback, который передаёт IAsyncResult в EndRead для получения числа байтов либо исключения. Если EndRead вызвать до завершения, он может блокироваться. Для конкретного NetworkStream документация допускает callback inline при синхронном завершении; свойство CompletedSynchronously описывает этот случай.",
+          "en": "BeginRead initiates the read and returns IAsyncResult. On completion AsyncCallback calls EndRead to retrieve bytes or an exception. Calling EndRead before completion can block. NetworkStream documentation explicitly allows inline callback execution on synchronous completion; CompletedSynchronously reports that case."
+        },
+        "code": "IAsyncResult? result = null;\nresult = stream.BeginRead(buffer, 0, buffer.Length,\n    ar => { Console.WriteLine(result is null); stream.EndRead(ar); }, null);\n// Inline completion: True, because assignment has not happened yet.",
+        "language": "csharp"
+      },
+      {
+        "id": "os-vs-taskrun",
+        "title": {
+          "ru": "Настоящее I/O и перенос блокировки",
+          "en": "True async I/O vs offloading blocking work"
+        },
+        "body": {
+          "ru": "Операция ожидания и поток обработки завершения — разные сущности. В сетевом async I/O .NET и ОС отслеживают незавершённую операцию, не удерживая пользовательский worker всю задержку. Однако Task.Run(() => stream.Read(...)) выполняет синхронный Read на worker и удерживает его до окончания ожидания; это не превращает чтение в неблокирующее.",
+          "en": "A pending I/O operation and the thread executing its completion are distinct. Proper asynchronous socket operations can remain pending without a worker blocked for the entire delay. Task.Run(() => stream.Read(...)) still blocks whichever worker executes the synchronous Read."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "reentrancy-and-races",
+        "title": {
+          "ru": "Inline callback, замыкание и гонки",
+          "en": "Inline callback, closure and races"
+        },
+        "body": {
+          "ru": "В выражении result = BeginRead(... callback ...) правая часть вычисляется прежде присваивания. Если callback вызывается inline, captured result всё ещё null. Если callback вызван на другом потоке, результат может быть как null, так и ссылкой в зависимости от порядка выполнения; без синхронизации также нельзя полагаться на видимость записи. Аргумент callback ar содержит завершившийся IAsyncResult и устраняет зависимость от внешнего присваивания. Лаборатория Q-038 моделирует inline-вызов детерминированно — это не гарантия для каждого реального сокета.",
+          "en": "The right-hand side of result = BeginRead(... callback ...) is evaluated before assignment. An inline callback observes the captured result as null. A callback running on another thread may race with the assignment; without synchronization there is no cross-thread visibility guarantee. Use the callback's ar argument instead of the outer variable. Q-038 deterministically simulates an inline callback; it does not claim every real socket completes inline."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "task-adapter",
+        "title": {
+          "ru": "Как перейти от APM к Task",
+          "en": "Bridging APM to Task"
+        },
+        "body": {
+          "ru": "Task.Factory.FromAsync адаптирует корректный Begin/End-паттерн к Task. TaskCompletionSource может представлять завершение callback-API; RunContinuationsAsynchronously снижает риск синхронного исполнения пользовательских continuations внутри SetResult. Это мост абстракций, а не способ гарантированно получить неблокирующий I/O из синхронной реализации.",
+          "en": "Task.Factory.FromAsync adapts a valid Begin/End pair to Task. TaskCompletionSource can represent callback completion; RunContinuationsAsynchronously reduces the risk that continuations execute inline inside SetResult. Adapters bridge completion models; they cannot automatically turn blocking implementations into true nonblocking I/O."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Назови последовательность APM → EAP → TAP → async/await и укажи отличие API от синтаксиса.",
+          "en": "Name the APM → EAP → TAP → async/await timeline and distinguish API from syntax."
+        },
+        "rubric": {
+          "ru": "APM: Begin/End, IAsyncResult, .NET 1.0; EAP: события, .NET 2.0; TAP: Task, .NET 4; async/await: C# 5, 2012. Async существовал и раньше.",
+          "en": "APM: Begin/End and IAsyncResult in .NET 1.0; EAP: events in .NET 2.0; TAP: Task in .NET 4; async/await: C# 5, 2012. Async I/O predates language syntax."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Объясни, почему 1 000 сетевых BeginRead могут ожидать без 1 000 заблокированных workers, а Task.Run(Read) — нет.",
+          "en": "Explain why 1,000 NetworkStream BeginRead calls can remain pending without 1,000 blocked workers whereas Task.Run(Read) cannot."
+        },
+        "rubric": {
+          "ru": "Отдельные pending I/O операции ОС; callbacks при завершении, worker нужен на обработку. Task.Run запускает синхронный Read на worker, который может блокироваться.",
+          "en": "OS-managed pending I/O; callbacks at completion; workers only for processing. Task.Run executes a synchronous Read on a worker that can block."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Что увидит замыкание result при inline callback до возврата BeginRead?",
+          "en": "What does a captured result variable contain if the callback runs inline before BeginRead returns?"
+        },
+        "rubric": {
+          "ru": "null: присваивание результатом BeginRead происходит позже. ar — это аргумент завершённой операции.",
+          "en": "null: the BeginRead result assignment happens afterward. ar identifies the completed operation."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Приложение на старом .NET запускает 1 000 BeginRead и потребляет сотни workers. Какие гипотезы проверишь?",
+          "en": "An old .NET app starts 1,000 BeginRead operations and consumes hundreds of workers. What do you investigate?"
+        },
+        "rubric": {
+          "ru": "Определить конкретный тип Stream; настоящий socket APM или ThreadPool fallback; EndRead до завершения; sync waits, callbacks, стеки и ThreadPool counters.",
+          "en": "Inspect concrete Stream implementation, true socket APM vs worker fallback, premature EndRead, sync waits, callbacks, stacks and pool counters."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как обернуть старый APM API в TAP и безопасно обработать ошибки и продолжения?",
+          "en": "How would you wrap an APM API into TAP while preserving errors and avoiding inline continuation hazards?"
+        },
+        "rubric": {
+          "ru": "Task.Factory.FromAsync(Begin/End) или TCS с SetException/SetResult и RunContinuationsAsynchronously, ровно один EndRead, lifetime и отмена отдельно. Не обещать отмены если legacy API её не поддерживает.",
+          "en": "Use Task.Factory.FromAsync or TCS with SetException/SetResult and RunContinuationsAsynchronously, exactly one EndRead; handle lifetime/cancellation separately. Do not promise cancellation if legacy API lacks it."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-036.cs",
+      "labs/dotnet/Q-038.cs"
+    ],
+    "prerequisites": []
+  },
+  {
     "id": "task-vs-thread",
     "lesson": "threadpool-scheduling",
     "level": "fundamentals",
@@ -1300,55 +1494,568 @@
     ]
   },
   {
+    "id": "race-condition-vs-data-race",
+    "lesson": "shared-memory",
+    "level": "fundamentals",
+    "title": {
+      "ru": "Race Condition, Data Race и Lost Update",
+      "en": "Race conditions, data races and lost updates"
+    },
+    "goal": {
+      "ru": "Находить ошибку в инварианте, отличать гонку порядка событий от несинхронизированных обращений к памяти.",
+      "en": "Detect violated invariants; distinguish scheduling races from unsynchronized memory accesses."
+    },
+    "definition": {
+      "ru": "Race condition — корректность зависит от относительного порядка конкурирующих событий, причём допустимый порядок нарушает инвариант. Data race — конфликтующие обращения к одной области памяти из разных потоков, где хотя бы одно — запись, без достаточной синхронизации. Логическая race condition возможна и без data race, например при двух атомарных операциях check и act.",
+      "en": "A race condition occurs when correctness depends on the ordering of concurrent events and some legal ordering breaks an invariant. A data race involves conflicting unsynchronized accesses to one memory location from different threads, at least one being a write. A logical race can exist without a data race, e.g. separate atomic check and act."
+    },
+    "steps": [
+      {
+        "ru": "Два делегата Task.Run могут обращаться к одному объекту Counter; класс — ссылочный тип, но Task.Run не захватывает monitor и не блокирует специально worker.",
+        "en": "Two Task.Run delegates can share a Counter instance; its reference type does not imply a monitor or automatically block workers."
+      },
+      {
+        "ru": "counter++ логически включает read, compute, write; два потока могут прочитать 0 до любого write, оба записать 1 и потерять инкремент.",
+        "en": "counter++ logically includes read, compute and write; both threads may read 0 and then write 1, losing an increment."
+      },
+      {
+        "ru": "Task.WhenAll ожидает завершения обеих задач и не синхронизирует модификацию поля; для двух инкрементов возможны 1 или 2.",
+        "en": "Task.WhenAll waits for both operations but does not serialize modifications; two increments may leave 1 or 2."
+      },
+      {
+        "ru": "Атомарные чтение и запись int не означают атомарность составной операции ++; и на одном ядре переключение выполнения может создать гонку.",
+        "en": "Atomic individual int loads/stores do not make ++ atomic; interleavings can occur even on a single CPU core."
+      },
+      {
+        "ru": "Инвариант формулируется явно, например stock >= 0; проверяй, защищает ли синхронизация всю транзакцию, а не одну инструкцию.",
+        "en": "State the invariant explicitly, e.g., stock >= 0; verify synchronization protects the entire operation rather than one instruction."
+      }
+    ],
+    "resources": {
+      "ru": "Shared mutable state, cache lines и CPU-время; чем выше contention, тем выше цена синхронизации. Отсутствие физической параллельности не отменяет race.",
+      "en": "Shared mutable state, cache lines and CPU time; contention increases synchronization cost. Physical parallel execution is not required for a race."
+    },
+    "pitfalls": {
+      "ru": "Не путай состояние гонки с deadlock или с «Task блокирует поток». Не переносите автоматически C++ undefined-behavior правила на C#/.NET. Лаборатория Q-040 специально управляет порядком await, чтобы продемонстрировать Lost Update, а не моделирует конкретный планировщик.",
+      "en": "Do not confuse races with deadlocks or assume Task implies blocking. Do not blindly apply C++ undefined-behavior rules to C#/.NET. Q-040 forces an async interleaving to demonstrate lost updates; it is not a specific OS scheduling trace."
+    },
+    "code": "var state = new Counter();\nawait Task.WhenAll(Task.Run(() => state.Value++), Task.Run(() => state.Value++));\nConsole.WriteLine(state.Value); // 1 or 2\n// Counter has public int Value;",
+    "codeLanguage": "csharp",
+    "questions": [
+      39,
+      40
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/expressions",
+      "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock",
+      "https://learn.microsoft.com/en-us/dotnet/standard/threading/managed-threading-best-practices"
+    ],
+    "chapters": [
+      {
+        "id": "definition",
+        "title": {
+          "ru": "Race Condition против Data Race",
+          "en": "Race condition versus data race"
+        },
+        "body": {
+          "ru": "Гонка — более широкая характеристика некорректного алгоритма: результат зависит от порядка событий. Data race описывает несинхронизированные конфликтующие обращения к памяти; обычно требует пересмотра протокола синхронизации. Даже если каждое обращение через Interlocked и data race отсутствует, разделённые check и act могут нарушить бизнес-инвариант.",
+          "en": "A race condition is an algorithmic correctness failure depending on event order. A data race describes conflicting unsynchronized memory accesses. Even if all individual accesses are atomic and there is no data race, split check and act steps can violate a business invariant."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "lost-update",
+        "title": {
+          "ru": "Lost Update: два чтения 0",
+          "en": "Lost update: two reads of 0"
+        },
+        "body": {
+          "ru": "Порядок T1:read(0), T2:read(0), T1:write(1), T2:write(1) допустим для обычного counter++. Оба делегата завершатся, но counter=1, хотя ожидался 2. Это не значит, что Task.Run создаёт по одному отдельному потоку на каждую задачу.",
+          "en": "Interleaving T1:read(0), T2:read(0), T1:write(1), T2:write(1) can happen for normal counter++. Both delegates finish but counter=1 rather than 2. Task.Run does not guarantee a new thread per Task."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "interleaving",
+        "title": {
+          "ru": "Почему возможен race на одном ядре",
+          "en": "Why one CPU core is enough"
+        },
+        "body": {
+          "ru": "ОС может переключить поток после чтения и до записи. Race condition зависит от чередования событий, а не от одновременного исполнения машинных инструкций на двух физических CPU. Объект Task не содержит своего отдельного стека ОС по определению.",
+          "en": "The OS can switch between threads after the read but before the write. A race depends on interleavings, not necessarily simultaneous instructions on separate cores. A Task does not intrinsically own an OS thread stack."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "invariants",
+        "title": {
+          "ru": "Инвариант вместо угадывания результата",
+          "en": "Invariants over guessing output"
+        },
+        "body": {
+          "ru": "Для счётчика после двух успешных логических инкрементов ожидаем 2; для склада после покупки ожидаем stock >= 0. Анализируй возможные чередования и спрашивай, где именно гарантируется неделимость всей операции. Не путай значения, возвращаемые постфиксным ++, с финальным значением поля.",
+          "en": "For two successful logical increments we expect 2; for inventory we require stock >= 0. Enumerate possible interleavings and identify the operation that must be atomic. Distinguish the value returned by postfix ++ from the final stored value."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Чем Race Condition отличается от Data Race?",
+          "en": "What is the difference between a race condition and a data race?"
+        },
+        "rubric": {
+          "ru": "Race — сбой логического инварианта из-за порядка; data race — конфликтующие несинхронизированные обращения. Логическая гонка бывает без data race.",
+          "en": "Race: invariant violation due to event ordering; data race: conflicting unsynchronized memory accesses. Logical races need not include data races."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Объясни Lost Update для двух одновременных counter++ из 0.",
+          "en": "Explain the lost-update interleaving for two counter++ operations starting at 0."
+        },
+        "rubric": {
+          "ru": "Read/modify/write отдельно; оба читают 0, оба записывают 1.",
+          "en": "Read/modify/write are separate; both read 0 and write 1."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Какие финальные значения возможны после двух Task.Run(() => state.Value++) и await Task.WhenAll?",
+          "en": "What final values are possible after two Task.Run(() => state.Value++) calls and awaiting WhenAll?"
+        },
+        "rubric": {
+          "ru": "1 либо 2. Task.WhenAll не защищает поле, но ждёт оба делегата.",
+          "en": "1 or 2. Task.WhenAll waits for completion but does not protect the field."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Промежуточно пропадает обновление заказов под нагрузкой. Как доказать race?",
+          "en": "Orders occasionally lose updates under concurrency. How do you prove the race?"
+        },
+        "rubric": {
+          "ru": "Сформулировать инвариант, построить interleaving, воспроизвести через синхронизацию тестовых этапов, сделать трассировку и исключить другие причины.",
+          "en": "Define the invariant, construct a concrete interleaving, reproduce with gated scheduling, collect traces, and rule out other causes."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как обеспечить ровно два корректных изменения общего счётчика?",
+          "en": "How would you guarantee two increments of a shared counter?"
+        },
+        "rubric": {
+          "ru": "Interlocked.Increment(ref value) для одного числа; lock для нескольких связанных условий/полей. Объяснить tradeoffs и отсутствие необходимости Task.Run для простого ++.",
+          "en": "Interlocked.Increment(ref value) for a single counter; lock for related state invariants. Explain tradeoffs and why simple increments do not require Task.Run."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-040.cs"
+    ],
+    "prerequisites": []
+  },
+  {
     "id": "atomicity-and-memory-visibility",
     "lesson": "shared-memory",
     "level": "internals",
     "title": {
-      "ru": "Атомарность, volatile и Interlocked",
-      "en": "Atomicity, volatile and Interlocked"
+      "ru": "volatile, Interlocked и атомарный RMW",
+      "en": "volatile, Interlocked and atomic read-modify-write"
     },
     "goal": {
-      "ru": "Понимать read-modify-write и модель видимости памяти.",
-      "en": "Understand read-modify-write and memory visibility."
+      "ru": "Различать атомарность одного действия, acquire/release и операции с ref.",
+      "en": "Distinguish single-operation atomicity, acquire/release and by-reference updates."
     },
     "definition": {
-      "ru": "counter++ — чтение, вычисление и запись, а не гарантированная атомарная операция. volatile регулирует некоторые правила доступа/упорядочивания, но не обеспечивает атомарный ++. Interlocked.Increment атомарно изменяет одну переменную.",
-      "en": "counter++ is a read/modify/write sequence, not a guaranteed atomic operation. volatile controls certain access/ordering semantics but does not make ++ atomic. Interlocked.Increment atomically changes one variable."
+      "ru": "volatile в C# придаёт volatile-чтению acquire, а volatile-записи release семантику, но не делает ++ атомарным. Interlocked.Increment(ref int) изменяет единственную переменную атомарно, без захвата C# Monitor. ref адресует саму переменную int, а не ссылочный тип.",
+      "en": "C# volatile provides acquire semantics for reads and release for writes but does not make ++ atomic. Interlocked.Increment(ref int) atomically modifies one variable without acquiring a C# Monitor. ref refers to the variable location, not to whether the containing type is a class."
     },
     "steps": [
       {
-        "ru": "Roslyn генерирует операции чтения и записи для ++; их общий порядок может перемешаться с другими потоками.",
-        "en": "Roslyn emits reads and writes for ++; their ordering can interleave across workers."
+        "ru": "Обычный ++ логически состоит из read/compute/write; два потока могут записать один и тот же новый результат.",
+        "en": "An ordinary ++ logically includes read/compute/write; two threads may both write the same new value."
       },
       {
-        "ru": "Два потока могут прочитать прежнее значение и записать одинаковый результат: потерянное обновление.",
-        "en": "Two threads can read the same old value and overwrite one another: a lost update."
+        "ru": "Volatile read/write обеспечивают частичное упорядочивание (acquire/release) и не устраняют interleaving между чтением и записью.",
+        "en": "Volatile reads/writes provide partial acquire/release ordering, not mutual exclusion across read and write."
       },
       {
-        "ru": "Interlocked осуществляет атомарный read-modify-write для одной локации памяти.",
-        "en": "Interlocked performs atomic read-modify-write for one memory location."
+        "ru": "Interlocked.Increment(ref int) выполняет неделимый read-modify-write над адресуемым значением; два завершённых ++ из нуля дают 2.",
+        "en": "Interlocked.Increment(ref int) performs indivisible read-modify-write on a variable; two increments starting at zero yield 2."
       },
       {
-        "ru": "Для нескольких связанных полей нужна синхронизация инварианта, например общий lock.",
-        "en": "For multi-field invariants, use synchronization such as a shared lock."
+        "ru": "Типично CLR/JIT использует атомарные инструкции CPU, но конкретная инструкция и затраты определяются платформой и конкуренцией.",
+        "en": "CLR/JIT typically emits hardware atomic operations; exact instructions and costs vary with architecture and contention."
+      },
+      {
+        "ru": "Atomic RMW не защищает отдельную связанную проверку, другие поля или транзакцию вне памяти; эти случаи требуют отдельного алгоритма.",
+        "en": "Atomic RMW does not protect separately performed checks, other fields or an external transaction; these need a larger protocol."
       }
     ],
     "resources": {
-      "ru": "Shared memory и cache-coherence; атомарные инструкции могут создавать contention между ядрами.",
-      "en": "Shared memory and cache coherence; atomic instructions may contend between cores."
+      "ru": "Когерентность кэшей и конкуренция за общую cache line. Atomic RMW может стоить дороже обычной записи; это не Monitor lock и не гарантия отсутствия ожидания CPU.",
+      "en": "Cache-coherence traffic and contention over shared cache lines. Atomic RMW can be costlier than normal writes; it is not a Monitor lock nor a promise of zero CPU stalls."
     },
     "pitfalls": {
-      "ru": "volatile не решает гонку counter++; число успешно запущенных Task не определяет точное значение счётчика.",
-      "en": "volatile does not fix counter++; the number of scheduled Tasks does not determine the final counter value."
+      "ru": "volatile не делает counter++ атомарным, не устанавливает глобальный total order и не гарантирует, что volatile-чтение всегда вернёт последнее по реальному времени значение. ref работает и с value-type int; не путай с тем, что Counter — class.",
+      "en": "volatile does not make counter++ atomic, establish a universal total order, or guarantee that reads always see the chronologically latest value. ref also works with value-type int; do not confuse it with Counter being a class."
     },
-    "code": "int counter = 0;\nInterlocked.Increment(ref counter);",
+    "code": "int counter = 0;\nInterlocked.Increment(ref counter); // atomically counter=1",
     "codeLanguage": "csharp",
     "questions": [
       21,
-      28
+      28,
+      41,
+      42
     ],
     "refs": [
-      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked"
+      "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/volatile",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.increment",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.volatile.read"
+    ],
+    "chapters": [
+      {
+        "id": "three-properties",
+        "title": {
+          "ru": "Atomicity, Visibility и Ordering",
+          "en": "Atomicity, visibility and ordering"
+        },
+        "body": {
+          "ru": "Atomicity: отдельная операция неделима. Visibility: наблюдаемость записей между потоками при корректной синхронизации. Ordering: разрешённые переупорядочивания compiler/JIT/CPU. Это разные свойства; acquire/release не эквивалентны atomic RMW. Гарантии C# следует отличать от поведения конкретного процессора.",
+          "en": "Atomicity means an operation is indivisible; visibility concerns observations across threads under appropriate synchronization; ordering concerns compiler/JIT/CPU rearrangements. These are distinct properties; acquire/release is not the same as atomic RMW."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "volatile-semantics",
+        "title": {
+          "ru": "Что гарантирует volatile",
+          "en": "What volatile guarantees"
+        },
+        "body": {
+          "ru": "В C# volatile-чтение имеет acquire-семантику; volatile-запись — release. Это ограничивает определённые перемещения memory accesses через операции. Это НЕ полная глобальная последовательность всех обращений и НЕ атомарность выражения Value++. Даже volatile int может потерять обновление при двух инкрементах.",
+          "en": "C# volatile reads have acquire semantics and writes have release semantics. This restricts certain reorderings across those accesses; it is NOT a global sequential order and does not make Value++ atomic. Two volatile increments can still lose an update."
+        },
+        "code": "sealed class Counter { public volatile int Value; }\n// Value++ still reads, computes and writes separately",
+        "language": "csharp"
+      },
+      {
+        "id": "interlocked-ref",
+        "title": {
+          "ru": "Как ref передаёт исходную переменную",
+          "en": "How ref passes the original variable"
+        },
+        "body": {
+          "ru": "Сигнатура Interlocked.Increment(ref int location) принимает ссылку на саму переменную int. Например int counter=0; Interlocked.Increment(ref counter) изменяет локальную переменную counter. Не имеет значения, находится ли int в классе, массиве или локальной переменной (при соблюдении правил ref). Механизм обычно использует атомарную инструкцию CPU, а не Monitor.Enter/Exit.",
+          "en": "Interlocked.Increment(ref int location) receives the int variable by reference. It directly updates a local int, an int field, or an array element when valid ref usage permits. It typically uses CPU atomics instead of Monitor.Enter/Exit."
+        },
+        "code": "int counter=0;\nint updated=Interlocked.Increment(ref counter);\n// updated=1; counter=1",
+        "language": "csharp"
+      },
+      {
+        "id": "interlocked-limits",
+        "title": {
+          "ru": "Чего Interlocked не гарантирует",
+          "en": "What Interlocked does not guarantee"
+        },
+        "body": {
+          "ru": "Атомарный инкремент одного счётчика не создаёт критическую секцию для остальных операций. Если требуется проверить остаток и уменьшить его как одну транзакцию, необходим CAS-loop или lock. Если кроме счётчика изменяется ещё одно поле, атомарность отдельного int не делает общий инвариант корректным.",
+          "en": "An atomic single-counter increment does not create a critical section around neighboring operations. Check-and-decrement requires a CAS loop or lock. Separate updates to other fields are not covered by the same atomicity guarantee."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Различи atomicity, visibility и ordering. Что значит acquire/release для volatile?",
+          "en": "Distinguish atomicity, visibility and ordering. What do volatile acquire/release operations mean?"
+        },
+        "rubric": {
+          "ru": "Три независимых свойства. C# volatile read acquire, write release; нет глобального total order и нет атомарного ++.",
+          "en": "Three distinct properties; C# volatile read acquire, write release. No global total order or atomic ++."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Объясни почему два volatile Value++ всё равно могут дать результат 1.",
+          "en": "Explain why two volatile Value++ operations may still result in 1."
+        },
+        "rubric": {
+          "ru": "Оба читают 0; каждый вычисляет 1; оба пишут 1. volatile не объединяет операции.",
+          "en": "Both read 0, compute 1 and write 1. volatile does not combine the operations."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Два успешных Interlocked.Increment(ref counter) из counter=0: что выводит чтение после WhenAll?",
+          "en": "After two completed Interlocked.Increment(ref counter) from zero, what is the final value after WhenAll?"
+        },
+        "rubric": {
+          "ru": "2; каждый атомарный RMW изменяет одно значение, ref указывает на исходную переменную int.",
+          "en": "2; each atomic RMW updates the same variable; ref refers to the int location."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Под нагрузкой volatile-флаг работает, но общий счётчик теряет инкременты. Какие возможны причины и тесты?",
+          "en": "A volatile flag behaves as expected but an increment counter loses updates. Diagnose the mechanism."
+        },
+        "rubric": {
+          "ru": "RMW не атомарен, заменить на Interlocked/lock, написать детерминированный gated test и проверить инвариант.",
+          "en": "Non-atomic RMW; use Interlocked/lock, force an interleaving in a test, assert the invariant."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как выбрать volatile, Interlocked или lock для одного флага, счётчика и мульти-полевого инварианта?",
+          "en": "Choose volatile, Interlocked or lock for a flag, counter and multi-field invariant."
+        },
+        "rubric": {
+          "ru": "Volatile — ограниченные сигналы/ordering с корректным протоколом; Interlocked — атомарное изменение одного состояния; lock — единая критическая секция над связанным состоянием.",
+          "en": "volatile for suitable signaling/ordering protocols; Interlocked for a single atomic state update; lock for a shared multi-field critical section."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-042.cs"
+    ],
+    "prerequisites": [
+      "race-condition-vs-data-race"
+    ]
+  },
+  {
+    "id": "compare-exchange-cas-loop",
+    "lesson": "shared-memory",
+    "level": "internals",
+    "title": {
+      "ru": "CompareExchange, CAS-loop и инвариант stock ≥ 0",
+      "en": "CompareExchange, CAS loops and the stock ≥ 0 invariant"
+    },
+    "goal": {
+      "ru": "Понимать, что меняет CAS через ref, что возвращает previous и почему повторная попытка нужна при конкуренции.",
+      "en": "Understand what CAS changes via ref, what previous returns and why contention requires retries."
+    },
+    "definition": {
+      "ru": "Compare-and-Swap / CompareExchange — атомарное сравнение значения в location с comparand и условная запись value; всегда возвращает старое значение location. CAS-loop повторяет чтение и попытку, когда значение изменилось, и может атомарно реализовать проверку остатка и уменьшение с соблюдением stock >= 0.",
+      "en": "CompareExchange atomically compares a location with the expected comparand and conditionally stores the new value; it always returns the location's pre-operation value. A CAS loop rereads and retries after contention and can preserve the stock >= 0 invariant."
+    },
+    "steps": [
+      {
+        "ru": "Interlocked.CompareExchange(ref stock, 0, 1) атомарно записывает 0 при stock==1 и возвращает предыдущее значение 1. Если stock==0, запись не происходит и возвращается 0.",
+        "en": "Interlocked.CompareExchange(ref stock, 0, 1) atomically writes 0 if stock==1 and returns the previous 1. If stock==0, it does not write and returns 0."
+      },
+      {
+        "ru": "ref указывает на саму переменную int, а не на то, что Counter — класс. current — независимая локальная копия; current-1 лишь вычисляет аргумент.",
+        "en": "ref passes the variable location, even for value-type int. current is an independent local snapshot; current-1 only computes a proposed value."
+      },
+      {
+        "ru": "Отдельные Volatile.Read(stock)>0 и Interlocked.Decrement(stock) оставляют окно Check-Then-Act; два покупателя могут увидеть 1, затем оба уменьшить до -1.",
+        "en": "Separate Volatile.Read(stock)>0 and Interlocked.Decrement(stock) leave a check-then-act window; both buyers can observe 1 and decrement it to -1."
+      },
+      {
+        "ru": "Простой CAS(3→2) допускает только одного победителя; второй видит previous==2 и не должен считать покупку успешной.",
+        "en": "A one-shot CAS(3→2) has only one winner; the other sees previous==2 and must not claim success."
+      },
+      {
+        "ru": "CAS-loop перечитывает stock после неудачи: если осталось >0, повторяет CAS со свежим expected; если 0, возвращает false.",
+        "en": "A CAS loop rereads stock after failure: if positive it retries with a fresh expected value; if zero it returns false."
+      },
+      {
+        "ru": "Lock-free не равнозначно wait-free: отдельный поток может многократно проигрывать CAS, хотя система продолжает делать успехи.",
+        "en": "Lock-free does not mean wait-free: an individual thread can repeatedly lose CAS while the system makes progress."
+      }
+    ],
+    "resources": {
+      "ru": "Атомарные инструкции CPU / runtime, когерентность кэшей, стоимость contention/retries. Временная остановка одного worker не обязана останавливать прогресс других участников CAS-loop.",
+      "en": "Hardware/runtime atomic operations, cache coherence, contention and retry costs. Pausing one worker need not stop progress of others in a lock-free CAS loop."
+    },
+    "pitfalls": {
+      "ru": "CompareExchange не возвращает newValue; он возвращает значение ДО операции. Простой CAS без цикла не покрывает произвольный остаток. Даже корректный in-memory CAS не делает продажу и запись в БД одной транзакцией. Нельзя считать TryBuy wait-free.",
+      "en": "CompareExchange returns the OLD value, not newValue. One-shot CAS does not support arbitrary inventory. A correct in-memory CAS is not a transaction spanning inventory, payment and database. The loop is not wait-free."
+    },
+    "code": "static bool TryBuy(ref int stock)\n{\n    while (true)\n    {\n        int current = Volatile.Read(ref stock);\n        if (current <= 0) return false;\n        int previous = Interlocked.CompareExchange(ref stock, current - 1, current);\n        if (previous == current) return true;\n    }\n}",
+    "codeLanguage": "csharp",
+    "questions": [
+      43,
+      44,
+      45,
+      46,
+      47
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.compareexchange",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.volatile.read",
+      "https://learn.microsoft.com/en-us/dotnet/standard/threading/overview-of-synchronization-primitives"
+    ],
+    "chapters": [
+      {
+        "id": "ref-location",
+        "title": {
+          "ru": "ref и три аргумента CAS",
+          "en": "ref and the three CAS arguments"
+        },
+        "body": {
+          "ru": "Сигнатура int CompareExchange(ref int location, int value, int comparand). location — сама ячейка stock. value — новое значение; comparand — ожидаемое. Возвращается старое значение (даже при неуспехе). При stock=10, current=10: CompareExchange(ref stock,current-3,current) запишет 7; current останется 10; previous будет 10.",
+          "en": "Signature: int CompareExchange(ref int location, int value, int comparand). location is stock itself; value is the new value; comparand is expected. The method returns the old value even on failure. For stock=10 and current=10, CompareExchange(ref stock,current-3,current) writes 7, leaves current at 10 and returns previous=10."
+        },
+        "code": "int stock=10, current=10;\nint previous=Interlocked.CompareExchange(ref stock,current-3,current);\n// stock=7; current=10; previous=10",
+        "language": "csharp"
+      },
+      {
+        "id": "atomic-check-act",
+        "title": {
+          "ru": "Атомарная операция не означает атомарный алгоритм",
+          "en": "Atomic operation is not an atomic algorithm"
+        },
+        "body": {
+          "ru": "Проверка Volatile.Read(ref stock)>0 и действие Interlocked.Decrement(ref stock) независимы. Оба покупателя могут получить true при stock=1, затем каждый атомарно уменьшает его: 1→0→-1. CAS делает сравнение ожидаемого и запись частью одной атомарной операции, не оставляя окна между ними.",
+          "en": "Volatile.Read(ref stock)>0 and Interlocked.Decrement(ref stock) are separate. Both buyers can observe stock=1 before either decrements, then each atomically decrements: 1→0→-1. CAS combines expected-value validation and write into one atomic operation."
+        },
+        "code": "if (Volatile.Read(ref stock)>0)\n    Interlocked.Decrement(ref stock); // unsafe check-then-act",
+        "language": "csharp"
+      },
+      {
+        "id": "single-cas",
+        "title": {
+          "ru": "Один товар и два конкурирующих CAS",
+          "en": "One item and two competing CAS calls"
+        },
+        "body": {
+          "ru": "Из stock=1 только один поток способен выполнить CAS(1→0); победитель получает previous=1 и печатает Purchased. Второй видит 0, получает previous=0 и ничего не покупает. При stock=3 два CAS(3→2) тоже дают лишь один успешный переход: это недостаточно для двух независимых покупок.",
+          "en": "From stock=1 only one thread can CAS 1→0; the winner gets previous=1 and prints Purchased. The loser receives previous=0. With stock=3, two one-shot CAS(3→2) calls still allow only one transition: insufficient for two purchases."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "retry",
+        "title": {
+          "ru": "Разбор CAS-loop: stock=3 и два покупателя",
+          "en": "CAS-loop trace: stock=3 and two buyers"
+        },
+        "body": {
+          "ru": "Оба считывают current=3. T1 выполняет CAS(3→2): stock становится 2, previous=3, успех. T2 пытается CAS(3→2), получает previous=2, не меняет stock, previous!=current. Он возвращается к началу while, читает current=2, CAS(2→1) успешно записывает 1, возвращает previous=2. Итого две покупки, stock=1. Если stock=1 и покупателей 5, только один вернёт true, остальные при следующем чтении stock=0 вернут false.",
+          "en": "Both read current=3. T1 CAS(3→2) succeeds; stock becomes 2, previous=3. T2 CAS(3→2) fails with previous=2 and does not change stock. It loops, reads current=2, CAS(2→1) succeeds returning previous=2. Two purchases leave stock=1. With five buyers competing for stock=1, only one returns true; others reread zero and return false."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "linearizability",
+        "title": {
+          "ru": "Точка линеаризации и границы алгоритма",
+          "en": "Linearization point and algorithm boundaries"
+        },
+        "body": {
+          "ru": "Успешный CAS — атомарная точка, в которую операция покупки фиксирует уменьшение остатка; возврат false при current<=0 подтверждает отсутствие товара при соответствующем чтении. Это линейризуемый in-memory счётчик с предположением, что все конкурирующие изменения идут через согласованный протокол и никто не увеличивает stock в анализируемом сценарии. Для настоящего склада требуются транзакции БД, идемпотентность и семантика резервирования.",
+          "en": "Successful CAS is the atomic point at which a purchase commits an inventory decrement; a read yielding zero justifies failure at that observation. This is a linearizable in-memory counter assuming all writers follow the same protocol and no restocking in this exercise. Real inventory also needs database transactions, idempotency and reservation semantics."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Перечисли аргументы CompareExchange и объясни, что возвращается.",
+          "en": "Name the arguments to CompareExchange and its return value."
+        },
+        "rubric": {
+          "ru": "ref location, value(new), comparand(expected). Возвращается прежнее значение location, а не значение после операции.",
+          "en": "ref location, value(new), comparand(expected). Returns the pre-operation location value, not the new value."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему CAS безопаснее проверки volatile + Interlocked.Decrement при stock=1?",
+          "en": "Why does CAS avoid overselling when volatile check + Interlocked.Decrement does not?"
+        },
+        "rubric": {
+          "ru": "CAS объединяет проверку и изменение, для двух потоков только один переход 1→0 возможен. Раздельный check-then-act допускает оба декремента.",
+          "en": "CAS atomically combines check and update; only one 1→0 transition can occur. A split check-then-act allows both decrements."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Два потока прочитали current=3. Первый CAS(3→2) успешен, второй нет. Какие current, previous, stock видит второй и что затем происходит?",
+          "en": "Both threads read current=3. First CAS(3→2) succeeds; second fails. What are the second thread's current, previous and stock values, and what happens next?"
+        },
+        "rubric": {
+          "ru": "При неуспехе current=3, previous=2, stock=2; следующий цикл читает current=2, CAS(2→1) возвращает previous=2, stock=1.",
+          "en": "On failure current=3, previous=2, stock=2; next loop reads current=2, CAS(2→1) returns previous=2 and leaves stock=1."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему некорректно считать, что множество повторов CAS означает deadlock или wait-free?",
+          "en": "Why does a large number of CAS retries not imply deadlock or wait freedom?"
+        },
+        "rubric": {
+          "ru": "Другие потоки могут продвигаться, пока конкретный проигрывает; алгоритм lock-free, но без гарантии для каждого потока. Измерять contention/retries/backoff.",
+          "en": "Other threads can make progress while one loses repeatedly; lock-free is not wait-free. Measure contention/retries and investigate backoff."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Опиши TryBuy для stock>=0 без lock, учитывая пять покупателей при stock=1.",
+          "en": "Design TryBuy preserving stock>=0 without lock for five buyers and one item."
+        },
+        "rubric": {
+          "ru": "Volatile.Read, reject at <=0; CAS(old→old-1), success if previous==old; else retry with new current. 1 true, 4 false, stock=0. Не считать это DB-транзакцией.",
+          "en": "Volatile.Read; reject at <=0; CAS(old→old-1); success if previous==old; otherwise retry with fresh value. One true, four false, stock zero. This is not a DB transaction."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-043.cs",
+      "labs/dotnet/Q-044.cs",
+      "labs/dotnet/Q-045.cs",
+      "labs/dotnet/Q-046.cs",
+      "labs/dotnet/Q-047.cs"
+    ],
+    "prerequisites": [
+      "race-condition-vs-data-race",
+      "atomicity-and-memory-visibility"
     ]
   },
   {

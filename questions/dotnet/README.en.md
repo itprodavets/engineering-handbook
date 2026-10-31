@@ -18,6 +18,9 @@ Each question belongs to exactly one canonical lesson; related code challenges s
 - [Q-013](en/Q-013-completed-await-and-scheduling.md): Does await always suspend, allocate a worker, or switch threads?
 - [Q-024](en/Q-024-completed-await-output.md): What is the output and why? The awaited Task is already complete. — reinforcement
 - [Q-025](en/Q-025-incomplete-await-output.md): What is the output? The method awaits an incomplete TaskCompletionSource. — reinforcement
+- [Q-036](en/Q-036-apm-eap-tap-history.md): How was asynchronous I/O performed before async/await, and when did APM, EAP and TAP appear? — reinforcement
+- [Q-037](en/Q-037-apm-vs-taskrun-read.md): Why can NetworkStream.BeginRead scale better than Task.Run(() => stream.Read(...))?
+- [Q-038](en/Q-038-inline-apm-callback-captured-result.md): What does a callback print if invoked inline before assigning result = BeginRead(...)? — reinforcement
 
 ## ThreadPool and the OS scheduler
 
@@ -50,6 +53,15 @@ Each question belongs to exactly one canonical lesson; related code challenges s
 - [Q-029](en/Q-029-lock-new-object.md): Does lock(new object()) protect counter from concurrent increments? — reinforcement
 - [Q-034](en/Q-034-semaphore-waitasync.md): What does second.IsCompleted print after another WaitAsync without Release? — reinforcement
 - [Q-035](en/Q-035-parallel-foreach-async-void.md): Does Parallel.ForEach wait for async lambda continuations, and what output is guaranteed? — reinforcement
+- [Q-039](en/Q-039-race-condition-vs-data-race.md): How do race conditions differ from data races, and can a logical race occur without a data race?
+- [Q-040](en/Q-040-lost-update-two-task-run.md): What outcomes are possible after two Task.Run(() => state.Value++) and awaiting Task.WhenAll, starting at Value=0? — reinforcement
+- [Q-041](en/Q-041-volatile-does-not-make-plus-plus-atomic.md): Why does volatile int Value not make Value++ atomic, and what ordering does C# volatile provide?
+- [Q-042](en/Q-042-interlocked-increment-ref.md): What does Interlocked.Increment(ref int) guarantee, and why is ref unrelated to Counter being a reference type? — reinforcement
+- [Q-043](en/Q-043-check-then-act-stock-negative.md): Can stock become -1 after a volatile positive check and an Interlocked.Decrement when starting at stock=1? — reinforcement
+- [Q-044](en/Q-044-compareexchange-returns-prior.md): Starting from stock=1, what does CompareExchange(ref stock,0,1) return and what is stock afterward? — reinforcement
+- [Q-045](en/Q-045-two-buyers-single-item-cas.md): Can both threads successfully execute CompareExchange(ref stock,0,1) when stock starts at 1? — reinforcement
+- [Q-046](en/Q-046-two-buyers-stock-three-single-cas.md): If stock=3 and two threads perform CompareExchange(ref stock,2,3), how many succeed and what do the calls return? — reinforcement
+- [Q-047](en/Q-047-cas-loop-five-buyers.md): How does a CAS loop behave with stock=3/two buyers and stock=1/five buyers? — reinforcement
 
 ## Continuations and execution contexts
 
