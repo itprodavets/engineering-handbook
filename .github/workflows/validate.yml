@@ -20,9 +20,12 @@ jobs:
       - name: Validate generated localization and canonical structure
         run: |
           python3 scripts/build_site.py --check
+          python3 scripts/build_units.py --check
           python3 scripts/check_site.py
           python3 scripts/check_links.py
           node --check site/assets/app.js
+          node --check site/assets/learning.js
+          node --test tests/spaced-repetition.test.mjs
 
   dotnet:
     name: .NET 10 runnable examples

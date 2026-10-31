@@ -1,0 +1,46 @@
+# Разделы углублённого обучения
+
+[Русский](README.md) · [English](en/README.md)
+
+Один механизм — одно объяснение. Вопросы закрепляют материал.
+
+## [Жизненный цикл async/await](../async-lifecycle.md)
+
+- [I/O-bound и CPU-bound — точные определения](io-vs-cpu-bound.md) — Различать вычисление, ожидание сети и физические ресурсы.
+- [Что компилятор генерирует для async/await](async-state-machine.md) — Понимать MoveNext, awaiter и ветвление IsCompleted.
+- [От PostgreSQL до epoll/IOCP и continuation](async-socket-pipeline.md) — Проследить реальную цепочку SQL, сокета, ядра ОС и возвращения в C#.
+
+## [ThreadPool и планировщик ОС](../threadpool-scheduling.md)
+
+- [Thread, Task и Task.Run — разные сущности](task-vs-thread.md) — Отделять единицу выполнения ОС от описания завершения операции.
+- [Планировщик ОС, ядра CPU и ThreadPool](os-vs-runtime-scheduler.md) — Понимать время CPU, вытеснение и очереди .NET.
+- [ThreadPool starvation и блокирующие ожидания](threadpool-starvation.md) — Объяснять, какие workers заняты и почему растёт очередь.
+
+## [Композиция Task и ошибки](../task-composition.md)
+
+- [WhenAll и WhenAny — семантика завершения](task-aggregation.md) — Различать ожидание всех задач и получение первой завершившейся.
+- [Вложенные Task и StartNew(Func<Task>)](startnew-nested-tasks.md) — Отличать завершение outer Task от реальной асинхронной работы.
+
+## [Разделяемая память и синхронизация](../shared-memory.md)
+
+- [Атомарность, volatile и Interlocked](atomicity-and-memory-visibility.md) — Понимать read-modify-write и модель видимости памяти.
+- [Monitor lock и SemaphoreSlim](mutual-exclusion-and-semaphores.md) — Различать блокировку потока и асинхронное ожидание разрешения.
+- [Почему Parallel.ForEach(async ...) опасен](parallel-foreach-async-void.md) — Объяснять потерю управления продолжениями async void.
+
+## [Continuation и контексты](../execution-context.md)
+
+- [ExecutionContext и AsyncLocal<T>](executioncontext-asynclocal.md) — Понять логический контекст, не привязанный к ОС-потоку.
+- [SynchronizationContext и ConfigureAwait(false)](synchronizationcontext-configureawait.md) — Понять захват контекста и отсутствие гарантии переключения потока.
+- [TaskCompletionSource и встроенные continuation](taskcontinuations-tcs.md) — Понимать reentrancy и опасность SetResult под lock.
+
+## [Отмена асинхронных операций](../cancellation.md)
+
+- [CancellationToken — кооперативная отмена](cancellation-tokens.md) — Отличать запрос на отмену от принудительной остановки потока.
+
+## [ValueTask<T> и стоимость ожидания](../valuetask.md)
+
+- [ValueTask<T> и правила потребления](valuetask-ivaluetasksource.md) — Понять, почему struct не гарантирует нулевые аллокации.
+
+## [Блокировки и sync-over-async](../sync-over-async.md)
+
+- [Deadlock и starvation при .Result/.Wait()](sync-over-async.md) — Различать заблокированный поток, цикл ожидания и отсутствие прогресса.
