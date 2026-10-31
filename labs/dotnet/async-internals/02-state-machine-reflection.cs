@@ -15,6 +15,6 @@ Func<Task<int>> operation = ExampleAsync;
 AsyncStateMachineAttribute? attribute =
     operation.Method.GetCustomAttribute<AsyncStateMachineAttribute>();
 
-Console.WriteLine(attribute?.StateMachineType
-    .GetInterfaces().Contains(typeof(IAsyncStateMachine)) == true);
+Console.WriteLine(attribute is not null &&
+    typeof(IAsyncStateMachine).IsAssignableFrom(attribute.StateMachineType));
 Console.WriteLine(await operation());
