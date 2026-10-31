@@ -21,3 +21,7 @@ New categories are registered in `content/catalog.json`; keep the knowledge map 
 ## Deep-dive units and cards
 
 Canonical deep technical explanations belong in content/units.json: one unit per distinct mechanism, with Russian and English definitions, compiler/runtime/OS steps, resources, failure modes and the relevant question IDs. Each question has exactly one unit owner; do not duplicate explanations in practice cards. Generate with scripts/build_units.py and scripts/build_site.py, then run both --check validations. Browser-local SRS progress must never be committed to public GitHub. [Learning method](docs/learning-method.en.md).
+
+## Interview-depth course authoring
+
+For a complete technical module, do not stop at the four-point summary. In content/units.json supply focused `chapters` (one mechanism per chapter), reference links, runnable `labFiles`, and five `checks` in strict order Recall → Explain → Predict → Diagnose → Design. Each check has a question and *hidden rubric* in both RU and EN. Keep each existing Q ID owned by a single unit, and include expected behavior only when deterministic. Preserve the private self-ratings under browser localStorage keys (not Git). Review docs/engineering-interview.md before adding more content.

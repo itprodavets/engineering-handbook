@@ -1,30 +1,50 @@
-# Structured learning and spaced repetition
+# Structured learning, depth checks and spaced repetition
 
 [Русский](learning-method.md) · [English](learning-method.en.md)
 
-[Home](../README.en.md) · [Learning units](../topics/dotnet/units/en/README.md) · [Flashcards](https://itprodavets.github.io/engineering-handbook/#/en/cards)
+[Home](../README.en.md) · [Deep-dive units](../topics/dotnet/units/en/README.md) · [Flashcards](https://itprodavets.github.io/engineering-handbook/#/en/cards)
 
-**Path:** engineering area → module → deep-dive unit → code lab/question → spaced-repetition card.
+## Five layers of a technical mechanism
 
-Each mechanism has one canonical explanation: definition, compiler, runtime, OS, resources, concurrency failure modes, code and references. Questions reinforce that content rather than duplicating the theory.
+Follow **engineering area → module → detailed unit → reproducible experiment → knowledge check → focused spaced review**. Each idea has **one canonical explanation**, with related questions and labs linking to it.
 
-## Spaced repetition
+The reference [Async/Await module](../topics/dotnet/en/async-lifecycle.md) contains **six ordered units**: I/O versus CPU → awaiter contract → compiler state machine → socket I/O → allocations → production diagnostics. Each unit includes separate RU/EN explanations, code, resource costs, pitfalls and assessment criteria.
 
-- Don't know: repeat in **10 minutes** and reset the correct-answer streak.
-- Know: next intervals **1, 3, 7, 14, 30, 60, 120, 240 days**.
-- At most **10 new cards per day**; due reviews take priority.
+## Evidence of competence
 
-This is a simple fixed scheduler, **not Anki FSRS**. Intervals are counted from grading time.
+| Level | Demonstration |
+|---|---|
+| **Recall** | Exact definition and important limitations |
+| **Explain** | C# → Roslyn → CLR/JIT → OS mechanism |
+| **Predict** | Predict unseen code behavior before running it |
+| **Diagnose** | Form hypotheses and verify them using metrics/traces |
+| **Design** | Choose a production solution and justify trade-offs |
 
-## Personal data
+**Write your explanation first**, then reveal the rubric and self-grade: Not yet / Partially / Can justify. These ratings are **self-assessments**, not certifications. Predict, Diagnose and Design require actual code execution and measurement evidence. See the [interview methodology](engineering-interview.en.md).
 
-Completion flags and card schedules live in this browser's localStorage, not the public GitHub repository. There is no cross-device sync yet; clearing browser data can erase progress.
+## Weak skills become review cards
 
-## Source of truth
+A rating of Not yet or Partially adds a review card **specific to the failed skill**. Regular question cards unlock **after studying the owning unit**; previously started cards remain accessible.
 
-- content/units.json — bilingual units.
-- content/questions.json — one question/card bank.
-- labs/<track>/ — runnable experiments.
-- scripts/build_units.py — generated Markdown and Pages data.
+**Don't know:** repeat in 10 minutes. **Know:** progress through 1, 3, 7, 14, 30, 60, 120, 240 days, with at most 10 new cards daily. This is a fixed scheduler, **not Anki FSRS**.
 
-[Add lessons from chat](chat-authoring.en.md)
+## Storage and privacy
+
+Public sources: `content/units.json`, `content/questions.json`, `labs/<track>/`, generated Markdown and Pages files. Private browser-only values: `eh:units:v1`, `eh:mastery:v1`, `eh:mastery-drafts:v1`, `eh:srs:v1` in localStorage. There is no cross-device sync yet; clearing browser data can erase your progress. Separate Google Sheet grades remain private.
+
+## Authoring workflow
+
+Edit canonical `content/units.json` and `content/questions.json`, then run:
+
+```bash
+python3 scripts/build_site.py
+python3 scripts/build_units.py
+python3 scripts/build_site.py --check
+python3 scripts/build_units.py --check
+python3 scripts/check_site.py
+python3 scripts/check_links.py
+node --test tests/spaced-repetition.test.mjs tests/mastery.test.mjs
+python3 scripts/check_deep_labs.py   # Requires .NET 10 SDK
+```
+
+[Async/Await runnable labs](../labs/dotnet/async-internals/README.en.md) · [Adding content from ChatGPT](chat-authoring.en.md)

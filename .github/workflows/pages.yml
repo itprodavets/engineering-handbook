@@ -41,6 +41,7 @@ jobs:
           python3 scripts/build_units.py --check
           python3 scripts/check_site.py
           python3 scripts/check_links.py
+          node --test tests/mastery.test.mjs
       - name: Set up Pages
         uses: actions/configure-pages@v6
       - name: Upload static site

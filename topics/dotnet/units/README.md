@@ -7,8 +7,11 @@
 ## [Жизненный цикл async/await](../async-lifecycle.md)
 
 - [I/O-bound и CPU-bound — точные определения](io-vs-cpu-bound.md) — Различать вычисление, ожидание сети и физические ресурсы.
+- [Контракт awaiter и синхронное завершение](awaiter-completion-path.md) — Понять GetAwaiter/IsCompleted/GetResult и почему await может не приостановить метод.
 - [Что компилятор генерирует для async/await](async-state-machine.md) — Понимать MoveNext, awaiter и ветвление IsCompleted.
 - [От PostgreSQL до epoll/IOCP и continuation](async-socket-pipeline.md) — Проследить реальную цепочку SQL, сокета, ядра ОС и возвращения в C#.
+- [Память, state machine и стоимость асинхронности](async-memory-and-allocations.md) — Проверить реальную стоимость async без выдуманных размеров объектов.
+- [Production-разбор: p99 latency и ThreadPool starvation](async-production-capstone.md) — Научиться подтверждать причину задержек и проектировать исправление.
 
 ## [ThreadPool и планировщик ОС](../threadpool-scheduling.md)
 

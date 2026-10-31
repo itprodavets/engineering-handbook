@@ -37,6 +37,13 @@ def page(u, lang, qmap, group):
         "## " + ("Внутренний механизм" if ru else "Internal mechanics"), "",
     ]
     lines += [f"{i}. {tr(step, lang)}" for i, step in enumerate(u["steps"], 1)]
+    if u.get("chapters"):
+        lines += ["", "## " + ("Последовательное объяснение" if ru else "Step-by-step explanation"), ""]
+        for ch in u["chapters"]:
+            lines += ["### " + tr(ch["title"], lang), "", tr(ch["body"], lang), ""]
+            if ch.get("code"):
+                lines += [chr(96)*3 + ch.get("language", "csharp"),
+                          ch["code"].rstrip(), chr(96)*3, ""]
     lines += ["", "## " + ("Потребляемые ресурсы" if ru else "Resources"),
               "", tr(u["resources"], lang), "",
               "## " + ("Ошибки и ограничения" if ru else "Pitfalls and constraints"),
@@ -45,10 +52,28 @@ def page(u, lang, qmap, group):
         lines += ["## " + ("Пример" if ru else "Example"), "",
                   chr(96)*3 + u.get("codeLanguage", "csharp"),
                   u["code"].rstrip(), chr(96)*3, ""]
+    if u.get("labFiles"):
+        lines += ["## " + ("Запускаемые эксперименты" if ru else "Runnable experiments"), ""]
+        for path in u["labFiles"]:
+            lines += ["- [" + path.split("/")[-1] + "](" + root + path +
+                      ") — " + chr(96) + "dotnet run --file " + path + chr(96)]
+        lines += [""]
     lines += ["## " + ("Вопросы для закрепления" if ru else "Review questions"), ""]
     for n in u["questions"]:
         q = qmap[f"Q-{n:03d}"]
         lines.append(f"- [{q['id']}: {tr(q['q'], lang)}]({qdir}{q['slug']}.md)")
+    if u.get("checks"):
+        lines += ["", "## " + ("Пять уровней понимания" if ru else "Five levels of understanding"), "",
+                  ("Сначала ответь самостоятельно. Критерии открой только после попытки." if ru
+                   else "Answer independently; reveal evaluation criteria only after an attempt."), ""]
+        for index, c in enumerate(u["checks"], start=1):
+            lines += ["### " + str(index) + ". " + c["level"].title(), "",
+                      tr(c["prompt"], lang), ""]
+            if c.get("code"):
+                lines += [chr(96)*3 + "csharp", c["code"].rstrip(), chr(96)*3, ""]
+            lines += ["<details>", "<summary>" +
+                      ("Критерии ответа" if ru else "Answer criteria") +
+                      "</summary>", "", tr(c["rubric"], lang), "", "</details>", ""]
     lines += ["", "## " + ("Источники" if ru else "References"), ""]
     lines += [f"- [{ref}]({ref})" for ref in u.get("refs", [])]
     pos = group.index(u)
@@ -85,6 +110,25 @@ def main(check):
     owned = {}
     seen = set()
     for u in units:
+        if u.get("chapters"):
+            chapter_ids = [c["id"] for c in u["chapters"]]
+            if len(chapter_ids) != len(set(chapter_ids)):
+                raise ValueError("Duplicate chapter id")
+            for chapter in u["chapters"]:
+                for key in ("title", "body"):
+                    tr(chapter[key], "ru")
+                    tr(chapter[key], "en")
+        if u.get("checks"):
+            expected = ["recall", "explain", "predict", "diagnose", "design"]
+            if [c["level"] for c in u["checks"]] != expected:
+                raise ValueError("Five checks must follow Recall→Design")
+            for check in u["checks"]:
+                for key in ("prompt", "rubric"):
+                    tr(check[key], "ru")
+                    tr(check[key], "en")
+        for path in u.get("labFiles", []):
+            if not (ROOT / path).is_file():
+                raise ValueError("Missing lab file: " + path)
         if u["id"] in seen or not re.fullmatch(r"[a-z][a-z0-9-]*",u["id"]):
             raise ValueError("Duplicate/invalid unit ID")
         seen.add(u["id"])
@@ -108,6 +152,10 @@ def main(check):
             owned[qid] = u["lesson"]
     if set(owned) != set(questions):
         raise ValueError(f"Questions without canonical units: {set(questions)-set(owned)}")
+    for u in units:
+        for prerequisite in u.get("prerequisites", []):
+            if prerequisite not in seen:
+                raise ValueError("Unknown prerequisite: " + prerequisite)
     for lid,lesson in lessons.items():
         for n in lesson["questions"]:
             if owned.get(f"Q-{n:03d}") != lid:

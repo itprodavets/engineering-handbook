@@ -1,4 +1,4 @@
-import {moduleOutline, unitView, cardsView, gradeCard, selectCardQueue, linkedUnitForQuestion} from './learning.js';
+import {moduleOutline, unitView, cardsView, gradeCard, selectCardQueue, linkedUnitForQuestion, activeReviewQuestions, gradeMastery, masterySummary} from './learning.js';
 /* Engineering Handbook — dependency-free, static bilingual learning interface.
    Answers and progress stay in the browser; C# execution uses Codespaces/Actions. */
 const REPO = 'https://github.com/itprodavets/engineering-handbook';
@@ -95,6 +95,9 @@ function persist(key,value){try{localStorage.setItem(key,JSON.stringify(value));
 state.progress=getStored('eh:progress:v1',{});
 state.unitsDone=getStored('eh:units:v1',{});
 state.srs=getStored('eh:srs:v1',{});
+state.mastery=getStored('eh:mastery:v1',{});
+state.masteryDrafts=getStored('eh:mastery-drafts:v1',{});
+state.assessRevealed={};
 state.units=[];
 state.flashFlipped=false;
 state.unitRequest=null;
@@ -134,7 +137,7 @@ function categoryPage(id){const cat=category(id);if(!cat)return notFound();const
 function stageSections(){const tracks=[...new Set(state.data.lessons.map(l=>l.track||'dotnet'))];return tracks.map(track=>{const lessons=state.data.lessons.filter(l=>(l.track||'dotnet')===track);const stages=[...new Set([...stageOrder,...lessons.map(l=>l.stage)])].filter(stage=>lessons.some(l=>l.stage===stage));return `<div class="section-head"><div><h2>${escapeHTML(trackLabel(track))}</h2></div></div>`+stages.map(stage=>{const group=lessons.filter(l=>l.stage===stage);return `<div class="section-head"><div><div class="eyebrow"><span class="dot-accent"></span>${escapeHTML(t().stages[stage]||stage)}</div></div></div><div class="module-grid">${group.map(l=>moduleCard(l,state.data.lessons.indexOf(l))).join('')}</div>`;}).join('');}).join('');}
 function stageComing(){const present=new Set(state.data.lessons.map(l=>trackLabel(l.track||'dotnet')));const future=UPCOMING.filter(name=>!present.has(name));if(!future.length)return '';return `<div class="section-head"><div><h2>${escapeHTML(t().comingTitle)}</h2><p>${escapeHTML(t().comingText)}</p></div></div><div class="module-grid">${future.map(name=>`<div class="module-card upcoming"><span class="mod-num muted-num">${escapeHTML(t().planned)}</span><h3>${name}</h3><p>${escapeHTML(t().comingText)}</p></div>`).join('')}</div>`;}
 function home(){
- const u=t(), q=selectCardQueue(state.data.questions,state.srs), first=state.units.find(x=>!state.unitsDone[x.id])||state.units[0];
+ const u=t(), q=selectCardQueue(activeReviewQuestions(state.data.questions,state.units,state.unitsDone,state.srs,state.lang),state.srs), first=state.units.find(x=>!state.unitsDone[x.id])||state.units[0];
  const learned=Object.keys(state.unitsDone).length;
  return `${breadcrumb([{label:u.overview}])}<div class="hero"><div class="eyebrow"><span class="dot-accent"></span>${u.introKicker}</div><h1>${escapeHTML(u.introStart)} <span>${escapeHTML(u.introEnd)}</span></h1><p class="lead">${escapeHTML(u.intro)}</p><div class="hero-actions"><a class="btn btn-primary" href="${href('unit',first?.id||'io-vs-cpu-bound')}">${escapeHTML(state.lang==='ru'?'Продолжить обучение':'Continue learning')} ↗</a><a class="btn btn-secondary" href="${href('lessons')}">${escapeHTML(u.browse)} →</a></div></div>
  <div class="stat-row"><div class="stat"><b>${catalog().length}</b><span>${escapeHTML(u.modules)}</span></div><div class="stat"><b>${learned}/${state.units.length}</b><span>${escapeHTML(state.lang==='ru'?'Разделов пройдено':'Units completed')}</span></div><div class="stat"><b>${q.dueCount}</b><span>${escapeHTML(state.lang==='ru'?'Карточек к повторению':'Reviews due')}</span></div></div>
@@ -153,8 +156,13 @@ function lessonPage(id){
  <p class="module-intro">${escapeHTML(lesson.overview)}</p>${outline}
  <div class="module-flashcards"><div><strong>${escapeHTML(state.lang==='ru'?'Проверяй знания через интервальные карточки':'Review concepts with spaced-repetition cards')}</strong><p>${escapeHTML(state.lang==='ru'?'Теория живёт в одном разделе, а вопросы закрепляют изученное.':'Concepts have one canonical explanation; flashcards reinforce them.')}</p></div><a class="btn btn-primary" href="${href('cards',lesson.id)}">${escapeHTML(state.lang==='ru'?'Повторять карточки':'Practice cards')} →</a></div>`;
 }
-function unitPage(id){const unit=state.units.find(x=>x.id===id);if(!unit)return notFound();return unitView(unit,{lang:state.lang,units:state.units,questions:state.data.questions,unitProgress:state.unitsDone,href});}
-function cardsPage(){return cardsView({lang:state.lang,questions:state.data.questions,units:state.units,history:state.srs,flipped:state.flashFlipped,href,now:Date.now(),lessonId:currentPath().id||null});}
+function unitPage(id){const unit=state.units.find(x=>x.id===id);if(!unit)return notFound();return unitView(unit,{lang:state.lang,units:state.units,questions:state.data.questions,unitProgress:state.unitsDone,mastery:state.mastery,revealed:state.assessRevealed,drafts:state.masteryDrafts,href});}
+function cardsPage(){
+ const available=activeReviewQuestions(state.data.questions,state.units,state.unitsDone,state.srs,state.lang);
+ const pool=currentPath().id?available.filter(q=>q.lesson===currentPath().id):available;
+ if(!pool.length)return '<div class="unit-heading"><h1>'+(state.lang==='ru'?'Карточки для закрепления':'Spaced-repetition cards')+'</h1></div><div class="review-empty"><h2>'+(state.lang==='ru'?'Сначала изучи один раздел':'Study a learning unit first')+'</h2><p>'+(state.lang==='ru'?'Новые карточки появятся после отметки раздела как изученного. Ошибки в проверках также добавляют карточки.':'Cards unlock after you mark a unit as studied. Weak mastery checks also create review cards.')+'</p><a class="btn btn-primary" href="'+href('lessons')+'">'+(state.lang==='ru'?'Открыть учебные модули':'Open the curriculum')+'</a></div>';
+ return cardsView({lang:state.lang,questions:pool,units:state.units,history:state.srs,flipped:state.flashFlipped,href,now:Date.now(),lessonId:currentPath().id||null});
+}
 
 function challengeEditor(q){const u=t();const code=state.edits[q.id]??q.code;const command=q.runCommand||'';const editorLabel=q.codeLanguage==='go'?'Go':q.codeLanguage==='csharp'?'C#':(q.codeLanguage||'Code');return `<div class="code-window"><div class="code-titlebar"><span class="dots"><i></i><i></i><i></i></span><span>${escapeHTML(u.codeEditor)}</span><span>${escapeHTML(editorLabel)}</span></div><textarea id="code-editor" class="code-editor" spellcheck="false" aria-label="${escapeHTML(u.codeEditor)}" style="height:${Math.min(420,Math.max(170,code.split('\n').length*22+45))}px">${escapeHTML(code)}</textarea></div><div class="code-controls"><button class="btn btn-secondary btn-small" data-action="copy-code" data-id="${q.id}">⧉ ${escapeHTML(u.copy)}</button><button class="btn btn-secondary btn-small" data-action="reset-code" data-id="${q.id}">↺ ${escapeHTML(u.clear)}</button>${q.lab?`<a class="btn btn-soft btn-small" href="${CODESPACES}" target="_blank" rel="noopener noreferrer">⌘ ${escapeHTML(u.runCodespaces)}</a>${q.track==='dotnet'?`<a class="btn btn-soft btn-small" href="${REPO}/actions/workflows/run-lab.yml" target="_blank" rel="noopener noreferrer">▶ ${escapeHTML(u.runActions)}</a>`:''}`:''}</div><div class="code-note">${escapeHTML(u.runHint)}${command?` <code>${escapeHTML(command)}</code>`:''}</div>`;}
 function questionPage(id){const q=qById(id);if(!q)return notFound();const l=lById(q.lesson),u=t(),shown=!!state.revealed[id],answer=state.drafts[id]||'',check=state.checks[id],hasCode=!!q.code,prevNext=l.questions.map(n=>'Q-'+String(n).padStart(3,'0')),i=prevNext.indexOf(id),prev=prevNext[i-1]||null,next=prevNext[i+1]||null;
@@ -184,7 +192,7 @@ async function render(){const token=++state.renderToken;const r=currentPath();co
 }
 function setProgress(id,status){if(status){state.progress[id]={status,at:new Date().toISOString()};}else delete state.progress[id];persist('eh:progress:v1',state.progress);render();}
 function normalizeOutput(s){return strip(s).replace(/\s+/g,'').toLowerCase();}
-function doAction(action,id,grade){switch(action){
+function doAction(action,id,grade,level){switch(action){
  case 'toggle-theme':state.theme=state.theme==='light'?'dark':'light';document.documentElement.dataset.theme=state.theme;persist('eh:theme:v1',state.theme);render();break;
  case 'toggle-menu':state.mobile=!state.mobile;render();break;
  case 'close-menu':state.mobile=false;render();break;
@@ -196,17 +204,20 @@ function doAction(action,id,grade){switch(action){
  case 'mark-review':setProgress(id,'review');break;
  case 'clear-progress':setProgress(id,'');break;
  case 'unit-completed':if(state.unitsDone[id])delete state.unitsDone[id];else state.unitsDone[id]={at:new Date().toISOString()};persist('eh:units:v1',state.unitsDone);render();break;
+case 'mastery-toggle':{const key=id+':'+level;state.assessRevealed[key]=!state.assessRevealed[key];render();break;}
+case 'mastery-grade':{const key=id+':'+level;if(!state.assessRevealed[key])return;state.mastery=gradeMastery(state.mastery,id,level,Number(grade));persist('eh:mastery:v1',state.mastery);const reviewId='M:'+id+':'+level;if(Number(grade)<2){state.srs=gradeCard(state.srs,reviewId,false);}else if(state.srs[reviewId]){delete state.srs[reviewId];}persist('eh:srs:v1',state.srs);render();break;}
  case 'card-flip':state.flashFlipped=true;render();break;
- case 'card-grade':{const scope=currentPath().id?state.data.questions.filter(q=>q.lesson===currentPath().id):state.data.questions;const current=selectCardQueue(scope,state.srs).current;if(!state.flashFlipped||current?.id!==id)return;state.srs=gradeCard(state.srs,id,grade==='know');persist('eh:srs:v1',state.srs);state.flashFlipped=false;render();break;}
+ case 'card-grade':{const all=activeReviewQuestions(state.data.questions,state.units,state.unitsDone,state.srs,state.lang);const scope=currentPath().id?all.filter(q=>q.lesson===currentPath().id):all;const current=selectCardQueue(scope,state.srs).current;if(!state.flashFlipped||current?.id!==id)return;state.srs=gradeCard(state.srs,id,grade==='know');persist('eh:srs:v1',state.srs);state.flashFlipped=false;render();break;}
 }}
 window.addEventListener('hashchange',()=>render());
 document.addEventListener('click',e=>{
- const btn=e.target.closest('[data-action]');if(btn){if(btn.tagName==='BUTTON')e.preventDefault();doAction(btn.dataset.action,btn.dataset.id,btn.dataset.grade);}else if(e.target.closest('.sidebar a,.search-overlay a')){state.mobile=false;state.query='';}
+ const btn=e.target.closest('[data-action]');if(btn){if(btn.tagName==='BUTTON')e.preventDefault();doAction(btn.dataset.action,btn.dataset.id,btn.dataset.grade,btn.dataset.level);}else if(e.target.closest('.sidebar a,.search-overlay a')){state.mobile=false;state.query='';}
 });
 document.addEventListener('input',e=>{
  if(e.target.id==='search'){state.query=e.target.value;updateSearchDisplay();}
  if(e.target.id==='my-answer'){const r=currentPath();state.drafts[r.id]=e.target.value;}
  if(e.target.id==='code-editor'){const r=currentPath();state.edits[r.id]=e.target.value;}
+if(e.target.matches('[data-mastery-draft]')){state.masteryDrafts[e.target.dataset.masteryDraft]=e.target.value;persist('eh:mastery-drafts:v1',state.masteryDrafts);}
 });
 document.addEventListener('change',e=>{if(e.target.id==='topic-select'){state.filter=e.target.value;render();}});
 document.addEventListener('keydown',e=>{if(e.key==='/' && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();document.getElementById('search')?.focus();}if(e.key==='Escape'){state.query='';updateSearchDisplay();document.getElementById('search')?.blur();if(state.mobile){state.mobile=false;render();}}});

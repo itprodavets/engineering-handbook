@@ -49,6 +49,301 @@
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth"
+    ],
+    "chapters": [
+      {
+        "id": "cost-model",
+        "title": {
+          "ru": "Время ожидания не равно времени CPU",
+          "en": "Elapsed waiting is not CPU time"
+        },
+        "body": {
+          "ru": "Полное время запроса состоит из вычислений клиентского приложения, ожидания сети/БД и обработки ответа. Пять секунд SQL не означают пять секунд CPU на сервере ASP.NET Core: во время незавершённого асинхронного ожидания worker может работать над другой задачей. Однако EF Core и драйвер всё равно используют CPU при построении SQL, передаче данных, декодировании и создании объектов.",
+          "en": "Elapsed request time includes client computation, network/database waits and response processing. A five-second SQL query does not consume five seconds of ASP.NET Core CPU: during pending asynchronous I/O, the worker can execute other work. EF Core and the provider still use CPU to prepare SQL, transfer bytes, decode values and materialize objects."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "what-await-means",
+        "title": {
+          "ru": "Ожидаем операцию, а не освобождение конкретного CPU",
+          "en": "Awaiting an operation does not release a specific CPU core"
+        },
+        "body": {
+          "ru": "Рабочий поток .NET — это поток ОС, который планировщик размещает на логическом CPU. `await` сам по себе не освобождает «ядро №3»: при незавершённой операции async-метод регистрирует продолжение и возвращает управление. Поток может брать другую работу, а ОС решает, на каком CPU он будет выполняться. При завершённой Task приостановки может не быть.",
+          "en": "A .NET worker is an OS thread placed on a logical CPU by the OS scheduler. `await` does not release a named core: for an incomplete operation the async method registers a continuation and returns control. The worker can process other jobs; the OS chooses its logical CPU. An already completed Task may not suspend at all."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "limiters",
+        "title": {
+          "ru": "Какие ресурсы ограничивают масштабирование",
+          "en": "What actually limits throughput"
+        },
+        "body": {
+          "ru": "Для 1 000 HTTP-запросов необходимо различать количество запросов, активных DB-соединений, выполняемых SQL, заблокированных workers и ожидающих Task. Пул PostgreSQL-подключений может ограничить одновременно выполняемые запросы задолго до исчерпания ThreadPool. `ToListAsync()` также удерживает память под результаты; полезно ограничивать выборку и применять пагинацию.",
+          "en": "For 1,000 HTTP requests distinguish request count, active database connections, executing SQL commands, blocked workers and pending Tasks. The PostgreSQL connection pool can limit concurrent queries before the ThreadPool is stressed. `ToListAsync()` also materializes results in memory; projection and pagination remain important."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "observable",
+        "title": {
+          "ru": "Что можно проверить",
+          "en": "What can be verified"
+        },
+        "body": {
+          "ru": "Для конкретного процесса фиксируй: CPU time, `dotnet.thread_pool.thread.count`, `dotnet.thread_pool.queue.length`, число DB-соединений и latency p95/p99. Эти показатели измеряют разные ресурсы. Низкий CPU при росте очереди — сигнал для диагностики, но ещё не доказательство ThreadPool starvation.",
+          "en": "Observe CPU time, `dotnet.thread_pool.thread.count`, `dotnet.thread_pool.queue.length`, DB connections and p95/p99 latency. These measure different resources. Low CPU with a growing queue is a diagnostic signal, not by itself proof of starvation."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Что означает I/O-bound? Назови два конкретных ресурса, которые могут ограничивать запрос к PostgreSQL.",
+          "en": "Define I/O-bound work and name two specific bottlenecks for a PostgreSQL request."
+        },
+        "rubric": {
+          "ru": "Указаны задержка/пропускная способность I/O и конкретные примеры: сеть, DB connection pool, throughput БД. Не путать с вычислениями CPU.",
+          "en": "Mentions I/O latency/throughput and concrete examples such as network, connection-pool capacity or DB throughput; distinguishes CPU work."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Расскажи, что выполняет CPU до, во время и после await ToListAsync().",
+          "en": "Explain CPU execution before, during and after awaiting ToListAsync()."
+        },
+        "rubric": {
+          "ru": "До: подготовка/отправка; при незавершённом I/O: worker не закреплён за запросом; после: чтение/материализация/HTTP. Не утверждай, что CPU всё время простаивает.",
+          "en": "Before: preparation/send; pending wait: no worker held by this request; after: read/materialize/respond. Avoid claiming the CPU is always idle."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Если SQL выполняется 5 секунд, будет ли HTTP worker заблокирован на эти 5 секунд при корректном async I/O?",
+          "en": "If SQL takes five seconds, does the HTTP worker remain blocked for those five seconds with true async I/O?"
+        },
+        "rubric": {
+          "ru": "Нет, при незавершённом асинхронном ожидании. Но операция может завершиться синхронно и CPU всё равно нужен при обработке ответа.",
+          "en": "No for a truly pending asynchronous wait. A synchronous completion is possible; CPU is still used while handling results."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "При 1 000 запросов CPU=25%, p99 latency растёт. Почему нельзя сразу обвинять ThreadPool? Что измеришь?",
+          "en": "At 1,000 requests CPU=25% and p99 latency rises. Why can’t you assume ThreadPool starvation? What would you inspect?"
+        },
+        "rubric": {
+          "ru": "Проверить thread count, очередь и stacks, DB connection pool, SQL plans, latency, downstream limits. Низкий CPU неоднозначен.",
+          "en": "Check pool threads, pending work and stacks, DB connections, query plans and downstream latency. Low CPU alone is ambiguous."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как ограничить число одновременных запросов к базе, не блокируя worker-потоки?",
+          "en": "How would you bound concurrent database queries without blocking worker threads?"
+        },
+        "rubric": {
+          "ru": "Асинхронный SemaphoreSlim.WaitAsync или Channel с bounded capacity, release/finally, CancellationToken, таймауты и наблюдаемость; не использовать sync Wait.",
+          "en": "Use async SemaphoreSlim.WaitAsync or bounded Channel, Release in finally, cancellation, timeouts and metrics; avoid synchronous waits."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/async-internals/01-await-control-flow.cs"
+    ],
+    "prerequisites": []
+  },
+  {
+    "id": "awaiter-completion-path",
+    "lesson": "async-lifecycle",
+    "level": "internals",
+    "title": {
+      "ru": "Контракт awaiter и синхронное завершение",
+      "en": "The awaiter contract and synchronous completion"
+    },
+    "goal": {
+      "ru": "Понять GetAwaiter/IsCompleted/GetResult и почему await может не приостановить метод.",
+      "en": "Understand GetAwaiter/IsCompleted/GetResult and why await may not suspend."
+    },
+    "definition": {
+      "ru": "`await` применим не только к Task: компилятор использует awaiter pattern (GetAwaiter, IsCompleted, GetResult и регистрацию продолжения). При готовом awaitable метод идёт дальше синхронно; при незавершённом — сохраняет состояние.",
+      "en": "`await` is not limited to Task: the compiler uses the awaiter pattern (GetAwaiter, IsCompleted, GetResult and continuation registration). Completed awaitables continue synchronously; pending ones suspend the method."
+    },
+    "steps": [
+      {
+        "ru": "Сначала вызывается GetAwaiter() у awaitable.",
+        "en": "The compiler obtains an awaiter via GetAwaiter()."
+      },
+      {
+        "ru": "IsCompleted определяет, доступен ли результат прямо сейчас.",
+        "en": "IsCompleted decides whether a result is available immediately."
+      },
+      {
+        "ru": "Если завершено — GetResult выполняется в текущем стеке вызовов; при исключении оно пробрасывается.",
+        "en": "If completed, GetResult runs in the current call stack and propagates an exception if present."
+      },
+      {
+        "ru": "Иначе регистрируется continuation; async-метод возвращает управление вызывающему коду.",
+        "en": "Otherwise a continuation is registered and the async method returns control."
+      }
+    ],
+    "resources": {
+      "ru": "Для завершённого await не требуется рабочий поток для ожидания; незавершённое ожидание может удерживать Task/continuation и ссылки на локальные данные.",
+      "en": "No waiting worker is required for an already completed await. A pending operation can retain a Task/continuation and references to locals."
+    },
+    "pitfalls": {
+      "ru": "Нельзя считать, что `await` гарантирует fairness или переключение потока. Для чисто CPU-bound циклов нужна отдельная стратегия планирования.",
+      "en": "Await does not guarantee fairness or a thread switch. Pure CPU-bound loops require a separate scheduling strategy."
+    },
+    "code": "async Task PrintAsync() { Console.Write(\"A\"); await Task.CompletedTask; Console.Write(\"B\"); }\nvar t = PrintAsync(); Console.Write(\"C\"); await t; // ABC",
+    "codeLanguage": "csharp",
+    "questions": [
+      13,
+      24
+    ],
+    "refs": [
+      "https://devblogs.microsoft.com/dotnet/how-async-await-really-works/"
+    ],
+    "chapters": [
+      {
+        "id": "pattern",
+        "title": {
+          "ru": "Это протокол компилятора, не только Task",
+          "en": "A compiler protocol, not just Task"
+        },
+        "body": {
+          "ru": "Синтаксис `await` проверяется через подходящий awaiter. Помимо GetAwaiter и IsCompleted нужен GetResult и возможность зарегистрировать continuation (INotifyCompletion либо ICriticalNotifyCompletion). Разные awaitable могут обеспечивать разные правила исполнения; нельзя выводить семантику всего языка только по реализации Task.",
+          "en": "The await syntax uses a suitable awaiter. Besides GetAwaiter and IsCompleted, it needs GetResult and a continuation registration mechanism (INotifyCompletion or ICriticalNotifyCompletion). Awaitables can provide different execution semantics; do not generalize from Task alone."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "fast",
+        "title": {
+          "ru": "Почему ABC — не ACB",
+          "en": "Why output is ABC rather than ACB"
+        },
+        "body": {
+          "ru": "Когда PrintAsync вызывается, её тело начинает исполняться синхронно. `Task.CompletedTask` уже имеет завершённый awaiter, поэтому `B` печатается до возврата из PrintAsync. Вызывающий код печатает `C` позже. Новый поток не нужен ни на одном этапе.",
+          "en": "When PrintAsync is called, its body starts synchronously. Task.CompletedTask already has a completed awaiter, so B prints before PrintAsync returns. The caller prints C later. No new thread is required."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "pending",
+        "title": {
+          "ru": "Что меняется при незавершённой Task",
+          "en": "What changes for a pending Task"
+        },
+        "body": {
+          "ru": "С `TaskCompletionSource` без SetResult awaiter возвращает `IsCompleted=false`: метод сохраняет state/awaiter, регистрирует продолжение и возвращает Task. Вызывающий код продолжает работу, а `SetResult` разрешает дальнейшее выполнение. С `RunContinuationsAsynchronously` continuation не встраивается синхронно в SetResult.",
+          "en": "With a TaskCompletionSource not yet completed, IsCompleted=false: the method stores its state/awaiter, registers a continuation and returns a Task. The caller proceeds, and SetResult enables resumption. RunContinuationsAsynchronously avoids inline continuations in SetResult."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "proof",
+        "title": {
+          "ru": "Как доказать",
+          "en": "How to validate"
+        },
+        "body": {
+          "ru": "Запусти Q-024 и Q-025, затем поменяй CompletedTask на Task.Delay(1): станет ли порядок гарантированным? Нет, короткий timer и планирование дают гонку, поэтому для доказательства асинхронной приостановки используй управляемый TaskCompletionSource gate.",
+          "en": "Run Q-024 and Q-025, then replace CompletedTask with Task.Delay(1): is output ordering guaranteed? No; timer completion and scheduling introduce a race. Use a controlled TaskCompletionSource gate to prove suspension."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Что обязаны предоставить awaitable и awaiter для C# await?",
+          "en": "What must an awaitable and awaiter provide for C# await?"
+        },
+        "rubric": {
+          "ru": "GetAwaiter, IsCompleted, GetResult, регистрация continuation через OnCompleted/UnsafeOnCompleted; не только Task.",
+          "en": "GetAwaiter, IsCompleted, GetResult and continuation registration via OnCompleted/UnsafeOnCompleted; not restricted to Task."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Объясни две ветки await по значению IsCompleted.",
+          "en": "Explain both branches of await depending on IsCompleted."
+        },
+        "rubric": {
+          "ru": "True: GetResult и синхронное продолжение; false: сохранение state и continuation.",
+          "en": "True: GetResult and synchronous continuation; false: saved state and continuation."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Выведет ли код с await Task.CompletedTask буквы ABC или ACB и почему?",
+          "en": "Does code awaiting Task.CompletedTask print ABC or ACB, and why?"
+        },
+        "rubric": {
+          "ru": "ABC; метод начинается синхронно, await уже завершён.",
+          "en": "ABC; the method starts synchronously and the await completes immediately."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему Task.Delay(1) — плохой способ доказать, что продолжение на другом потоке?",
+          "en": "Why is Task.Delay(1) an unreliable proof of a new continuation thread?"
+        },
+        "rubric": {
+          "ru": "Малая задержка и scheduler создают гонку, разные ThreadId не гарантия, await не создаёт Thread.",
+          "en": "Short timing and scheduling races; a new thread ID is not guaranteed, await does not create a thread."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как написать детерминированный тест незавершённого await без Thread.Sleep?",
+          "en": "How would you write a deterministic test of an incomplete await without Thread.Sleep?"
+        },
+        "rubric": {
+          "ru": "TaskCompletionSource с RunContinuationsAsynchronously, сначала assert false IsCompleted, затем SetResult и await; фиксированный порядок.",
+          "en": "Use TaskCompletionSource with RunContinuationsAsynchronously, assert incomplete, SetResult, then await; controlled order."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-024.cs",
+      "labs/dotnet/Q-025.cs"
+    ],
+    "prerequisites": [
+      "io-vs-cpu-bound"
     ]
   },
   {
@@ -97,12 +392,132 @@
     "codeLanguage": "csharp",
     "questions": [
       12,
-      13,
-      24,
       25
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth"
+    ],
+    "chapters": [
+      {
+        "id": "entry",
+        "title": {
+          "ru": "Что реально создаёт Roslyn",
+          "en": "What Roslyn actually produces"
+        },
+        "body": {
+          "ru": "Для `async Task<T>` Roslyn создаёт реализацию `IAsyncStateMachine` с полями состояния, awaiter, локальных переменных, которые переживают приостановку, и `AsyncTaskMethodBuilder<T>`. Точка входа создаёт и инициализирует машину, вызывает builder.Start(ref stateMachine) и возвращает Task через builder.Task. Детали физического представления могут отличаться в Debug/Release и между версиями Roslyn/runtime.",
+          "en": "For an `async Task<T>` method, Roslyn emits an `IAsyncStateMachine` implementation with state, awaiter, captured locals and an `AsyncTaskMethodBuilder<T>`. The entry point initializes the state machine, calls builder.Start(ref stateMachine) and returns builder.Task. Physical details can differ across Debug/Release and compiler/runtime versions."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "move-next",
+        "title": {
+          "ru": "MoveNext: синхронная ветка и незавершённый await",
+          "en": "MoveNext: the completed fast path and pending await"
+        },
+        "body": {
+          "ru": "В `MoveNext()` вызов `GetAwaiter()` возвращает awaiter. Если `IsCompleted` истинно, `GetResult()` выполняется прямо сейчас и код идёт дальше. Иначе state machine сохраняет номер состояния и awaiter, а builder регистрирует continuation через механизм вроде `AwaitUnsafeOnCompleted`. Это *схематическое* описание — для реального IL нужно дизассемблировать конкретную сборку.",
+          "en": "In `MoveNext()`, GetAwaiter obtains the awaiter. If IsCompleted is true, GetResult runs immediately and execution continues. Otherwise the state machine stores its state number and awaiter, and the builder registers a continuation using machinery such as `AwaitUnsafeOnCompleted`. This is a *schematic* explanation; inspect a compiled assembly for actual IL."
+        },
+        "code": "// Schematic, NOT literal Roslyn-generated C#:\nvar awaiter = operation.GetAwaiter();\nif (!awaiter.IsCompleted)\n{\n    state = 0;\n    savedAwaiter = awaiter;\n    builder.AwaitUnsafeOnCompleted(ref awaiter, ref this);\n    return;\n}\nvar value = awaiter.GetResult();",
+        "language": "csharp"
+      },
+      {
+        "id": "resume",
+        "title": {
+          "ru": "Завершение, исключения и продолжения",
+          "en": "Completion, errors and continuations"
+        },
+        "body": {
+          "ru": "При завершении ожидаемой операции продолжение снова вызывает `MoveNext()`: восстанавливает awaiter/состояние, выполняет `GetResult()` (здесь может быть повторно выброшено исключение) и движется дальше. Успех завершается через builder.SetResult, ошибка — через SetException. Асинхронность — способ разделить один метод на несколько фрагментов исполнения; это не требование создать новый OS Thread.",
+          "en": "When awaited work completes, the continuation calls MoveNext again, restores state/awaiter and calls GetResult (which may rethrow the operation’s exception). Success flows to builder.SetResult; failures to SetException. Async splits one logical method into executable segments and does not require a new OS thread."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "where-look",
+        "title": {
+          "ru": "Как увидеть именно сгенерированный код",
+          "en": "How to inspect real emitted code"
+        },
+        "body": {
+          "ru": "Собери отдельный пример в Debug и Release, открой сборку в ILSpy либо SharpLab и сравни MoveNext, поля состояния, GetAwaiter, IsCompleted и вызовы builder. Логи выполнения показывают результат, но не являются доказательством конкретных IL-инструкций. Утверждения о количестве heap-объектов отдельно проверь профилировщиком.",
+          "en": "Compile a small example in Debug and Release, inspect the assembly in ILSpy or SharpLab, and compare MoveNext, state fields, GetAwaiter, IsCompleted and builder calls. Runtime output alone does not prove specific emitted IL instructions. Investigate heap object counts separately with a profiler."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Что представляет собой async state machine? Назови IAsyncStateMachine и MoveNext.",
+          "en": "What is an async state machine? Name IAsyncStateMachine and MoveNext."
+        },
+        "rubric": {
+          "ru": "Упомянут сгенерированный тип с состоянием и методом MoveNext; async не создаёт поток.",
+          "en": "Mentions a generated stateful type with MoveNext; async does not create a thread."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Восстанови цепочку GetAwaiter → IsCompleted → AwaitUnsafeOnCompleted → GetResult → SetResult/SetException.",
+          "en": "Reconstruct the GetAwaiter → IsCompleted → AwaitUnsafeOnCompleted → GetResult → SetResult/SetException pipeline."
+        },
+        "rubric": {
+          "ru": "Правильно описаны обе ветки (готово/ожидание), сохранение состояния и механизм ошибок; синтаксис компилятора отделён от деталей реализации.",
+          "en": "Explains both branches, stored state and failure handling, distinguishing compiler semantics from runtime implementation."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Какой вывод у async-метода, где await Task.CompletedTask расположен между Console.Write(\"A\") и Console.Write(\"B\"), а вызывающий печатает \"C\" после вызова?",
+          "en": "What prints if an async method writes A, awaits Task.CompletedTask, writes B, and the caller writes C after invoking it?"
+        },
+        "rubric": {
+          "ru": "ABC: awaiter уже завершён, приостановки нет; сам async-метод начинает исполняться синхронно.",
+          "en": "ABC: already-completed awaiter means no suspension; async method begins synchronously."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "ILSpy показывает MoveNext и поля awaiter. Значит ли это, что каждый вызов обязательно аллоцирует state machine на managed heap?",
+          "en": "ILSpy shows MoveNext and awaiter fields. Does that prove every call heap-allocates the state machine?"
+        },
+        "rubric": {
+          "ru": "Нет: наличие сгенерированного типа не равно отдельному объекту на heap; фактический путь зависит от async completion и runtime. Измерить профилировщиком.",
+          "en": "No: existence of a generated type does not imply a heap object per call. Allocation depends on completion/runtime; verify via a profiler."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Тебе предложили заменить все Task<T> на ValueTask<T> ради производительности. Какие данные нужны до решения?",
+          "en": "A proposal says replace every Task<T> with ValueTask<T> for speed. What evidence would you request?"
+        },
+        "rubric": {
+          "ru": "Измерения sync completion rate, allocations/op, throughput/latency, интерфейсы потребления, повторный await, IValueTaskSource. Без замеров не менять.",
+          "en": "Measure sync-completion rate, allocations per operation, latency/throughput, consumers, repeated awaiting and IValueTaskSource semantics first."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/async-internals/02-state-machine-reflection.cs"
+    ],
+    "prerequisites": [
+      "io-vs-cpu-bound"
     ]
   },
   {
@@ -155,6 +570,472 @@
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth"
+    ],
+    "chapters": [
+      {
+        "id": "call-stack",
+        "title": {
+          "ru": "Граница EF Core, Npgsql и Socket",
+          "en": "The EF Core → Npgsql → Socket boundary"
+        },
+        "body": {
+          "ru": "EF Core преобразует LINQ в SQL, Npgsql управляет протоколом PostgreSQL и соединением, а `Socket`/`NetworkStream` используют API ОС. Время SQL включает работу на сервере БД; клиентский .NET-процесс не выделяет для каждого удалённого запроса отдельный CPU или worker на всю задержку.",
+          "en": "EF Core translates LINQ, Npgsql handles the PostgreSQL protocol and connection, and Socket/NetworkStream use OS APIs. SQL latency includes work on the database server; the client does not dedicate one CPU or worker for the entire remote wait."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "os-ready",
+        "title": {
+          "ru": "Что происходит в ядре ОС",
+          "en": "What the OS kernel actually does"
+        },
+        "body": {
+          "ru": "На Linux реализация асинхронных сокетов .NET может использовать event polling на основе `epoll`; на Windows для сокетного I/O применяется механизм IOCP. Эти механизмы различаются, но оба позволяют не держать отдельный заблокированный рабочий поток на каждом ожидающем чтении. Низкоуровневые I/O event threads у runtime возможны: «0 выделенных worker на ожидание» не означает «во всём процессе 0 потоков».",
+          "en": "On Linux .NET can use epoll-based socket polling; Windows socket I/O uses IOCP. They differ in implementation but both avoid a dedicated blocked worker per pending read. Runtime I/O event threads may exist: zero dedicated workers per wait does not mean zero threads in the process."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "response",
+        "title": {
+          "ru": "Почему результат может требовать нескольких чтений",
+          "en": "Why one result may require multiple reads"
+        },
+        "body": {
+          "ru": "При получении сетевых пакетов ядро обновляет состояние сокета, runtime будит соответствующий механизм чтения, Npgsql декодирует сообщения и EF Core материализует записи. Большой результат может чередовать несколько событий I/O и CPU-обработку — `ToListAsync()` не означает «весь список создался в ядре ОС».",
+          "en": "As packets arrive, the kernel updates socket readiness, the runtime resumes read operations, Npgsql decodes protocol messages and EF Core materializes rows. Large results can alternate between I/O readiness and CPU decoding; ToListAsync does not mean the OS kernel constructs the entire C# list."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "limits",
+        "title": {
+          "ru": "Пул соединений, таймаут и backpressure",
+          "en": "Connection pools, timeouts and backpressure"
+        },
+        "body": {
+          "ru": "Если пул допускает меньше соединений, чем одновременно пришло HTTP-запросов, часть операций ждёт свободное соединение. Нельзя делать вывод о количестве активных SQL только по числу Task. Используй CancellationToken, connection timeout, ограничение конкурентности и наблюдение за количеством DB connections.",
+          "en": "When fewer database connections are available than incoming HTTP requests, some operations wait for a free connection. Task count does not equal active SQL count. Use cancellation, connection timeouts, bounded concurrency and DB connection metrics."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Назови обязанности EF Core, Npgsql, Socket API и ядра ОС.",
+          "en": "Name the responsibilities of EF Core, Npgsql, Socket APIs and the OS kernel."
+        },
+        "rubric": {
+          "ru": "EF Core формирует запрос/объекты, Npgsql — протокол и соединение, Socket/ОС — network bytes, не SQL-объекты.",
+          "en": "EF Core handles query/materialization, Npgsql the protocol/connection, Socket/OS network bytes, not SQL objects."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Каким образом pending network read избегает отдельного заблокированного worker в Linux/Windows?",
+          "en": "How can a pending network read avoid a dedicated blocked worker on Linux/Windows?"
+        },
+        "rubric": {
+          "ru": "Linux epoll readiness или Windows IOCP completion; механизм runtime возвращает продолжение, CPU нужен для обработки и callbacks.",
+          "en": "Linux epoll readiness or Windows IOCP completion; runtime resumes the continuation, with CPU used for callbacks and decoding."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Если 1 000 HTTP-запросов ждут PostgreSQL, а пул соединений ограничен 100, будут ли одновременно выполняться все 1 000 SQL?",
+          "en": "If 1,000 HTTP requests await PostgreSQL with a pool limit of 100 connections, do all 1,000 SQL queries execute at once?"
+        },
+        "rubric": {
+          "ru": "Нет, ограничение соединений и поведение приложения мешают; максимум 100 соединений этого пула, но число SQL может быть ниже.",
+          "en": "No; connection pool/application limits prevent that. At most 100 connections from that pool, active SQL may be fewer."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "p99 растёт, CPU клиента низкий, ThreadPool queue стабильна, DB pool wait увеличивается. Какой уровень системы вероятнее перегружен?",
+          "en": "p99 rises, client CPU is low, ThreadPool queue stable and DB pool waits grow. Which layer is more likely the bottleneck?"
+        },
+        "rubric": {
+          "ru": "Пул соединений/БД, а не доказанное starvation. Проверить длительность SQL, pool occupancy, планы и сеть.",
+          "en": "The connection pool/DB, not proven starvation. Inspect SQL duration, pool occupancy, plans and network."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Для тяжёлого API выбери: ToListAsync без ограничения, sync Task.Run или bounded async + pagination. Почему?",
+          "en": "For a heavy API, choose unlimited ToListAsync, synchronous Task.Run or bounded async with pagination. Why?"
+        },
+        "rubric": {
+          "ru": "Ограниченный асинхронный I/O с пагинацией/проекцией, таймаутами и мониторингом, учитывая реальные пределы DB pool.",
+          "en": "Bounded asynchronous I/O with pagination/projection, timeouts and monitoring based on actual DB pool capacity."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/async-internals/03-socket-simulation.cs"
+    ],
+    "prerequisites": [
+      "async-state-machine"
+    ]
+  },
+  {
+    "id": "async-memory-and-allocations",
+    "lesson": "async-lifecycle",
+    "level": "internals",
+    "title": {
+      "ru": "Память, state machine и стоимость асинхронности",
+      "en": "Memory, state machines and async allocation cost"
+    },
+    "goal": {
+      "ru": "Проверить реальную стоимость async без выдуманных размеров объектов.",
+      "en": "Measure real async costs without inventing object sizes."
+    },
+    "definition": {
+      "ru": "Синтаксис `async` не задаёт фиксированного числа объектов в heap. На готовом fast path может не быть новой Task-аллокации; при незавершённом await runtime должен сохранить состояние продолжения, что может потребовать heap-хранения.",
+      "en": "The `async` syntax does not imply a fixed number of heap objects. A completed fast path may avoid allocating a new Task; incomplete awaits require retaining continuation state, which can require heap storage."
+    },
+    "steps": [
+      {
+        "ru": "Roslyn строит state machine и сохраняет нужные локальные переменные.",
+        "en": "Roslyn generates a state machine and captures necessary locals."
+      },
+      {
+        "ru": "Для готовой операции компиляторская state machine может завершиться без перехода к continuation.",
+        "en": "The state machine can complete an already-ready operation without scheduling a continuation."
+      },
+      {
+        "ru": "Для pending await runtime удерживает состояние до продолжения, и детали heap-размещения зависят от реализации.",
+        "en": "Pending await state must survive until resumed; exact heap storage depends on implementation."
+      },
+      {
+        "ru": "Замеры требуют прогрева и одинакового окружения; текущий поток и весь процесс имеют разные метрики.",
+        "en": "Measurements need warm-up and controlled conditions; per-thread allocation and process-wide allocation are different metrics."
+      }
+    ],
+    "resources": {
+      "ru": "Task/awaiter/captured locals/continuation; CPU JIT и GC; точные байты и время только по измерениям с указанными параметрами.",
+      "en": "Task/awaiter/captured locals/continuation, JIT and GC CPU; exact bytes and time require measured workload/environment."
+    },
+    "pitfalls": {
+      "ru": "Сравнение двух вариантов на одном запуске может быть искажено JIT, GC, кэшированием, периодом прогрева и переключением потоков.",
+      "en": "A single run can be distorted by JIT, GC, caching, warm-up and thread changes."
+    },
+    "code": "long before = GC.GetAllocatedBytesForCurrentThread();\n// Execute a controlled hot path repeatedly here.\nlong bytes = GC.GetAllocatedBytesForCurrentThread() - before;",
+    "codeLanguage": "csharp",
+    "questions": [],
+    "refs": [
+      "https://devblogs.microsoft.com/dotnet/how-async-await-really-works/"
+    ],
+    "chapters": [
+      {
+        "id": "object",
+        "title": {
+          "ru": "State machine ≠ heap-аллокация на каждый вызов",
+          "en": "State machine ≠ a heap allocation per call"
+        },
+        "body": {
+          "ru": "Наличие сгенерированного типа в IL означает необходимость хранить состояние, но не гарантирует отдельный heap-объект при каждом вызове. Реальное представление зависит от того, дошёл ли код до незавершённого await, и оптимизаций runtime. Например, `async Task` с исключительно синхронным завершением может повторно использовать завершённую Task.",
+          "en": "A generated state machine type means state must be represented, but does not guarantee one heap object per invocation. Actual representation depends on whether a pending await was encountered and runtime optimizations. An `async Task` method that always completes synchronously may reuse a completed Task."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "measure",
+        "title": {
+          "ru": "Правильный протокол эксперимента",
+          "en": "A sound measurement protocol"
+        },
+        "body": {
+          "ru": "Прогрей код и JIT; выдели baseline; повтори много раз на одинаковой версии .NET/архитектуре. `GC.GetAllocatedBytesForCurrentThread()` измеряет выделения managed памяти, произведённые текущим потоком, и не показывает все системные ресурсы, другие потоки и retained heap size. BenchmarkDotNet полезен для статистически обоснованного сравнения.",
+          "en": "Warm up code and JIT, establish a baseline, run repeated iterations with fixed .NET version and architecture. `GC.GetAllocatedBytesForCurrentThread()` measures managed allocations made by the current thread; it omits other threads, retained heap size and native resources. Use BenchmarkDotNet for careful comparisons."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "leaks",
+        "title": {
+          "ru": "Долгоживущие продолжения удерживают ссылки",
+          "en": "Pending continuations retain references"
+        },
+        "body": {
+          "ru": "Пока async-метод приостановлен, захваченные значения и `this` могут оставаться достижимыми; отмена и таймауты должны завершать операции и освобождать ресурсы. Важно отличать кратковременные аллокации от retained-memory leaks.",
+          "en": "While an async method is suspended, captured locals and `this` can remain reachable. Cancellation and timeouts should let work complete and release resources. Distinguish transient allocations from retained-memory leaks."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "tradeoffs",
+        "title": {
+          "ru": "Когда обсуждать ValueTask",
+          "en": "When to consider ValueTask"
+        },
+        "body": {
+          "ru": "ValueTask<T> может уменьшить аллокации при частом синхронном завершении, но увеличивает сложность потребления и не всегда улучшает производительность. Решение принимай после профилирования, а не по самому факту наличия await.",
+          "en": "ValueTask<T> can reduce allocations for often-synchronous completion but complicates consumption and does not always improve performance. Decide based on profiling rather than the mere presence of await."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Можно ли по ключевому слову async вычислить точное число heap-аллокаций?",
+          "en": "Can you derive an exact heap allocation count from the async keyword?"
+        },
+        "rubric": {
+          "ru": "Нет, зависит от ветки завершения, реализации, версии runtime и оптимизаций.",
+          "en": "No; completion path, implementation, runtime version and optimizations matter."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Что должно остаться достижимым после незавершённого await и почему?",
+          "en": "What must remain reachable across a pending await, and why?"
+        },
+        "rubric": {
+          "ru": "Состояние метода, awaiter, нужные локальные данные и continuation до окончания операции.",
+          "en": "State, awaiter, required locals and continuation until completion."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Будет ли повторное await Task.CompletedTask создавать 1000 отдельных OS thread?",
+          "en": "Does awaiting Task.CompletedTask 1,000 times create 1,000 OS threads?"
+        },
+        "rubric": {
+          "ru": "Нет, завершённая Task идёт по синхронному fast path; поток не создаётся оператором await.",
+          "en": "No; completed Tasks take the synchronous fast path; await does not create threads."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему сравнение одного запуска по GC.GetAllocatedBytesForCurrentThread ненадёжно?",
+          "en": "Why is a single GC.GetAllocatedBytesForCurrentThread measurement unreliable?"
+        },
+        "rubric": {
+          "ru": "Требуются baseline, прогрев и повторы; текущий поток не равен всему процессу, GC/JIT шумят.",
+          "en": "Needs warm-up, baseline and repetitions; per-thread != entire process, GC/JIT add noise."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Когда ValueTask<T> оправдан, а когда Task<T> лучше?",
+          "en": "When is ValueTask<T> justified and when is Task<T> preferable?"
+        },
+        "rubric": {
+          "ru": "Measure sync-completion frequency, allocations and consumers; ValueTask often better for hot low-allocation API, Task simpler for composition.",
+          "en": "Measure synchronous completion frequency, allocation and consumers; ValueTask may help hot paths; Task is simpler for composition."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/async-internals/04-allocations.cs"
+    ],
+    "prerequisites": [
+      "async-state-machine"
+    ]
+  },
+  {
+    "id": "async-production-capstone",
+    "lesson": "async-lifecycle",
+    "level": "production",
+    "title": {
+      "ru": "Production-разбор: p99 latency и ThreadPool starvation",
+      "en": "Production case: p99 latency and ThreadPool starvation"
+    },
+    "goal": {
+      "ru": "Научиться подтверждать причину задержек и проектировать исправление.",
+      "en": "Learn to prove the cause of latency and design a justified fix."
+    },
+    "definition": {
+      "ru": "Высокая latency при низком CPU — симптом, а не диагноз. Причиной могут быть sync-over-async, очередь ThreadPool, ограничение пула DB-соединений, медленные SQL, сетевые таймауты или downstream backpressure.",
+      "en": "High latency with low CPU is a symptom, not a diagnosis. Causes include sync-over-async, ThreadPool queues, database connection-pool limits, slow SQL, network timeouts or downstream backpressure."
+    },
+    "steps": [
+      {
+        "ru": "Сформулируй гипотезы: ThreadPool, DB pool, SQL duration, network, lock contention.",
+        "en": "List competing hypotheses: ThreadPool, DB pool, SQL latency, network and lock contention."
+      },
+      {
+        "ru": "Собери metrics: p50/p95/p99, pool threads, pending work items, CPU time, DB connections, rates/errors.",
+        "en": "Collect metrics: p50/p95/p99, pool thread count, pending work, CPU, DB connections, rates and errors."
+      },
+      {
+        "ru": "Используй dotnet-stack/dotnet-trace, чтобы найти занятые workers и sync-over-async stacks.",
+        "en": "Use dotnet-stack/dotnet-trace to identify blocked workers and sync-over-async stacks."
+      },
+      {
+        "ru": "Исправь причину, установи bounded concurrency, timeout/cancellation, проверь нагрузочным тестом.",
+        "en": "Fix the root cause, apply bounded concurrency and timeouts/cancellation, verify under a load test."
+      }
+    ],
+    "resources": {
+      "ru": "ThreadPool workers/queues, DB connection pool, network sockets, memory, CPU, retries; только измеренный контекст позволяет оценить пределы.",
+      "en": "ThreadPool workers/queues, DB connections, sockets, memory, CPU and retries; capacity limits require measurement."
+    },
+    "pitfalls": {
+      "ru": "Нельзя делать вывод «ThreadPool starvation» только по CPU=20%. Ограничение пула подключений может выглядеть похоже; замена на Task.Run часто ухудшает ситуацию.",
+      "en": "CPU=20% alone does not prove ThreadPool starvation. Connection-pool contention can look similar; wrapping in Task.Run can make it worse."
+    },
+    "code": "await semaphore.WaitAsync(ct);\ntry { return await db.Orders.AsNoTracking().Take(100).ToListAsync(ct); }\nfinally { semaphore.Release(); }",
+    "codeLanguage": "csharp",
+    "questions": [],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/core/diagnostics/debug-threadpool-starvation",
+      "https://learn.microsoft.com/en-us/dotnet/core/diagnostics/built-in-metrics-runtime"
+    ],
+    "chapters": [
+      {
+        "id": "investigate",
+        "title": {
+          "ru": "Шаг 1: конкурирующие гипотезы",
+          "en": "Step 1: competing hypotheses"
+        },
+        "body": {
+          "ru": "Сценарий: 1 000 HTTP-запросов одновременно, CPU=20%, p99=12 секунд, количество worker threads растёт. Это совместимо с ThreadPool starvation, но также с блокировками на уровне DB pool. Если ThreadPool queue.length растёт и stack traces показывают `Task.Wait`/`.Result` — появляются доказательства sync-over-async. Если очередь пула стабильна, а DB pool waits растут — основной предел, вероятно, БД.",
+          "en": "Scenario: 1,000 concurrent requests, CPU=20%, p99=12 seconds and rising worker count. This is compatible with ThreadPool starvation but may also involve DB pool contention. Rising ThreadPool queue length and stacks in Task.Wait/.Result support a sync-over-async hypothesis. Stable ThreadPool queue with growing DB pool waits points toward the DB layer."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "counters",
+        "title": {
+          "ru": "Шаг 2: измерение без угадывания",
+          "en": "Step 2: measure rather than guess"
+        },
+        "body": {
+          "ru": "Смотри `dotnet.thread_pool.thread.count` (сколько threads существует), `dotnet.thread_pool.queue.length` (сколько work items ждёт), CPU time, количество активных DB-соединений, HTTP latency p99. Ни одна метрика отдельно не даёт полный диагноз. Команда `dnx dotnet-counters monitor -p <PID>` доступна в .NET 10; не запускай сбор в production без понимания накладных расходов.",
+          "en": "Observe dotnet.thread_pool.thread.count (existing threads), dotnet.thread_pool.queue.length (pending work items), CPU time, active DB connections and HTTP p99. No single metric is a full diagnosis. .NET 10 can run `dnx dotnet-counters monitor -p <PID>`; account for diagnostic overhead in production."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "remediation",
+        "title": {
+          "ru": "Шаг 3: исправление и компромиссы",
+          "en": "Step 3: remediation and trade-offs"
+        },
+        "body": {
+          "ru": "Убери `.Result`/`.Wait()` из async code path, не оборачивай синхронный I/O в Task.Run. Ограничь одновременную работу с БД через async SemaphoreSlim/Channel, но помни: ограничение на уровне каждого инстанса не равно глобальному. Примени projection, pagination и CancellationToken. Увеличение ThreadPool min threads может замаскировать симптом, но не исправляет корневой блокирующий код.",
+          "en": "Remove .Result/.Wait() from async paths; do not wrap synchronous I/O in Task.Run. Bound DB operations with async SemaphoreSlim/Channel, remembering that per-instance limits are not global. Apply projection, pagination and CancellationToken. Raising ThreadPool minimum threads may mask symptoms rather than fixing the blocking code."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "verify",
+        "title": {
+          "ru": "Шаг 4: доказательство исправления",
+          "en": "Step 4: prove improvement"
+        },
+        "body": {
+          "ru": "Проведи одинаковый load test до и после: throughput, latency distributions, errors, thread count, queue length, DB pool occupancy и CPU. Укажи версии .NET, количество CPU и pool limits; не делай вывод из одного разового прогона. Если рецидивы краткие, собери trace со stack samples.",
+          "en": "Run comparable before/after load tests: throughput, latency percentiles, errors, thread count, queue length, DB pool occupancy and CPU. Record .NET version, CPU count and pool limits; avoid drawing conclusions from one run. Capture a trace for intermittent issues."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Назови два основных наблюдаемых признака возможного ThreadPool starvation.",
+          "en": "Name two observable signs of possible ThreadPool starvation."
+        },
+        "rubric": {
+          "ru": "Рост thread count/queue length вместе с задержками и возможно низким CPU; это признаки, не доказательство.",
+          "en": "Growing thread count/queued work and latency, potentially low CPU; clues, not proof."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему .Result блокирует worker, даже если внутри выполняется асинхронное I/O?",
+          "en": "Why does .Result block a worker even if the inner I/O is asynchronous?"
+        },
+        "rubric": {
+          "ru": "Синхронное ожидание удерживает вызывающий поток до завершения Task, которая может ждать I/O и continuation.",
+          "en": "Synchronous wait occupies the caller until the Task completes, even if inner I/O uses continuations."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Что произойдёт при Task.Run(() => DbQueryAsync().Result) под нагрузкой?",
+          "en": "What happens under load with Task.Run(() => DbQueryAsync().Result)?"
+        },
+        "rubric": {
+          "ru": "Worker блокируется на .Result, очередь/число workers могут расти; это не делает I/O неблокирующим.",
+          "en": "A worker blocks in Result; work queues/thread count may grow; this does not make I/O nonblocking."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "CPU=20%, p99 растёт, ThreadPool queue=0, но DB pool waits растут. Куда смотреть сначала?",
+          "en": "CPU=20%, p99 increases, ThreadPool queue=0, DB pool waits increase. Where do you investigate first?"
+        },
+        "rubric": {
+          "ru": "Пул соединений/длительность SQL и downstream DB, при этом проверить другие данные; CPU alone не диагноз.",
+          "en": "Investigate DB pool occupancy, SQL duration and downstream DB first, corroborating with other evidence."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Предложи исправление для 1 000 запросов с 100 DB connections и объясни компромиссы bounded concurrency.",
+          "en": "Design a fix for 1,000 requests with 100 DB connections and explain bounded concurrency trade-offs."
+        },
+        "rubric": {
+          "ru": "Async end-to-end, pagination, max concurrency ниже/равно лимита на нужном уровне, backpressure, timeouts, cancellation; следить за очередями и p99.",
+          "en": "Async end-to-end, pagination, concurrency bound relative to the relevant pool, backpressure, timeouts and cancellation; monitor queue depth and p99."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/async-internals/05-queue-diagnostics.cs"
+    ],
+    "prerequisites": [
+      "async-socket-pipeline",
+      "async-memory-and-allocations"
     ]
   },
   {

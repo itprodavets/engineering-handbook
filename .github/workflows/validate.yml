@@ -26,6 +26,7 @@ jobs:
           node --check site/assets/app.js
           node --check site/assets/learning.js
           node --test tests/spaced-repetition.test.mjs
+          node --test tests/mastery.test.mjs
 
   dotnet:
     name: .NET 10 runnable examples
@@ -36,3 +37,4 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - run: python3 scripts/check_labs.py
+      - run: python3 scripts/check_deep_labs.py

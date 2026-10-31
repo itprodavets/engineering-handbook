@@ -43,3 +43,7 @@ Register new technology tracks in [`content/catalog.json`](content/catalog.json)
 Add deep technical explanations to content/units.json. Keep one canonical unit per mechanism and link questions as reinforcement only. Generate with scripts/build_units.py and scripts/build_site.py, verify both --check commands and run node --test tests/spaced-repetition.test.mjs. User review schedules remain browser-local and are never published.
 
 [Learning method](docs/learning-method.en.md) · [Learning units](topics/dotnet/units/en/README.md)
+
+## Full-depth engineering modules
+
+Do not stop at concise Q&A. Each full unit in content/units.json should include ordered `chapters`, precise resource and failure analysis, reproducible `labFiles`, and five `checks` (Recall, Explain, Predict, Diagnose, Design). Maintain separate RU/EN text. Hide evaluation rubrics until the learner attempts an answer. Self-ratings and typed answers stay in browser localStorage, never public Git. Run `python3 scripts/check_deep_labs.py` and `node --test tests/mastery.test.mjs` in addition to the normal validations. See [Interview preparation](docs/engineering-interview.en.md).

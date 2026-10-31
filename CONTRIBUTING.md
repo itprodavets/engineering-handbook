@@ -43,3 +43,7 @@ node --check site/assets/app.js
 Новые углублённые темы записывай в content/units.json, не в site/data и не в сгенерированные Markdown. Один механизм — один учебный раздел, вопросы — только закрепление. Запускай python3 scripts/build_units.py и python3 scripts/build_site.py, затем обе проверки с --check и node --test tests/spaced-repetition.test.mjs. Расписание пользователя остаётся локальным, без публикации в GitHub.
 
 [Методика повторения](docs/learning-method.md) · [Учебные разделы](topics/dotnet/units/README.md)
+
+## Стандарт глубокого учебного модуля
+
+Не ограничивайся кратким ответом. Для проверяемого механизма в content/units.json укажи: `chapters` с точным порядком исполнения, ресурсы и ограничения, `labFiles` и пять `checks` (Recall, Explain, Predict, Diagnose, Design). Пиши RU и EN отдельно. Критерии проверки скрыты до самостоятельного ответа, оценки и введённые тексты не записываются в публичный GitHub. Запусти `python3 scripts/check_deep_labs.py`, `node --test tests/mastery.test.mjs` и обычную проверку документации. Пример методики: [Глубокие инженерные собеседования](docs/engineering-interview.md).

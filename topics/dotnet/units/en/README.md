@@ -7,8 +7,11 @@ One mechanism, one canonical explanation; questions reinforce it.
 ## [The async/await execution lifecycle](../../en/async-lifecycle.md)
 
 - [I/O-bound and CPU-bound work](io-vs-cpu-bound.md) — Distinguish computation, network waiting, and physical resources.
+- [The awaiter contract and synchronous completion](awaiter-completion-path.md) — Understand GetAwaiter/IsCompleted/GetResult and why await may not suspend.
 - [What the compiler generates for async/await](async-state-machine.md) — Understand MoveNext, awaiters and the IsCompleted fast path.
 - [From PostgreSQL to epoll/IOCP and continuations](async-socket-pipeline.md) — Trace SQL, sockets, the OS kernel, and resumption in C#.
+- [Memory, state machines and async allocation cost](async-memory-and-allocations.md) — Measure real async costs without inventing object sizes.
+- [Production case: p99 latency and ThreadPool starvation](async-production-capstone.md) — Learn to prove the cause of latency and design a justified fix.
 
 ## [ThreadPool and the OS scheduler](../../en/threadpool-scheduling.md)
 
