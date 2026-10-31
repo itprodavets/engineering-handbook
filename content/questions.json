@@ -733,5 +733,257 @@
     "guarantee": "A раньше X; дальнейший вывод недетерминирован без явного ожидания.",
     "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/common-async-bugs",
     "terms": ""
+  },
+  {
+    "id": "Q-036",
+    "slug": "Q-036-apm-eap-tap-history",
+    "title": "APM/EAP/TAP",
+    "q": {
+      "ru": "Как выполняли асинхронный I/O до async/await и в какие годы появились APM, EAP и TAP?",
+      "en": "How was asynchronous I/O performed before async/await, and when did APM, EAP and TAP appear?"
+    },
+    "a": {
+      "ru": "APM (.NET 1.0) использовал Begin/End, IAsyncResult и callbacks; EAP (.NET 2.0) использовал события; TAP (.NET 4) — Task и continuations. C# 5 (2012) добавил async/await, который компилируется в state machine. Настоящий неблокирующий I/O зависит от реализации библиотеки и ОС.",
+      "en": "APM (.NET 1.0) used Begin/End, IAsyncResult and callbacks; EAP (.NET 2.0) used completion events; TAP (.NET 4) introduced Task and continuations. C# 5 (2012) added async/await compiler-generated state machines. True nonblocking I/O depends on library and OS support."
+    },
+    "code": "",
+    "lab": "labs/dotnet/Q-036.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/interop-with-other-asynchronous-patterns-and-types",
+    "terms": ""
+  },
+  {
+    "id": "Q-037",
+    "slug": "Q-037-apm-vs-taskrun-read",
+    "title": "Async I/O vs blocking",
+    "q": {
+      "ru": "Почему NetworkStream.BeginRead может масштабироваться лучше, чем Task.Run(() => stream.Read(...))?",
+      "en": "Why can NetworkStream.BeginRead scale better than Task.Run(() => stream.Read(...))?"
+    },
+    "a": {
+      "ru": "Настоящее pending socket I/O не удерживает отдельный заблокированный worker на всё ожидание. Task.Run переносит синхронный Read в ThreadPool: worker блокируется при отсутствии данных. Но абстрактный Stream.BeginRead не гарантирует такую реализацию.",
+      "en": "True pending socket I/O does not pin a worker throughout the wait. Task.Run offloads synchronous Read to a ThreadPool worker which may block. Generic Stream.BeginRead does not by itself promise true async I/O."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.beginread",
+    "terms": ""
+  },
+  {
+    "id": "Q-038",
+    "slug": "Q-038-inline-apm-callback-captured-result",
+    "title": "Inline callback",
+    "q": {
+      "ru": "Что напечатает callback, если он вызван inline до завершения присваивания result = BeginRead(...)?",
+      "en": "What does a callback print if invoked inline before assigning result = BeginRead(...)?"
+    },
+    "a": {
+      "ru": "True: при вычислении правой части присваивания result ещё null. Аргумент ar содержит IAsyncResult завершившейся операции. Если callback на другом потоке, возникает гонка с присваиванием. Лаборатория моделирует inline callback, не реальный сокет.",
+      "en": "True: the right-hand side executes before result is assigned, so it is still null. The callback ar parameter identifies the completed operation. Another-thread callback can race with assignment. The lab simulates inline execution rather than a real socket."
+    },
+    "code": "IAsyncResult? result = null;\nresult = stream.BeginRead(buffer,0,buffer.Length, ar => Console.WriteLine(result is null),null);",
+    "lab": "labs/dotnet/Q-038.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.beginread",
+    "terms": ""
+  },
+  {
+    "id": "Q-039",
+    "slug": "Q-039-race-condition-vs-data-race",
+    "title": "Race vs Data Race",
+    "q": {
+      "ru": "Чем отличается Race Condition от Data Race и может ли логическая гонка возникнуть без data race?",
+      "en": "How do race conditions differ from data races, and can a logical race occur without a data race?"
+    },
+    "a": {
+      "ru": "Race Condition — нарушение инварианта из-за допустимого порядка конкурентных событий. Data Race — конфликтующие несинхронизированные обращения к общей области памяти (одно — запись). Две отдельно атомарные операции check и act могут создать логическую гонку без data race.",
+      "en": "A race condition is an invariant violation caused by event ordering. A data race is conflicting unsynchronized memory access with at least one write. Two individually atomic check/act operations can still cause a logical race without a data race."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/standard/threading/managed-threading-best-practices",
+    "terms": ""
+  },
+  {
+    "id": "Q-040",
+    "slug": "Q-040-lost-update-two-task-run",
+    "title": "Lost Update",
+    "q": {
+      "ru": "Какие значения возможны после двух Task.Run(() => state.Value++) и await Task.WhenAll, если Value=0?",
+      "en": "What outcomes are possible after two Task.Run(() => state.Value++) and awaiting Task.WhenAll, starting at Value=0?"
+    },
+    "a": {
+      "ru": "1 или 2. ++ не атомарен: оба потока могут прочитать 0 и записать 1. Task.WhenAll ждёт завершения, но не защищает общую память. Пример лаборатории принудительно устраивает interleaving с потерянным обновлением.",
+      "en": "1 or 2. ++ is not atomic: both may read 0 and write 1. Task.WhenAll only waits for completion, not mutual exclusion. The lab forces a lost-update interleaving."
+    },
+    "code": "var state = new Counter();\nawait Task.WhenAll(Task.Run(() => state.Value++), Task.Run(() => state.Value++));\nConsole.WriteLine(state.Value);",
+    "lab": "labs/dotnet/Q-040.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.increment",
+    "terms": ""
+  },
+  {
+    "id": "Q-041",
+    "slug": "Q-041-volatile-does-not-make-plus-plus-atomic",
+    "title": "volatile",
+    "q": {
+      "ru": "Почему volatile int Value не делает Value++ атомарным и что реально гарантирует volatile в C#?",
+      "en": "Why does volatile int Value not make Value++ atomic, and what ordering does C# volatile provide?"
+    },
+    "a": {
+      "ru": "Volatile read имеет acquire, volatile write — release семантику. Они не создают глобальный последовательный порядок всех операций и не объединяют read/modify/write в неделимую транзакцию: два потока могут записать 1 вместо 2.",
+      "en": "Volatile reads have acquire, writes have release semantics. This is not a single global sequential order or an atomic composite read-modify-write: both workers may write 1 rather than 2."
+    },
+    "code": "sealed class Counter { public volatile int Value; }\n// Two unsynchronized Value++ operations can lose an update.",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/volatile",
+    "terms": ""
+  },
+  {
+    "id": "Q-042",
+    "slug": "Q-042-interlocked-increment-ref",
+    "title": "Interlocked.Increment",
+    "q": {
+      "ru": "Что гарантирует Interlocked.Increment(ref int) и почему ref не связан со ссылочной природой Counter?",
+      "en": "What does Interlocked.Increment(ref int) guarantee, and why is ref unrelated to Counter being a reference type?"
+    },
+    "a": {
+      "ru": "Атомарный read-modify-write одного int: два успешных инкремента из 0 дают 2. ref передаёт саму ячейку int даже если это локальная value-type переменная. Не захватывает C# Monitor lock для всей секции; обычно аппаратные атомарные инструкции.",
+      "en": "Atomic read-modify-write of one int: two completed increments from 0 result in 2. ref passes the variable location even for a local value-type int. It does not acquire a C# Monitor over an entire section; runtime typically uses CPU atomic instructions."
+    },
+    "code": "int counter = 0;\nInterlocked.Increment(ref counter);",
+    "lab": "labs/dotnet/Q-042.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.increment",
+    "terms": ""
+  },
+  {
+    "id": "Q-043",
+    "slug": "Q-043-check-then-act-stock-negative",
+    "title": "Check-Then-Act",
+    "q": {
+      "ru": "Может ли stock стать -1 при Volatile.Read(stock)>0 и последующем Interlocked.Decrement, если stock=1?",
+      "en": "Can stock become -1 after a volatile positive check and an Interlocked.Decrement when starting at stock=1?"
+    },
+    "a": {
+      "ru": "Да. Два покупателя могут прочитать 1 до любого декремента. Атомарные декременты выполняются как 1→0→-1. Операция проверки и действие не атомарны вместе; нарушается инвариант stock>=0.",
+      "en": "Yes. Both buyers may read 1 before either decrements. Their individually atomic decrements produce 1→0→-1. The check and act are not atomic together, violating stock>=0."
+    },
+    "code": "if (Volatile.Read(ref stock)>0)\n    Interlocked.Decrement(ref stock);",
+    "lab": "labs/dotnet/Q-043.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.decrement",
+    "terms": ""
+  },
+  {
+    "id": "Q-044",
+    "slug": "Q-044-compareexchange-returns-prior",
+    "title": "CompareExchange",
+    "q": {
+      "ru": "При stock=1 что вернёт CompareExchange(ref stock,0,1) и чему станет равен stock?",
+      "en": "Starting from stock=1, what does CompareExchange(ref stock,0,1) return and what is stock afterward?"
+    },
+    "a": {
+      "ru": "Возвращает прежнее значение 1; одновременно атомарно записывает 0, поскольку stock совпал с expected=1. Аргументы: ref location, newValue, expectedValue. При stock=10, current=10, CAS(current-3,current) даёт previous=10,current=10,stock=7.",
+      "en": "Returns the old value 1 while atomically writing 0 because stock matched expected=1. Arguments: ref location, newValue, expectedValue. For stock=10/current=10, CAS(current-3,current) returns previous=10 and leaves current=10, stock=7."
+    },
+    "code": "int stock=1;\nint previous=Interlocked.CompareExchange(ref stock,0,1);\nConsole.WriteLine($\"{previous} {stock}\");",
+    "lab": "labs/dotnet/Q-044.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.compareexchange",
+    "terms": ""
+  },
+  {
+    "id": "Q-045",
+    "slug": "Q-045-two-buyers-single-item-cas",
+    "title": "CAS one item",
+    "q": {
+      "ru": "Могут ли оба потока успешно выполнить CompareExchange(ref stock,0,1) при stock=1?",
+      "en": "Can both threads successfully execute CompareExchange(ref stock,0,1) when stock starts at 1?"
+    },
+    "a": {
+      "ru": "Нет. Только один CAS атомарно выполнит 1→0 и вернёт previous=1. Другой увидит 0 и получит previous=0; Purchased печатается один раз, stock=0.",
+      "en": "No. Only one CAS can atomically replace 1→0 and return previous=1. The other sees 0 and returns previous=0; Purchased occurs once and stock ends at 0."
+    },
+    "code": "if (Interlocked.CompareExchange(ref stock,0,1)==1)\n    Console.WriteLine(\"Purchased\");",
+    "lab": "labs/dotnet/Q-045.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.compareexchange",
+    "terms": ""
+  },
+  {
+    "id": "Q-046",
+    "slug": "Q-046-two-buyers-stock-three-single-cas",
+    "title": "CAS expected value",
+    "q": {
+      "ru": "Если stock=3, два потока выполняют CompareExchange(ref stock,2,3). Сколько покупок успешны и что возвращают оба CAS?",
+      "en": "If stock=3 and two threads perform CompareExchange(ref stock,2,3), how many succeed and what do the calls return?"
+    },
+    "a": {
+      "ru": "Ровно один успешный переход 3→2, stock=2. Победитель получает 3, проигравший получает 2. Второй должен заново прочитать остаток и повторить CAS с expected=2, чтобы купить ещё один товар.",
+      "en": "Exactly one 3→2 transition succeeds; stock=2. Winner receives old value 3, loser gets 2. Loser must reread stock and retry with expected=2 to buy another item."
+    },
+    "code": "int previous=Interlocked.CompareExchange(ref stock,2,3);",
+    "lab": "labs/dotnet/Q-046.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.compareexchange",
+    "terms": ""
+  },
+  {
+    "id": "Q-047",
+    "slug": "Q-047-cas-loop-five-buyers",
+    "title": "CAS-loop",
+    "q": {
+      "ru": "Как CAS-loop ведёт себя при stock=3 и двух покупателях, а затем stock=1 и пяти покупателях?",
+      "en": "How does a CAS loop behave with stock=3/two buyers and stock=1/five buyers?"
+    },
+    "a": {
+      "ru": "При stock=3 и двух покупателях оба могут купить, stock=1: проигравший CAS перечитывает current и повторяет попытку. При stock=1 и пяти покупателях один получает true, четыре false, stock=0. На каждой итерации проверяется current<=0; значение не станет -1 при соблюдении протокола.",
+      "en": "With stock=3/two buyers both succeed and stock=1; a failed CAS rereads the actual value. With stock=1/five buyers one returns true, four false and stock=0. Each iteration checks current<=0; the invariant holds if all writers follow this protocol."
+    },
+    "code": "while (true) {\n  int current=Volatile.Read(ref stock);\n  if (current<=0) return false;\n  if (Interlocked.CompareExchange(ref stock,current-1,current)==current) return true;\n}",
+    "lab": "labs/dotnet/Q-047.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.compareexchange",
+    "terms": ""
   }
 ]

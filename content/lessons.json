@@ -82,7 +82,10 @@
       12,
       13,
       24,
-      25
+      25,
+      36,
+      37,
+      38
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/standard/async-in-depth",
@@ -335,7 +338,16 @@
       28,
       29,
       34,
-      35
+      35,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked",
