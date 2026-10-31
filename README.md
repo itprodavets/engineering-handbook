@@ -35,6 +35,12 @@
 - [Блокировки и sync-over-async](topics/dotnet/sync-over-async.md) — 1 вопросов и упражнений
 
 
+## Пошаговое обучение и карточки
+
+- [Углублённые разделы C# / .NET](topics/dotnet/units/README.md)
+- [Карточки «Знаю / Не знаю»](https://itprodavets.github.io/engineering-handbook/#/ru/cards)
+- [Методика повторения](docs/learning-method.md)
+
 ## Практика и код
 
 - [.NET / C# — Вопросы](questions/dotnet/README.md)

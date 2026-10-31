@@ -37,3 +37,9 @@ New technologies use the lesson's `track` (for example `go` or `kafka`). Questio
 ## Categories
 
 Register new technology tracks in [`content/catalog.json`](content/catalog.json). The generator updates README, RU/EN category pages and Pages datasets. [Repository layout](docs/repository-layout.en.md).
+
+## Learning units and flashcards
+
+Add deep technical explanations to content/units.json. Keep one canonical unit per mechanism and link questions as reinforcement only. Generate with scripts/build_units.py and scripts/build_site.py, verify both --check commands and run node --test tests/spaced-repetition.test.mjs. User review schedules remain browser-local and are never published.
+
+[Learning method](docs/learning-method.en.md) · [Learning units](topics/dotnet/units/en/README.md)

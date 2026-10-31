@@ -35,6 +35,12 @@ A technical learning handbook covering languages, runtimes, concurrency, infrast
 - [Blocking and sync-over-async](topics/dotnet/en/sync-over-async.md) — 1 questions and exercises
 
 
+## Deep-dive learning and flashcards
+
+- [C# / .NET deep-dive units](topics/dotnet/units/en/README.md)
+- [Know / Don't know flashcards](https://itprodavets.github.io/engineering-handbook/#/en/cards)
+- [Spaced-repetition method](docs/learning-method.en.md)
+
 ## Practical challenges and code
 
 - [.NET / C# — Questions](questions/dotnet/README.en.md)

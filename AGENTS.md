@@ -17,3 +17,7 @@ This is a **public-safe**, bilingual, source-controlled learning handbook. Keep 
 References: [Chat-based authoring (RU)](docs/chat-authoring.md) · [English](docs/chat-authoring.en.md) · [Technical accuracy](docs/technical-accuracy.md).
 
 New categories are registered in `content/catalog.json`; keep the knowledge map and Pages data synchronized. See [repository layout](docs/repository-layout.md) and [storage design](docs/storage.md). Do not add private user scores to public content.
+
+## Deep-dive units and cards
+
+Canonical deep technical explanations belong in content/units.json: one unit per distinct mechanism, with Russian and English definitions, compiler/runtime/OS steps, resources, failure modes and the relevant question IDs. Each question has exactly one unit owner; do not duplicate explanations in practice cards. Generate with scripts/build_units.py and scripts/build_site.py, then run both --check validations. Browser-local SRS progress must never be committed to public GitHub. [Learning method](docs/learning-method.en.md).

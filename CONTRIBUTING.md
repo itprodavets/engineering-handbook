@@ -37,3 +37,9 @@ node --check site/assets/app.js
 ## Категории
 
 Новые технологии регистрируются в [`content/catalog.json`](content/catalog.json). После добавления материала генератор автоматически обновляет README, каталог RU/EN и Pages. [Структура репозитория](docs/repository-layout.md).
+
+## Обучение и карточки
+
+Новые углублённые темы записывай в content/units.json, не в site/data и не в сгенерированные Markdown. Один механизм — один учебный раздел, вопросы — только закрепление. Запускай python3 scripts/build_units.py и python3 scripts/build_site.py, затем обе проверки с --check и node --test tests/spaced-repetition.test.mjs. Расписание пользователя остаётся локальным, без публикации в GitHub.
+
+[Методика повторения](docs/learning-method.md) · [Учебные разделы](topics/dotnet/units/README.md)
