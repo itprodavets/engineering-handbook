@@ -1393,53 +1393,388 @@
     "lesson": "task-composition",
     "level": "fundamentals",
     "title": {
-      "ru": "WhenAll и WhenAny — семантика завершения",
-      "en": "WhenAll and WhenAny completion semantics"
+      "ru": "WhenAny/WhenAll: завершение, ошибки и отмена",
+      "en": "WhenAny/WhenAll: completion, exceptions and cancellation"
     },
     "goal": {
-      "ru": "Различать ожидание всех задач и получение первой завершившейся.",
-      "en": "Distinguish waiting for all tasks from receiving the first completion."
+      "ru": "Точно понимать вложенные Task, приоритет Faulted/Canceled, aggregation и поведение await.",
+      "en": "Precisely reason about nested Tasks, Faulted/Canceled precedence, exception aggregation and await."
     },
     "definition": {
-      "ru": "Task.WhenAll создаёт агрегирующую Task, завершение которой зависит от всех входных. Task.WhenAny возвращает завершившуюся первой Task независимо от её статуса; оставшиеся задачи не отменяются автоматически.",
-      "en": "Task.WhenAll produces an aggregate task that completes after all inputs. Task.WhenAny yields the first completed task regardless of its state; the others are not automatically canceled."
+      "ru": "WhenAny даёт Task<Task>: внешняя задача успешно завершается при первом завершении входящей и возвращает Task-победителя, даже если он Faulted/Canceled. WhenAll ждёт все входящие: Faulted приоритетнее Canceled; при нескольких faults агрегат хранит их все, хотя await распространяет одно. WhenAny не отменяет проигравшие операции.",
+      "en": "WhenAny returns Task<Task>: its outer Task succeeds upon the first input completion and returns that Task, even if faulted/canceled. WhenAll waits for all inputs and prioritizes Faulted over Canceled; it aggregates all faults, although await propagates one. WhenAny does not cancel losers."
     },
     "steps": [
       {
-        "ru": "WhenAny возвращает Task<Task>, у внешней задачи статус успеха даже если winner завершился Faulted.",
-        "en": "WhenAny returns Task<Task>; the outer task succeeds even if the winning task faulted."
+        "ru": "WhenAny возвращает Task<Task> и не выбрасывает fault победителя до ожидания самой возвращённой Task.",
+        "en": "WhenAny returns Task<Task> without propagating the winning task's fault until the winner itself is awaited."
       },
       {
-        "ru": "Для исключения победителя отдельно await саму возвращённую Task.",
-        "en": "To observe the winner’s exception, await the returned inner Task."
+        "ru": "Проигравшие WhenAny продолжают исполняться, а таймер может выиграть раньше Producer, который затем завершится до resume вызывающего.",
+        "en": "WhenAny losers continue, and the timeout winner may be followed by producer completion before the caller resumes."
       },
       {
-        "ru": "WhenAll сохраняет ошибки всех faulted входных задач в своей AggregateException.",
-        "en": "WhenAll preserves failures of all faulted input tasks in its AggregateException."
+        "ru": "WhenAll не завершается после первого отказа: он ждёт все входящие Task, затем вычисляет Faulted/Canceled/RanToCompletion.",
+        "en": "WhenAll does not fail fast: it awaits all inputs before selecting Faulted/Canceled/Success."
       },
       {
-        "ru": "Обычный await WhenAll выбрасывает одно исключение; изучи all.Exception.InnerExceptions для полного набора.",
-        "en": "A normal await of WhenAll rethrows one exception; inspect all.Exception.InnerExceptions for the full set."
+        "ru": "combined.Exception.InnerExceptions содержит отдельные fault-исключения входящих; await combined распространяет одно, а синхронный Wait бросает AggregateException.",
+        "en": "combined.Exception.InnerExceptions holds fault exceptions from the inputs; await propagates one while synchronous Wait throws AggregateException."
+      },
+      {
+        "ru": "В результате Faulted+Canceled общее состояние Faulted; отменённая входящая Task всё ещё Canceled.",
+        "en": "With Faulted+Canceled input status, the combined Task is Faulted; the canceled input remains Canceled."
       }
     ],
     "resources": {
-      "ru": "Агрегирующие Task и продолжения; не выделяются специальные потоки на каждое ожидание.",
-      "en": "Aggregate Task and continuations; no dedicated threads per wait."
+      "ru": "Объекты Task/continuations, tracking завершения всех входящих, память для исключений и возможный lifetime проигравших WhenAny операций.",
+      "en": "Task objects and continuations, tracking all completions, retained exception state and potentially longer lifetime of WhenAny losers."
     },
     "pitfalls": {
-      "ru": "WhenAll не даёт сериализации доступа к общей памяти и не ограничивает параллелизм.",
-      "en": "WhenAll neither synchronizes shared memory nor bounds parallelism."
+      "ru": "Не называй WhenAll fail-fast; не рассчитывай на фиксированный порядок исключений при конкурентных сбоях. Проверка Status не равнозначна обработке ошибок. При timeout отдельно управляй токеном, продолжением, наблюдением ошибок и ресурсами проигравшей Task.",
+      "en": "Do not call WhenAll fail-fast or rely on a specific fault order under concurrent failures. Inspecting Status is not equivalent to handling exceptions. On timeout handle cancellation token, losing work, exceptions and resources."
     },
-    "code": "Task all = Task.WhenAll(first, second);\ntry { await all; } catch { Console.WriteLine(all.Exception); }",
+    "code": "Task winner = await Task.WhenAny(producer, Task.Delay(1000));\nif (winner == producer) await producer; // propagate producer fault\nelse Console.WriteLine(\"Timeout\");",
     "codeLanguage": "csharp",
     "questions": [
       14,
       15,
       26,
-      27
+      27,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60
     ],
     "refs": [
-      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall"
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany?view=net-10.0",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?view=net-10.0",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.delay?view=net-10.0"
+    ],
+    "chapters": [
+      {
+        "id": "whenany-outer-vs-inner",
+        "title": {
+          "ru": "WhenAny возвращает Task<Task>",
+          "en": "WhenAny returns Task<Task>"
+        },
+        "body": {
+          "ru": "`Task.WhenAny(first,second)` возвращает Task<Task>. `await WhenAny(...)` успешно выдаёт Task-победителя даже если он Faulted/Canceled; выбросить исключение победителя можно при следующем `await completed`. Не путай Completed wrapper и Winner. Проигравшие Task продолжают выполнение и автоматически не отменяются.",
+          "en": "Task.WhenAny(first,second) returns Task<Task>. Awaiting WhenAny succeeds with the winning Task even if it is Faulted or Canceled; awaiting that winning Task propagates its exception. The losers keep running unless explicitly canceled."
+        },
+        "code": "Task completed=await Task.WhenAny(producer,timeout);\nif (completed==producer) await producer;\nelse Console.WriteLine(\"Timeout\");",
+        "language": "csharp"
+      },
+      {
+        "id": "winner-vs-observation",
+        "title": {
+          "ru": "Победитель и состояние к моменту продолжения",
+          "en": "Winner vs state when continuation runs"
+        },
+        "body": {
+          "ru": "Победитель определяется первым событием завершения. Но пока код после await получит CPU, проигравшая задача тоже может завершиться. Поэтому «таймер выиграл» не означает «Producer ещё не выполнился к моменту Console.WriteLine». При timeout вызывающий код обязан решить, как отменять, наблюдать исключения и освобождать ресурсы проигравшего.",
+          "en": "The winner is the first completed task, but the loser can complete before the caller's continuation runs. 'Timeout won' does not prove the producer remains incomplete at Console.WriteLine. On timeout callers must decide how to cancel, observe faults and clean up the losing operation."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "whenall-aggregation",
+        "title": {
+          "ru": "WhenAll собирает ошибки и дожидается всех",
+          "en": "WhenAll aggregates faults and waits for all"
+        },
+        "body": {
+          "ru": "`Task.WhenAll` не fail-fast: возвращённая Task завершается лишь после завершения всех входящих. Когда две Task уже Faulted, `combined.Exception.InnerExceptions.Count == 2` (для двух одиночных исключений). `await combined` распространяет одно исключение, не обязательно агрегирующий объект; для всех ошибок исследуй сохранённую `combined.Exception`.",
+          "en": "WhenAll is not fail-fast: its returned Task completes after all inputs complete. Two already faulted inputs each storing one exception yield combined.Exception.InnerExceptions.Count == 2. Awaiting combined propagates one exception; inspect combined.Exception for all failures."
+        },
+        "code": "Task combined=Task.WhenAll(first,second);\ntry { await combined; }\ncatch { foreach (var ex in combined.Exception!.InnerExceptions) Console.WriteLine(ex); }",
+        "language": "csharp"
+      },
+      {
+        "id": "fault-cancel-priority",
+        "title": {
+          "ru": "Faulted приоритетнее Canceled",
+          "en": "Faulted takes priority over Canceled"
+        },
+        "body": {
+          "ru": "Итог WhenAll: есть хотя бы одна Faulted → Faulted; иначе есть хотя бы одна Canceled → Canceled; иначе RanToCompletion. Отмена другой Task при этом не исчезает — её собственный статус остаётся Canceled; но она не прибавляется как отдельный Fault к агрегату исключений. Await WhenAll с fault распространяет одно из fault-исключений.",
+          "en": "WhenAll status precedence: any Faulted → Faulted; otherwise any Canceled → Canceled; otherwise RanToCompletion. A canceled input retains its own status but does not add another fault exception to the aggregate. Awaiting a faulted WhenAll propagates one fault exception."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "time-is-not-sync",
+        "title": {
+          "ru": "Таймер и обработка ошибок",
+          "en": "Timer race and error handling"
+        },
+        "body": {
+          "ru": "`Task.Delay` даёт возможность timeout, но сам по себе не гарантирует, что Producer успел завершиться. После `WhenAny` проверь идентичность победителя и `await` самого Producer при его успехе, чтобы правильно получить его исключение и memory synchronization. Для APIs, поддерживающих токен, кооперативная отмена обязательна для реальной остановки: истечение времени само не отменяет I/O.",
+          "en": "Task.Delay supplies a timeout race, not proof of producer completion. After WhenAny inspect the winning Task and await producer when it wins to propagate errors and synchronize access. For APIs supporting tokens, use cooperative cancellation for actual shutdown; elapsed time alone does not stop I/O."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Опиши тип Task.WhenAny(Task, Task) и поведение ошибки победителя.",
+          "en": "Describe Task.WhenAny(Task, Task) return type and how a faulted winner behaves."
+        },
+        "rubric": {
+          "ru": "Task<Task>; внешняя Task RanToCompletion, вернётся winner; await winner распространяет ошибку.",
+          "en": "Task<Task>; outer RanToCompletion; await winner to propagate its failure."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Как WhenAll решает Faulted/Canceled/RanToCompletion и что хранит Exception?",
+          "en": "How does WhenAll choose Faulted/Canceled/Success and what does Exception store?"
+        },
+        "rubric": {
+          "ru": "Faulted > Canceled > success. Aggregate исключения faulted входящих; все задачи завершены.",
+          "en": "Faulted > Canceled > success. Aggregate faults from inputs; all must complete."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Два Task.FromException и await WhenAll: сколько InnerExceptions и что выбрасывает await?",
+          "en": "Two Task.FromException inputs and awaited WhenAll: count of InnerExceptions and exception propagation?"
+        },
+        "rubric": {
+          "ru": "Два InnerExceptions, await выбрасывает одно из сохранённых исключений (не обязательно AggregateException).",
+          "en": "Two InnerExceptions; await propagates one of the stored exceptions (not necessarily AggregateException)."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему одна Task уже faulted, а await Task.WhenAll ещё не завершился?",
+          "en": "Why might one input task already be faulted while awaiting WhenAll still has not completed?"
+        },
+        "rubric": {
+          "ru": "WhenAll ждёт все, не fail-fast. Исследовать оставшиеся pending, cancellation, hangs и resource lifetime.",
+          "en": "WhenAll waits all, not fail-fast. Investigate pending tasks, cancellation, hangs and resource lifetime."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как безопасно построить timeout через WhenAny, обработать fault и не забыть проигравшую Task?",
+          "en": "How to implement a timeout with WhenAny, propagate faults and handle the losing task?"
+        },
+        "rubric": {
+          "ru": "Task winner=await WhenAny(producer,delay); if winner==producer await producer; else cancel cooperative, observe faults, cleanup. Или WaitAsync с учётом того, что underlying operation может продолжиться.",
+          "en": "Inspect winner; await producer on producer-win; on timeout cooperatively cancel, observe faults, clean resources. Or WaitAsync while recognizing underlying work may continue."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-055.cs",
+      "labs/dotnet/Q-056.cs",
+      "labs/dotnet/Q-057.cs",
+      "labs/dotnet/Q-058.cs",
+      "labs/dotnet/Q-059.cs",
+      "labs/dotnet/Q-060.cs"
+    ],
+    "prerequisites": [
+      "task-vs-thread"
+    ]
+  },
+  {
+    "id": "task-completion-vs-ordering",
+    "lesson": "task-composition",
+    "level": "internals",
+    "title": {
+      "ru": "Task: completion synchronization, порядок и таймеры",
+      "en": "Tasks: completion synchronization, ordering and timers"
+    },
+    "goal": {
+      "ru": "Различать ожидание конкретной Task, ожидание набора задач и ожидание времени; не путать completion с execution order.",
+      "en": "Distinguish awaiting a specific Task, awaiting several Tasks and waiting for time; avoid confusing completion with execution order."
+    },
+    "definition": {
+      "ru": "`await producer` устанавливает связь с завершением конкретной задачи и позволяет безопасно читать произведённые ею данные после завершения. `await Task.WhenAll(producer,consumer)` ожидает обе задачи, но не упорядочивает операции внутри них. `await Task.Delay(100)` ожидает таймер, а не Producer; время не является протоколом синхронизации.",
+      "en": "Awaiting producer synchronizes with that task's completion and enables safe observation of its writes afterward. Awaiting WhenAll(producer,consumer) waits for both but does not order work inside them. Awaiting Task.Delay(100) waits for a timer rather than producer; elapsed time is not a synchronization protocol."
+    },
+    "steps": [
+      {
+        "ru": "Task.Run ставит делегат в ThreadPool. После записи data=42 Producer завершает Task; await этой конкретной Task упорядочивает последующее чтение.",
+        "en": "Task.Run queues work. The producer writes data=42 and completes its Task; awaiting that Task synchronizes a subsequent read."
+      },
+      {
+        "ru": "Task.WhenAll не определяет порядок исполнения Producer и Consumer: Consumer может прочитать data=0 до записи Producer.",
+        "en": "Task.WhenAll does not order producer and consumer execution: the consumer may read zero before the producer writes."
+      },
+      {
+        "ru": "Task.Delay возвращает Task, связанную с таймером; это не делегат и не выделенный заблокированный worker.",
+        "en": "Task.Delay returns a timer-backed Task; it is neither a delegate nor one blocked worker per delay."
+      },
+      {
+        "ru": "Даже если Producer реально завершился раньше таймера, await постороннего таймера не является заменой ожиданию Producer для корректного memory ordering.",
+        "en": "Even if producer seems to finish before the timer, awaiting an unrelated delay does not replace awaiting producer for synchronization."
+      },
+      {
+        "ru": "Для зависимости await producer внутри Consumer или перед чтением. Для timeout используй Task.WaitAsync(TimeSpan, token) либо WhenAny с проверкой победителя и явным контролем проигравшей операции.",
+        "en": "Express the dependency by awaiting producer before reading. For timeouts use Task.WaitAsync or WhenAny with winner inspection and explicit handling of the losing operation."
+      }
+    ],
+    "resources": {
+      "ru": "Task completions, scheduler/continuations, таймеры и память их состояний; await при незавершённой задаче обычно не удерживает ThreadPool worker.",
+      "en": "Task completion state, scheduling/continuations, timers and their memory; an incomplete await generally does not tie up a ThreadPool worker."
+    },
+    "pitfalls": {
+      "ru": "`await Task.WhenAll(...)` после чтения не исправляет уже произошедшую гонку. `Task.Delay` не гарантирует конкретного порядка и не заменяет готовность результата. Completed Task не равна Task<T> с данными.",
+      "en": "Awaiting WhenAll after a read does not retroactively fix a race. Task.Delay does not enforce readiness or ordering. Task completion is distinct from a Task<T> return value."
+    },
+    "code": "int data = 0;\nTask producer = Task.Run(() => { data = 42; });\nTask consumer = Task.Run(async () => { await producer; Console.WriteLine(data); });\nawait Task.WhenAll(producer, consumer); // 42",
+    "codeLanguage": "csharp",
+    "questions": [
+      52,
+      53,
+      54
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/task-asynchronous-programming-model",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?view=net-10.0",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.delay?view=net-10.0"
+    ],
+    "chapters": [
+      {
+        "id": "await-publication",
+        "title": {
+          "ru": "Await Producer обеспечивает синхронизацию",
+          "en": "Awaiting the producer synchronizes completion"
+        },
+        "body": {
+          "ru": "Надо отличать ожидание завершения от блокирования thread. После `await producer` код продолжения видит записи, сделанные до успешного завершения producer, если нет других несинхронизированных писателей. Даже если async-метод реально приостанавливался и продолжился на другом worker, гарантия относится к Task completion, а не thread identity.",
+          "en": "Await is about operation completion, not necessarily blocking a thread. After awaiting producer, continuation code can observe writes performed before its successful completion, absent interfering unsynchronized writers. A thread switch is neither required nor relevant to the synchronization guarantee."
+        },
+        "code": "Task producer=Task.Run(() => data=42);\nawait producer;\nConsole.WriteLine(data); // 42",
+        "language": "csharp"
+      },
+      {
+        "id": "whenall-does-not-order",
+        "title": {
+          "ru": "WhenAll ждёт, но не упорядочивает",
+          "en": "WhenAll waits but does not order work"
+        },
+        "body": {
+          "ru": "Если Producer и Consumer независимо поставлены в ThreadPool, `await WhenAll` выполняется после того, как Consumer уже прочитал data. Он лишь ждёт завершения обоих и не создаёт happens-before между Producer write и Consumer read. В частности, Consumer может вывести 0. Исправление — сделать `await producer` частью самого Consumer.",
+          "en": "If producer and consumer are scheduled independently, awaiting WhenAll after the consumer has read data only joins both tasks. It does not impose an order between their internal reads and writes. The consumer can print zero. Await producer inside consumer to establish that dependency."
+        },
+        "code": "Task consumer=Task.Run(async () => { await producer; Console.WriteLine(data); });",
+        "language": "csharp"
+      },
+      {
+        "id": "delay-not-sync",
+        "title": {
+          "ru": "Task.Delay — таймер, не готовность данных",
+          "en": "Task.Delay is a timer, not data readiness"
+        },
+        "body": {
+          "ru": "`await Task.Delay(100)` ждёт примерно указанный интервал, но не доказывает завершение другой Task. Producer может стартовать поздно или работать дольше. Даже успешное завершение Producer «по настенным часам» до таймера не является нужным memory-ordering доказательством между независимыми задачами. В CI можно воспроизвести нулевой результат gate, а не нестабильными гонками времени.",
+          "en": "`await Task.Delay(100)` waits approximately the specified duration; it does not establish that another Task finished. The producer may start late or take longer. Even producer's wall-clock completion before the timer is not itself the synchronization proof. Use deterministic test gates rather than flaky sleeps to reproduce the race."
+        },
+        "code": "await Task.Delay(100);\nConsole.WriteLine(data); // no producer completion dependency",
+        "language": "csharp"
+      },
+      {
+        "id": "whenany-introduction",
+        "title": {
+          "ru": "Победитель WhenAny и последующее чтение",
+          "en": "WhenAny winner vs later observation"
+        },
+        "body": {
+          "ru": "Task.WhenAny возвращает Task победителя. Сам факт победы таймера не означает, что Producer остаётся незавершённым к моменту продолжения после await: Producer может закончить в промежутке. Проверяй идентичность победителя, затем ожидай Producer, если именно он завершился, и отдельно обрабатывай проигравшего при timeout.",
+          "en": "WhenAny returns the completed winner. A timeout winning does not mean the producer is still incomplete when the caller resumes: it may complete in between. Check task identity, then await producer when it wins; handle the losing operation explicitly on timeout."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Различи completion synchronization, execution ordering и waiting for time.",
+          "en": "Distinguish completion synchronization, execution ordering and a timer delay."
+        },
+        "rubric": {
+          "ru": "await producer — связь с producer; WhenAll — join без порядка внутри; Delay — unrelated timer.",
+          "en": "await producer joins producer; WhenAll joins a set without internal ordering; Delay awaits an unrelated timer."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему после await producer читаем data=42 без volatile?",
+          "en": "Why is data=42 observable after await producer without volatile?"
+        },
+        "rubric": {
+          "ru": "Producer записал до completion; await синхронизирует наблюдение завершения; других писателей нет.",
+          "en": "Producer wrote before completion; await synchronizes with completion; no concurrent writers."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Что может прочитать Consumer внутри независимой Task, если WhenAll вызывается только потом?",
+          "en": "What might the consumer read if its independent Task runs before a later WhenAll?"
+        },
+        "rubric": {
+          "ru": "0 или 42; WhenAll после события не устанавливает порядок внутри задач.",
+          "en": "0 or 42; a later WhenAll does not order the tasks internally."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Код проходит тесты с Task.Delay(100), но падает при нагрузке. Почему?",
+          "en": "Why does code relying on Task.Delay(100) pass tests but fail under load?"
+        },
+        "rubric": {
+          "ru": "Ожидание таймера вместо события, нет зависимости; планировщик/нагрузка меняют timing; нужен await конкретной операции.",
+          "en": "Awaiting a timer instead of the producer, no dependency; scheduler/load changes timing; await actual operation."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как безопасно организовать Consumer и timeout без блокирования worker?",
+          "en": "How to design a dependent consumer and timeout without blocking workers?"
+        },
+        "rubric": {
+          "ru": "await producer для зависимостей; Task.WaitAsync(timeout)/CancellationToken с кооперативной отменой, наблюдением errors и cleanup; у WhenAny проверять winner.",
+          "en": "Use await producer for dependency; WaitAsync timeout/cooperative CancellationToken, fault observation and cleanup; check WhenAny winner."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-052.cs",
+      "labs/dotnet/Q-053.cs",
+      "labs/dotnet/Q-054.cs"
+    ],
+    "prerequisites": [
+      "memory-ordering-publication"
     ]
   },
   {
@@ -1851,6 +2186,202 @@
     ],
     "prerequisites": [
       "race-condition-vs-data-race"
+    ]
+  },
+  {
+    "id": "memory-ordering-publication",
+    "lesson": "shared-memory",
+    "level": "internals",
+    "title": {
+      "ru": "Memory Model: видимость, ordering и safe publication",
+      "en": "Memory model: visibility, ordering and safe publication"
+    },
+    "goal": {
+      "ru": "Проверять гарантии публикации данных через release/acquire, JIT, поток ОС и happens-before.",
+      "en": "Reason about release/acquire publication, JIT, OS scheduling and happens-before."
+    },
+    "definition": {
+      "ru": "Атомарная запись флага ещё не означает безопасную публикацию соседних данных. Правильный протокол: сначала data=42, потом Volatile.Write(ready,1) (release); Consumer читает Volatile.Read(ready) (acquire), и только увидев 1 обращается к data. Для этого протокола, при отсутствии других записей, результат равен 42. Перестановка публикации перед записью данных допускает 0.",
+      "en": "An atomic flag store does not by itself publish surrounding data. Correct message-passing protocol: write data=42, then Volatile.Write(ready,1) (release); the consumer uses Volatile.Read(ready) (acquire) and reads data only after observing 1. With no other writers, this publishes 42. Publishing the flag before the data permits observing 0."
+    },
+    "steps": [
+      {
+        "ru": "Producer записывает данные обычным способом до release-публикации ready=1. Acquire-чтение флага связывает это с последующим чтением data.",
+        "en": "Producer stores data before the release publication of ready=1. The matching acquire observation orders the subsequent data read."
+      },
+      {
+        "ru": "Если сначала записать ready=1, Consumer может прочитать data=0 до поздней записи data=42; volatile не исправляет неправильный программный порядок.",
+        "en": "Publishing ready=1 first allows the consumer to read data=0 before the later data=42 write; volatile cannot repair the incorrect program order."
+      },
+      {
+        "ru": "Без Volatile.Read обычное чтение флага в цикле не даёт протокола синхронизации; JIT/CPU могут применять оптимизации, в том числе hoisting чтения.",
+        "en": "Without Volatile.Read, ordinary reads inside a loop do not establish the protocol; JIT/CPU optimizations including read hoisting may apply."
+      },
+      {
+        "ru": "Thread.Yield влияет на планировщик ОС, но не является acquire/read fence и не создаёт happens-before между памятью разных потоков.",
+        "en": "Thread.Yield affects OS scheduling, but is not an acquire operation or a contractually specified memory fence and establishes no happens-before relationship."
+      },
+      {
+        "ru": "Наличие volatile-протокола не гарантирует fairness, планирование, deadline или ограниченное время активного ожидания; для production часто лучше Task, Channel или другой примитив.",
+        "en": "The volatile protocol does not guarantee fairness, scheduling or bounded spin time; Tasks, Channels or other higher-level primitives are often preferable in production."
+      }
+    ],
+    "resources": {
+      "ru": "Атомарные чтения/записи, JIT/CPU переупорядочивание, CPU-время busy-wait, кэш-когерентность, планировщик ОС.",
+      "en": "Atomic reads/writes, JIT/CPU ordering, busy-wait CPU costs, cache coherence and OS scheduling."
+    },
+    "pitfalls": {
+      "ru": "Volatile.Read не обещает видеть хронологически последнюю запись на любом ядре; Thread.Yield не является memory synchronization. Опасный цикл без volatile не запускается как тест на бесконечное ожидание. Публикация объекта требует анализа всех последующих изменений.",
+      "en": "Volatile.Read does not promise the chronologically latest store on every core; Thread.Yield does not synchronize memory. An unsafe infinite spin loop must not be used as an executable test. Publishing an object also requires reasoning about later mutations."
+    },
+    "code": "int data = 0, ready = 0;\nTask producer = Task.Run(() => { data = 42; Volatile.Write(ref ready, 1); });\nTask consumer = Task.Run(() => { while (Volatile.Read(ref ready) == 0) Thread.Yield(); Console.WriteLine(data); });\nawait Task.WhenAll(producer, consumer); // prints 42",
+    "codeLanguage": "csharp",
+    "questions": [
+      48,
+      49,
+      50,
+      51
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#1554-volatile-fields",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.volatile.read",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.thread.yield?view=net-10.0"
+    ],
+    "chapters": [
+      {
+        "id": "three-dimensions",
+        "title": {
+          "ru": "Атомарность ≠ видимость ≠ порядок",
+          "en": "Atomicity is not visibility or ordering"
+        },
+        "body": {
+          "ru": "Чтение и запись int атомарны в рамках гарантированных типов, но это не доказывает, что две разные записи наблюдаются в нужном порядке. Atomicity отвечает за неделимость одного доступа, Visibility — за видимость записей после синхронизации, Ordering — за допустимые перестановки. JIT/CPU/ОС выполняют разные роли. Для доказательства используй отношения между конкретными операциями, а не фразу «кэш обновится».",
+          "en": "Atomicity concerns indivisible accesses; visibility concerns what another thread observes under an established synchronization protocol; ordering concerns allowed reorderings. An atomic int store alone does not order two different stores. JIT, CPU and scheduler have distinct responsibilities. Prove a protocol by the actual operations, not by assuming caches will refresh."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "release-acquire",
+        "title": {
+          "ru": "Правильная публикация: data до ready",
+          "en": "Correct publication: data before ready"
+        },
+        "body": {
+          "ru": "Producer выполняет `data=42`, затем `Volatile.Write(ref ready,1)` с release. Consumer повторяет `Volatile.Read(ref ready)` с acquire; после наблюдения 1 чтение data получает 42, если никто не изменяет data. Это иллюстрация message passing, аналогичная примеру из спецификации C#. Само чтение ready может какое-то время возвращать 0 — нет ограничения ожидания.",
+          "en": "The producer writes data=42 and then uses release Volatile.Write(ref ready,1). The consumer polls using acquire Volatile.Read and reads data after observing 1; absent other writers, it observes 42. This is the message-passing example covered by the C# language specification. The flag may continue to read as zero for some time; no bounded wait is promised."
+        },
+        "code": "data = 42;\nVolatile.Write(ref ready, 1);\n// Consumer: if (Volatile.Read(ref ready) == 1) Console.WriteLine(data); // 42",
+        "language": "csharp"
+      },
+      {
+        "id": "wrong-order",
+        "title": {
+          "ru": "Публикация до данных допускает 0",
+          "en": "Publishing before data permits 0"
+        },
+        "body": {
+          "ru": "Если `Volatile.Write(ref ready,1)` стоит ДО `data=42`, release не распространяется на последующую запись data. Consumer может заметить 1, выйти из цикла и прочитать старый 0. Возможный interleaving: publish ready=1 → consumer read ready=1 → read data=0 → producer data=42. Лаборатория Q-049 детерминированно фиксирует этот порядок через отдельный тестовый gate.",
+          "en": "If release-store ready=1 precedes data=42, it does not publish a later store. The consumer can observe ready=1 and data=0. Possible sequence: publish flag → consumer observes flag → reads zero → producer writes 42. Q-049 uses an explicit test gate to make that interleaving deterministic."
+        },
+        "code": "Volatile.Write(ref ready, 1);\ndata = 42; // too late for publication",
+        "language": "csharp"
+      },
+      {
+        "id": "jit-hoist",
+        "title": {
+          "ru": "Обычное чтение в цикле и JIT",
+          "en": "Non-volatile polling and the JIT"
+        },
+        "body": {
+          "ru": "Без volatile цикл `while (ready==0) { }` не содержит гарантированно синхронизированного чтения. JIT может в определённых условиях оптимизировать повторное чтение (например, вынести его из цикла), поэтому завершение не гарантировано. Конкретная оптимизация зависит от версии/архитектуры; не утверждай, что она обязана случиться. Не демонстрируй это бесконечным нестабильным тестом в CI.",
+          "en": "Without volatile, `while (ready==0) { }` has no synchronized reads. Under applicable conditions the JIT may hoist or otherwise optimize an ordinary load, so termination is not guaranteed. The actual optimization varies by implementation; do not claim it must occur or run unsafe infinite spin tests in CI."
+        },
+        "code": "while (ready == 0) { } // no synchronization contract",
+        "language": "csharp"
+      },
+      {
+        "id": "yield",
+        "title": {
+          "ru": "Thread.Yield не делает memory barrier",
+          "en": "Thread.Yield is not a memory barrier"
+        },
+        "body": {
+          "ru": "`Thread.Yield()` предлагает ОС уступить исполнение готовому потоку. Он не делает чтение ready volatile и не является доказательством visibility. Даже если loop с Yield на определённой реализации перечитывает значение и обычно завершается, это не означает гарантии Memory Model. Его результат bool сообщает лишь о факте переключения, а не о видимости данных.",
+          "en": "Thread.Yield offers the current time slice to another runnable thread. It is not an acquire read nor a memory visibility contract. A loop that happens to terminate on a particular runtime does not prove safe publication. Its boolean result reports scheduling, not memory ordering."
+        },
+        "code": "while (ready == 0) { Thread.Yield(); } // not a synchronization fix",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Определи atomicity, visibility и ordering. Чем acquire отличается от release?",
+          "en": "Define atomicity, visibility and ordering. Distinguish acquire and release."
+        },
+        "rubric": {
+          "ru": "Atomicity — неделимость; visibility — наблюдаемость записей; ordering — разрешённый порядок. Acquire для последующих чтений, release для предшествующих записей.",
+          "en": "Atomicity is indivisibility, visibility is cross-thread observation, ordering constrains reordering. Acquire governs later accesses; release prior accesses."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Объясни, почему data=42 перед Volatile.Write(ready,1), а Consumer читает Volatile.Read(ready).",
+          "en": "Explain why data=42 precedes the release flag store and why the consumer uses an acquire read."
+        },
+        "rubric": {
+          "ru": "Корректный протокол публикации; после наблюдения 1 видны предшествующие записи. Не обещать ограниченное время ожидания.",
+          "en": "Correct publication protocol: observing 1 makes prior data stores visible. No bounded-wait guarantee."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Может ли Consumer вывести 0, если Producer сначала публикует ready=1, а потом пишет data=42?",
+          "en": "Can a consumer print 0 if the producer publishes ready=1 before writing data=42?"
+        },
+        "rubric": {
+          "ru": "Да. Consumer читает 1 и data=0 до поздней записи. Это допустимый interleaving.",
+          "en": "Yes. Consumer can see the flag then read zero before the later data write."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Может ли `Thread.Yield()` гарантировать завершение цикла с обычным `while(ready==0)`? Что проверишь?",
+          "en": "Can Thread.Yield guarantee termination of an ordinary `while(ready==0)` polling loop? How would you investigate?"
+        },
+        "rubric": {
+          "ru": "Нет. OS scheduling не заменяет memory synchronization. Изучить JIT, optimized code, тип поля, volatile/lock, наличие CPU starvation.",
+          "en": "No. Scheduling is not memory synchronization. Inspect JIT optimizations, memory protocol, field type, volatile/locks, CPU starvation."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Предложи без busy-wait передачу значения от Producer к Consumer для production.",
+          "en": "Design producer-to-consumer transfer without busy-waiting."
+        },
+        "rubric": {
+          "ru": "Лучше `Task<T>` и await, `Channel<T>`, SemaphoreSlim или другие примитивы с корректным протоколом; учитывать отмену/ошибки/ресурсы.",
+          "en": "Prefer Task<T>/await, Channel<T> or proper synchronization primitives; handle errors, cancellation and resource usage."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-048.cs",
+      "labs/dotnet/Q-049.cs"
+    ],
+    "prerequisites": [
+      "atomicity-and-memory-visibility"
     ]
   },
   {
@@ -2368,6 +2899,190 @@
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads"
+    ]
+  },
+  {
+    "id": "async-exception-builder",
+    "lesson": "cancellation",
+    "level": "internals",
+    "title": {
+      "ru": "AsyncTaskMethodBuilder: Faulted, Canceled и исключения",
+      "en": "AsyncTaskMethodBuilder: faulted, canceled and exceptions"
+    },
+    "goal": {
+      "ru": "Отличать статус Task от типа исключения, объяснять SetException и синхронные сбои внутри async Task.",
+      "en": "Distinguish Task status from exception type and explain SetException and early exceptions in async Task."
+    },
+    "definition": {
+      "ru": "AsyncTaskMethodBuilder.SetException в .NET для `async Task` различает OperationCanceledException (Task.Canceled) и остальные исключения (Task.Faulted). `Task.FromException(new OperationCanceledException())` всегда создаёт Faulted Task. `Task.Yield()` создаёт асинхронную точку продолжения, но не является источником отмены.",
+      "en": "In .NET, AsyncTaskMethodBuilder.SetException for an async Task treats OperationCanceledException as task cancellation and other exceptions as faults. Task.FromException(new OperationCanceledException()) explicitly constructs a Faulted Task. Task.Yield adds an asynchronous continuation point but does not cause cancellation."
+    },
+    "steps": [
+      {
+        "ru": "Компилятор создаёт state machine; MoveNext оборачивает пользовательское тело async Task необходимой обработкой исключений.",
+        "en": "Compiler-generated state machine MoveNext wraps the async Task body with exception handling."
+      },
+      {
+        "ru": "AsyncTaskMethodBuilder.SetException получает исключение и при OperationCanceledException вызывает путь TrySetCanceled с токеном из исключения; иначе TrySetException.",
+        "en": "AsyncTaskMethodBuilder.SetException handles OperationCanceledException via TrySetCanceled using its token and other exceptions via TrySetException."
+      },
+      {
+        "ru": "Отсюда async Task с throw new OperationCanceledException() получает Canceled даже без явного `CancellationTokenSource.Cancel()` в этом конкретном механизме.",
+        "en": "Thus async Task throwing OperationCanceledException becomes Canceled even without explicitly canceling a CancellationTokenSource in this specific builder mechanism."
+      },
+      {
+        "ru": "Task.FromException создаёт уже Faulted Task вне зависимости от класса переданного исключения, включая OperationCanceledException; Task.FromCanceled требует уже отменённый token.",
+        "en": "Task.FromException constructs an already Faulted Task regardless of exception type, including OperationCanceledException. Task.FromCanceled requires a canceled token."
+      },
+      {
+        "ru": "Исключение в теле `async Task` даже до первого незавершённого await обычно сохраняется в Task, а не синхронно выбрасывается из вызова; исключения при вычислении аргументов перед вызовом — другой случай.",
+        "en": "An exception thrown inside an async Task body, even before a suspending await, normally faults the returned Task instead of throwing from the call; exceptions evaluating arguments before invocation are separate."
+      }
+    ],
+    "resources": {
+      "ru": "State machine, Task или внутренний state box, exception record, CancellationToken и ожидание продолжений. Точная аллокация зависит от исполнения.",
+      "en": "State machines, Tasks/state boxes, captured exceptions, cancellation tokens and continuations; allocation details depend on execution path."
+    },
+    "pitfalls": {
+      "ru": "Не путать canceled Task с Faulted Task, внутри которой лежит OperationCanceledException. Правила Task.Run(Action) и токены отмены отличаются от обработки исключений компиляторного async Task. `await Task.CompletedTask` не обязан приостанавливать выполнение.",
+      "en": "Do not equate a canceled Task with a Faulted Task containing OperationCanceledException. Task.Run(Action) cancellation-token rules differ from compiler-generated async Task handling. Awaiting CompletedTask may execute without suspension."
+    },
+    "code": "static async Task FailAsync() { await Task.CompletedTask; throw new InvalidOperationException(\"Error\"); }\nTask task = FailAsync(); // returns Faulted Task\ntry { await task; } catch (InvalidOperationException) { }",
+    "codeLanguage": "csharp",
+    "questions": [
+      61,
+      62,
+      63
+    ],
+    "refs": [
+      "https://source.dot.net/System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Runtime/CompilerServices/AsyncTaskMethodBuilderT.cs.html",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.fromexception?view=net-10.0",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.fromcanceled?view=net-10.0"
+    ],
+    "chapters": [
+      {
+        "id": "status-vs-type",
+        "title": {
+          "ru": "Статус Task и класс исключения различаются",
+          "en": "Task status and exception type are different"
+        },
+        "body": {
+          "ru": "Нельзя определять Task.Status лишь по имени исключения. `Task.FromException(new OperationCanceledException())` создаёт `Faulted`, хотя `await` этой Task выбросит OperationCanceledException. `Task.FromCanceled(new CancellationToken(true))` создаёт `Canceled`, у которого exception aggregation устроена иначе. Для diagnostics проверяй и статус, и источник Task.",
+          "en": "Task.Status is not determined by inspecting exception type alone. Task.FromException(new OperationCanceledException()) creates Faulted even though awaiting it throws OperationCanceledException. Task.FromCanceled(new CancellationToken(true)) creates Canceled; its exception aggregation differs. Inspect Task status and how it was constructed."
+        },
+        "code": "Task fault=Task.FromException(new OperationCanceledException());\nTask canceled=Task.FromCanceled(new CancellationToken(true));\n// fault.Status=Faulted; canceled.Status=Canceled",
+        "language": "csharp"
+      },
+      {
+        "id": "builder-setexception",
+        "title": {
+          "ru": "Почему async Task с OCE становится Canceled",
+          "en": "Why async Task with OCE becomes Canceled"
+        },
+        "body": {
+          "ru": "В .NET 10 в AsyncTaskMethodBuilder<T>.SetException есть проверка `exception is OperationCanceledException oce`. При совпадении вызывается `task.TrySetCanceled(oce.CancellationToken, oce)`, иначе `TrySetException(exception)`. Это конкретный runtime source, который объясняет отличия builder от Task.FromException. `Task.Yield()` только меняет continuation scheduling.",
+          "en": "In .NET 10, AsyncTaskMethodBuilder<T>.SetException tests `exception is OperationCanceledException oce`. It then invokes `task.TrySetCanceled(oce.CancellationToken, oce)` instead of `TrySetException`. This runtime source explains the builder versus FromException distinction. Task.Yield only schedules continuation."
+        },
+        "code": "static async Task F() { await Task.Yield(); throw new OperationCanceledException(); }\n// await/catch; F() task status == Canceled",
+        "language": "csharp"
+      },
+      {
+        "id": "before-first-suspension",
+        "title": {
+          "ru": "Ошибка после CompletedTask ещё внутри Task",
+          "en": "An exception after CompletedTask remains in the Task"
+        },
+        "body": {
+          "ru": "`await Task.CompletedTask` может завершиться синхронно, поэтому `throw` выполняется до того, как вызывающему вернётся значение. Но он всё ещё находится внутри state machine и перехватывается builder. Вызывающий получает Faulted Task, а исключение возникает при `await task`. Отдельный случай: throw в обычном не-async методе до получения Task.",
+          "en": "Awaiting CompletedTask can proceed synchronously, so throw executes before the caller receives the Task. Yet it remains inside compiler-generated state machine handling: the caller receives a Faulted Task, with the exception thrown by await task. Contrast a non-async method throwing before returning any Task."
+        },
+        "code": "static async Task F() { await Task.CompletedTask; throw new InvalidOperationException(); }\nTask t=F(); // does not throw out of F()\n// t.Status == Faulted",
+        "language": "csharp"
+      },
+      {
+        "id": "production",
+        "title": {
+          "ru": "Как правильно классифицировать отмену в production",
+          "en": "Correctly classify production cancellation"
+        },
+        "body": {
+          "ru": "Перехватить OperationCanceledException недостаточно, чтобы утверждать, что конкретная Task находится в состоянии Canceled. Для Task.FromException(OCE) статус Faulted. При реальной отмене проверяй связанные токены, статус Task и ожидаемое поведение API. Не проглатывай отмену как успех, не называй каждую OCE пользовательским запросом на отмену.",
+          "en": "Catching OperationCanceledException alone does not prove the Task was Canceled. Task.FromException(OCE) is Faulted. For production cancellation, inspect task status, token relationship and API contract. Do not silently turn cancellation into success or assume every OCE was requested by the caller."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Назови статусы Task.FromException(OCE), Task.FromCanceled(token) и async Task throw OCE.",
+          "en": "Give the statuses for Task.FromException(OCE), Task.FromCanceled(token) and async Task throwing OCE."
+        },
+        "rubric": {
+          "ru": "Faulted, Canceled, Canceled (для async Task builder).",
+          "en": "Faulted, Canceled, Canceled (async Task builder)."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Как AsyncTaskMethodBuilder.SetException решает, что Task отменена?",
+          "en": "How does AsyncTaskMethodBuilder.SetException classify cancellation?"
+        },
+        "rubric": {
+          "ru": "OperationCanceledException → TrySetCanceled(token из OCE), иначе TrySetException. Task.Yield не является причиной.",
+          "en": "OperationCanceledException → TrySetCanceled(using exception token); otherwise TrySetException. Task.Yield is not the cause."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Будет ли синхронный throw наружу при TestAsync() c await CompletedTask и InvalidOperationException?",
+          "en": "Does TestAsync throw synchronously to the caller if it awaits CompletedTask then throws InvalidOperationException?"
+        },
+        "rubric": {
+          "ru": "Нет: метод возвращает Task со статусом Faulted, await task выбрасывает InvalidOperationException.",
+          "en": "No: method returns a Faulted Task, and awaiting it throws InvalidOperationException."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему в telemetry встречаются Faulted Task с OperationCanceledException и Canceled Task с тем же типом?",
+          "en": "Why can telemetry show both Faulted and Canceled tasks associated with OperationCanceledException?"
+        },
+        "rubric": {
+          "ru": "Разные способы создания/завершения Task: FromException vs AsyncTaskMethodBuilder/FromCanceled. Проверять происхождение и token.",
+          "en": "Different task construction/completion paths: FromException vs builder/FromCanceled. Inspect provenance and token."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как проектировать диагностику API, различающую ошибки и отмену?",
+          "en": "How to design API diagnostics distinguishing failure and cancellation?"
+        },
+        "rubric": {
+          "ru": "Учитывать Task.Status, token request/correlation, тип исключения, propagated cancellations; не считать OCE синонимом корректной отмены.",
+          "en": "Track Task.Status, cancellation requests and token correlation, exception type and propagation; OCE alone is not proof of requested cancellation."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-061.cs",
+      "labs/dotnet/Q-062.cs",
+      "labs/dotnet/Q-063.cs"
+    ],
+    "prerequisites": [
+      "async-state-machine",
+      "task-aggregation"
     ]
   },
   {

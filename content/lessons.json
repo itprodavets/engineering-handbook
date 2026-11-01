@@ -250,7 +250,16 @@
       15,
       26,
       27,
-      33
+      33,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall",
@@ -347,7 +356,11 @@
       44,
       45,
       46,
-      47
+      47,
+      48,
+      49,
+      50,
+      51
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked",
@@ -499,7 +512,10 @@
     ],
     "questions": [
       18,
-      30
+      30,
+      61,
+      62,
+      63
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads"
