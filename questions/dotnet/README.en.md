@@ -42,6 +42,15 @@ Each question belongs to exactly one canonical lesson; related code challenges s
 - [Q-026](en/Q-026-whenany-faulted-output.md): What does it print, and does awaiting WhenAny throw the winning task's exception? — reinforcement
 - [Q-027](en/Q-027-whenall-exceptions-count.md): How many exceptions are stored by WhenAll when two input Tasks fault? — reinforcement
 - [Q-033](en/Q-033-startnew-nested-task.md): What is the task type, and does awaiting outer once wait for the inner async operation? — reinforcement
+- [Q-052](en/Q-052-await-producer-publishes-data.md): Why does reading data after await producer yield 42 without volatile? — reinforcement
+- [Q-053](en/Q-053-whenall-does-not-order-producer-consumer.md): Can Consumer print zero even if the caller later awaits Task.WhenAll(producer,consumer)? — reinforcement
+- [Q-054](en/Q-054-task-delay-is-not-synchronization.md): Why does awaiting Task.Delay(100) not establish producer completion or visibility? — reinforcement
+- [Q-055](en/Q-055-whenany-winner-vs-continuation-time.md): If Task.Delay wins WhenAny, must producer still be incomplete when the continuation executes? — reinforcement
+- [Q-056](en/Q-056-whenany-faulted-winner-exception.md): Does awaiting WhenAny throw the winner's exception? What does awaiting the returned Task do? — reinforcement
+- [Q-057](en/Q-057-whenall-multiple-exceptions-await-one.md): How many InnerExceptions are stored for two faulted tasks, and what does await combined propagate? — reinforcement
+- [Q-058](en/Q-058-whenall-faulted-priority-over-canceled.md): What status does WhenAll(Faulted,Canceled) have, and what does await propagate? — reinforcement
+- [Q-059](en/Q-059-whenany-does-not-cancel-loser.md): Does WhenAny cancel losing tasks and what happens to them? — reinforcement
+- [Q-060](en/Q-060-whenall-waits-not-fail-fast.md): If one input task is already Faulted and another is pending, does WhenAll complete immediately? — reinforcement
 
 ## Shared memory and synchronization
 
@@ -62,6 +71,10 @@ Each question belongs to exactly one canonical lesson; related code challenges s
 - [Q-045](en/Q-045-two-buyers-single-item-cas.md): Can both threads successfully execute CompareExchange(ref stock,0,1) when stock starts at 1? — reinforcement
 - [Q-046](en/Q-046-two-buyers-stock-three-single-cas.md): If stock=3 and two threads perform CompareExchange(ref stock,2,3), how many succeed and what do the calls return? — reinforcement
 - [Q-047](en/Q-047-cas-loop-five-buyers.md): How does a CAS loop behave with stock=3/two buyers and stock=1/five buyers? — reinforcement
+- [Q-048](en/Q-048-safe-publication-acquire-release.md): Why does data=42 before release-store and acquire-reading ready safely publish 42? — reinforcement
+- [Q-049](en/Q-049-release-before-data-allows-zero.md): Can the consumer see zero if producer publishes ready before writing data? — reinforcement
+- [Q-050](en/Q-050-nonvolatile-loop-jit-hoisting.md): Does while(ready==0) without volatile necessarily terminate after another thread writes ready=1?
+- [Q-051](en/Q-051-thread-yield-is-not-memory-fence.md): Why does Thread.Yield in an ordinary polling loop not replace Volatile.Read?
 
 ## Continuations and execution contexts
 
@@ -80,6 +93,9 @@ Each question belongs to exactly one canonical lesson; related code challenges s
 
 - [Q-018](en/Q-018-cancellationtoken-taskrun.md): Can CancellationToken forcibly stop a running Task.Run, and is it passed to the delegate automatically?
 - [Q-030](en/Q-030-cancellation-after-start.md): Will the program print DONE when the token is canceled after the delegate starts? — reinforcement
+- [Q-061](en/Q-061-fromexception-oce-vs-fromcanceled.md): Why is Task.FromException(OCE) Faulted but Task.FromCanceled(token) Canceled? — reinforcement
+- [Q-062](en/Q-062-async-task-oce-builder-canceled.md): Why is async Task throwing OCE Canceled while Task.FromException(OCE) is Faulted? — reinforcement
+- [Q-063](en/Q-063-async-task-throws-after-completed-await.md): Does calling TestAsync synchronously throw InvalidOperationException if its body awaits CompletedTask then throws? — reinforcement
 
 ## ValueTask<T> and allocation trade-offs
 

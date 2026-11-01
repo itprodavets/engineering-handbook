@@ -4,7 +4,7 @@
 
 [Home](../README.en.md) · [Interactive practice](https://itprodavets.github.io/engineering-handbook/#/en/practice) · [Execution guide](../docs/execution.en.md)
 
-This folder contains **21 standalone runnable C# examples**. Each lab is linked to a challenge Q-024–Q-047, and each challenge belongs to exactly one canonical lesson. Theory is not duplicated across labs.
+This folder contains **35 standalone runnable C# examples**. Each lab is linked to a challenge Q-024–Q-063, and each challenge belongs to exactly one canonical lesson. Theory is not duplicated across labs.
 
 ```bash
 dotnet run --file labs/dotnet/Q-024.cs
@@ -34,5 +34,20 @@ dotnet run --file labs/dotnet/Q-024.cs
 | Q-045 | [C#](dotnet/Q-045.cs) | [Explanation](../questions/dotnet/en/Q-045-two-buyers-single-item-cas.md) |
 | Q-046 | [C#](dotnet/Q-046.cs) | [Explanation](../questions/dotnet/en/Q-046-two-buyers-stock-three-single-cas.md) |
 | Q-047 | [C#](dotnet/Q-047.cs) | [Explanation](../questions/dotnet/en/Q-047-cas-loop-five-buyers.md) |
+
+| Q-048 | [C#](dotnet/Q-048.cs) | [Explanation](../questions/dotnet/en/Q-048-safe-publication-acquire-release.md) |
+| Q-049 | [C#](dotnet/Q-049.cs) | [Explanation](../questions/dotnet/en/Q-049-release-before-data-allows-zero.md) |
+| Q-052 | [C#](dotnet/Q-052.cs) | [Explanation](../questions/dotnet/en/Q-052-await-producer-publishes-data.md) |
+| Q-053 | [C#](dotnet/Q-053.cs) | [Explanation](../questions/dotnet/en/Q-053-whenall-does-not-order-producer-consumer.md) |
+| Q-054 | [C#](dotnet/Q-054.cs) | [Explanation](../questions/dotnet/en/Q-054-task-delay-is-not-synchronization.md) |
+| Q-055 | [C#](dotnet/Q-055.cs) | [Explanation](../questions/dotnet/en/Q-055-whenany-winner-vs-continuation-time.md) |
+| Q-056 | [C#](dotnet/Q-056.cs) | [Explanation](../questions/dotnet/en/Q-056-whenany-faulted-winner-exception.md) |
+| Q-057 | [C#](dotnet/Q-057.cs) | [Explanation](../questions/dotnet/en/Q-057-whenall-multiple-exceptions-await-one.md) |
+| Q-058 | [C#](dotnet/Q-058.cs) | [Explanation](../questions/dotnet/en/Q-058-whenall-faulted-priority-over-canceled.md) |
+| Q-059 | [C#](dotnet/Q-059.cs) | [Explanation](../questions/dotnet/en/Q-059-whenany-does-not-cancel-loser.md) |
+| Q-060 | [C#](dotnet/Q-060.cs) | [Explanation](../questions/dotnet/en/Q-060-whenall-waits-not-fail-fast.md) |
+| Q-061 | [C#](dotnet/Q-061.cs) | [Explanation](../questions/dotnet/en/Q-061-fromexception-oce-vs-fromcanceled.md) |
+| Q-062 | [C#](dotnet/Q-062.cs) | [Explanation](../questions/dotnet/en/Q-062-async-task-oce-builder-canceled.md) |
+| Q-063 | [C#](dotnet/Q-063.cs) | [Explanation](../questions/dotnet/en/Q-063-async-task-throws-after-completed-await.md) |
 
 **GitHub Pages editing:** The website offers an editable example and reference-output prediction, not actual C# execution. Run code in Codespaces or Actions. To run a browser-modified snippet, copy it into your Codespaces lab file.

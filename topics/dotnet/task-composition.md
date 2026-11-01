@@ -37,6 +37,15 @@ Task.WhenAll создаёт агрегирующее завершение уже
 - [Q-026: Что напечатает код и выбросит ли await Task.WhenAny исключение?](../../questions/dotnet/Q-026-whenany-faulted-output.md)
 - [Q-027: Сколько исключений в Exception.InnerExceptions при двух завершившихся с ошибкой Task?](../../questions/dotnet/Q-027-whenall-exceptions-count.md)
 - [Q-033: Каков тип задачи и ждёт ли один await outer завершения внутренней асинхронной операции?](../../questions/dotnet/Q-033-startnew-nested-task.md)
+- [Q-052: Почему после await producer чтение data без volatile даёт 42?](../../questions/dotnet/Q-052-await-producer-publishes-data.md)
+- [Q-053: Можно ли вывести 0 внутри Consumer, хотя в конце вызван await Task.WhenAll(producer,consumer)?](../../questions/dotnet/Q-053-whenall-does-not-order-producer-consumer.md)
+- [Q-054: Почему await Task.Delay(100) не гарантирует, что другая Task завершилась и опубликовала data=42?](../../questions/dotnet/Q-054-task-delay-is-not-synchronization.md)
+- [Q-055: Если Task.Delay выиграла WhenAny, обязательно ли Producer остаётся незавершённым к моменту продолжения?](../../questions/dotnet/Q-055-whenany-winner-vs-continuation-time.md)
+- [Q-056: Выбросит ли await Task.WhenAny исключение из Faulted Task-победителя? Что меняет await completed?](../../questions/dotnet/Q-056-whenany-faulted-winner-exception.md)
+- [Q-057: Сколько исключений в combined.Exception.InnerExceptions при двух Task.FromException и что выбросит await combined?](../../questions/dotnet/Q-057-whenall-multiple-exceptions-await-one.md)
+- [Q-058: Какой статус имеет WhenAll(Faulted,Canceled) и какое исключение распространяет await?](../../questions/dotnet/Q-058-whenall-faulted-priority-over-canceled.md)
+- [Q-059: Отменяет ли Task.WhenAny проигравшие Task и как они завершаются?](../../questions/dotnet/Q-059-whenany-does-not-cancel-loser.md)
+- [Q-060: Если одна входящая Task уже Faulted, а другая ещё pending, завершится ли немедленно Task.WhenAll?](../../questions/dotnet/Q-060-whenall-waits-not-fail-fast.md)
 
 ## Первоисточники
 

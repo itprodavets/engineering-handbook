@@ -22,13 +22,15 @@
 
 ## [Композиция Task и ошибки](../task-composition.md)
 
-- [WhenAll и WhenAny — семантика завершения](task-aggregation.md) — Различать ожидание всех задач и получение первой завершившейся.
+- [WhenAny/WhenAll: завершение, ошибки и отмена](task-aggregation.md) — Точно понимать вложенные Task, приоритет Faulted/Canceled, aggregation и поведение await.
+- [Task: completion synchronization, порядок и таймеры](task-completion-vs-ordering.md) — Различать ожидание конкретной Task, ожидание набора задач и ожидание времени; не путать completion с execution order.
 - [Вложенные Task и StartNew(Func<Task>)](startnew-nested-tasks.md) — Отличать завершение outer Task от реальной асинхронной работы.
 
 ## [Разделяемая память и синхронизация](../shared-memory.md)
 
 - [Race Condition, Data Race и Lost Update](race-condition-vs-data-race.md) — Находить ошибку в инварианте, отличать гонку порядка событий от несинхронизированных обращений к памяти.
 - [volatile, Interlocked и атомарный RMW](atomicity-and-memory-visibility.md) — Различать атомарность одного действия, acquire/release и операции с ref.
+- [Memory Model: видимость, ordering и safe publication](memory-ordering-publication.md) — Проверять гарантии публикации данных через release/acquire, JIT, поток ОС и happens-before.
 - [CompareExchange, CAS-loop и инвариант stock ≥ 0](compare-exchange-cas-loop.md) — Понимать, что меняет CAS через ref, что возвращает previous и почему повторная попытка нужна при конкуренции.
 - [Monitor lock и SemaphoreSlim](mutual-exclusion-and-semaphores.md) — Различать блокировку потока и асинхронное ожидание разрешения.
 - [Почему Parallel.ForEach(async ...) опасен](parallel-foreach-async-void.md) — Объяснять потерю управления продолжениями async void.
@@ -42,6 +44,7 @@
 ## [Отмена асинхронных операций](../cancellation.md)
 
 - [CancellationToken — кооперативная отмена](cancellation-tokens.md) — Отличать запрос на отмену от принудительной остановки потока.
+- [AsyncTaskMethodBuilder: Faulted, Canceled и исключения](async-exception-builder.md) — Отличать статус Task от типа исключения, объяснять SetException и синхронные сбои внутри async Task.
 
 ## [ValueTask<T> и стоимость ожидания](../valuetask.md)
 

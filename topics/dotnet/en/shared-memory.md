@@ -34,6 +34,8 @@ Concurrent Tasks can mutate the same object. Task.WhenAll only waits for complet
 - [Q-021: Why is volatile counter++ unsafe, and how do Interlocked.Increment and lock differ?](../../../questions/dotnet/en/Q-021-volatile-vs-interlocked.md)
 - [Q-039: How do race conditions differ from data races, and can a logical race occur without a data race?](../../../questions/dotnet/en/Q-039-race-condition-vs-data-race.md)
 - [Q-041: Why does volatile int Value not make Value++ atomic, and what ordering does C# volatile provide?](../../../questions/dotnet/en/Q-041-volatile-does-not-make-plus-plus-atomic.md)
+- [Q-050: Does while(ready==0) without volatile necessarily terminate after another thread writes ready=1?](../../../questions/dotnet/en/Q-050-nonvolatile-loop-jit-hoisting.md)
+- [Q-051: Why does Thread.Yield in an ordinary polling loop not replace Volatile.Read?](../../../questions/dotnet/en/Q-051-thread-yield-is-not-memory-fence.md)
 
 ## Reinforcement challenges
 
@@ -48,6 +50,8 @@ Concurrent Tasks can mutate the same object. Task.WhenAll only waits for complet
 - [Q-045: Can both threads successfully execute CompareExchange(ref stock,0,1) when stock starts at 1?](../../../questions/dotnet/en/Q-045-two-buyers-single-item-cas.md)
 - [Q-046: If stock=3 and two threads perform CompareExchange(ref stock,2,3), how many succeed and what do the calls return?](../../../questions/dotnet/en/Q-046-two-buyers-stock-three-single-cas.md)
 - [Q-047: How does a CAS loop behave with stock=3/two buyers and stock=1/five buyers?](../../../questions/dotnet/en/Q-047-cas-loop-five-buyers.md)
+- [Q-048: Why does data=42 before release-store and acquire-reading ready safely publish 42?](../../../questions/dotnet/en/Q-048-safe-publication-acquire-release.md)
+- [Q-049: Can the consumer see zero if producer publishes ready before writing data?](../../../questions/dotnet/en/Q-049-release-before-data-allows-zero.md)
 
 ## Primary references
 

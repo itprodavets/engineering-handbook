@@ -27,10 +27,10 @@
 
 - [Жизненный цикл async/await](topics/dotnet/async-lifecycle.md) — 11 вопросов и упражнений
 - [ThreadPool и планировщик ОС](topics/dotnet/threadpool-scheduling.md) — 6 вопросов и упражнений
-- [Композиция Task и ошибки](topics/dotnet/task-composition.md) — 5 вопросов и упражнений
-- [Разделяемая память и синхронизация](topics/dotnet/shared-memory.md) — 15 вопросов и упражнений
+- [Композиция Task и ошибки](topics/dotnet/task-composition.md) — 14 вопросов и упражнений
+- [Разделяемая память и синхронизация](topics/dotnet/shared-memory.md) — 19 вопросов и упражнений
 - [Continuation и контексты](topics/dotnet/execution-context.md) — 6 вопросов и упражнений
-- [Отмена асинхронных операций](topics/dotnet/cancellation.md) — 2 вопросов и упражнений
+- [Отмена асинхронных операций](topics/dotnet/cancellation.md) — 5 вопросов и упражнений
 - [ValueTask<T> и стоимость ожидания](topics/dotnet/valuetask.md) — 1 вопросов и упражнений
 - [Блокировки и sync-over-async](topics/dotnet/sync-over-async.md) — 1 вопросов и упражнений
 

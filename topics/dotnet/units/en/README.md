@@ -22,13 +22,15 @@ One mechanism, one canonical explanation; questions reinforce it.
 
 ## [Task composition and exceptions](../../en/task-composition.md)
 
-- [WhenAll and WhenAny completion semantics](task-aggregation.md) — Distinguish waiting for all tasks from receiving the first completion.
+- [WhenAny/WhenAll: completion, exceptions and cancellation](task-aggregation.md) — Precisely reason about nested Tasks, Faulted/Canceled precedence, exception aggregation and await.
+- [Tasks: completion synchronization, ordering and timers](task-completion-vs-ordering.md) — Distinguish awaiting a specific Task, awaiting several Tasks and waiting for time; avoid confusing completion with execution order.
 - [Nested Tasks and StartNew(Func<Task>)](startnew-nested-tasks.md) — Separate completion of the outer Task from the inner async operation.
 
 ## [Shared memory and synchronization](../../en/shared-memory.md)
 
 - [Race conditions, data races and lost updates](race-condition-vs-data-race.md) — Detect violated invariants; distinguish scheduling races from unsynchronized memory accesses.
 - [volatile, Interlocked and atomic read-modify-write](atomicity-and-memory-visibility.md) — Distinguish single-operation atomicity, acquire/release and by-reference updates.
+- [Memory model: visibility, ordering and safe publication](memory-ordering-publication.md) — Reason about release/acquire publication, JIT, OS scheduling and happens-before.
 - [CompareExchange, CAS loops and the stock ≥ 0 invariant](compare-exchange-cas-loop.md) — Understand what CAS changes via ref, what previous returns and why contention requires retries.
 - [Monitor locks and SemaphoreSlim](mutual-exclusion-and-semaphores.md) — Distinguish thread blocking from asynchronous permit waiting.
 - [Why Parallel.ForEach(async ...) is dangerous](parallel-foreach-async-void.md) — Explain why async void continuations escape loop completion.
@@ -42,6 +44,7 @@ One mechanism, one canonical explanation; questions reinforce it.
 ## [Cancellation of asynchronous work](../../en/cancellation.md)
 
 - [CancellationToken is cooperative cancellation](cancellation-tokens.md) — Distinguish cancellation requests from forced thread termination.
+- [AsyncTaskMethodBuilder: faulted, canceled and exceptions](async-exception-builder.md) — Distinguish Task status from exception type and explain SetException and early exceptions in async Task.
 
 ## [ValueTask<T> and allocation trade-offs](../../en/valuetask.md)
 

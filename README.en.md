@@ -27,10 +27,10 @@ A technical learning handbook covering languages, runtimes, concurrency, infrast
 
 - [The async/await execution lifecycle](topics/dotnet/en/async-lifecycle.md) — 11 questions and exercises
 - [ThreadPool and the OS scheduler](topics/dotnet/en/threadpool-scheduling.md) — 6 questions and exercises
-- [Task composition and exceptions](topics/dotnet/en/task-composition.md) — 5 questions and exercises
-- [Shared memory and synchronization](topics/dotnet/en/shared-memory.md) — 15 questions and exercises
+- [Task composition and exceptions](topics/dotnet/en/task-composition.md) — 14 questions and exercises
+- [Shared memory and synchronization](topics/dotnet/en/shared-memory.md) — 19 questions and exercises
 - [Continuations and execution contexts](topics/dotnet/en/execution-context.md) — 6 questions and exercises
-- [Cancellation of asynchronous work](topics/dotnet/en/cancellation.md) — 2 questions and exercises
+- [Cancellation of asynchronous work](topics/dotnet/en/cancellation.md) — 5 questions and exercises
 - [ValueTask<T> and allocation trade-offs](topics/dotnet/en/valuetask.md) — 1 questions and exercises
 - [Blocking and sync-over-async](topics/dotnet/en/sync-over-async.md) — 1 questions and exercises
 

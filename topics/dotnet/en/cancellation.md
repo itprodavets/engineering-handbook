@@ -34,6 +34,9 @@ CancellationToken is a cooperative signal. It is not Thread.Abort: running code 
 ## Reinforcement challenges
 
 - [Q-030: Will the program print DONE when the token is canceled after the delegate starts?](../../../questions/dotnet/en/Q-030-cancellation-after-start.md)
+- [Q-061: Why is Task.FromException(OCE) Faulted but Task.FromCanceled(token) Canceled?](../../../questions/dotnet/en/Q-061-fromexception-oce-vs-fromcanceled.md)
+- [Q-062: Why is async Task throwing OCE Canceled while Task.FromException(OCE) is Faulted?](../../../questions/dotnet/en/Q-062-async-task-oce-builder-canceled.md)
+- [Q-063: Does calling TestAsync synchronously throw InvalidOperationException if its body awaits CompletedTask then throws?](../../../questions/dotnet/en/Q-063-async-task-throws-after-completed-await.md)
 
 ## Primary references
 

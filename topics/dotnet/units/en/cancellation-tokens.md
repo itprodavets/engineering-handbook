@@ -43,4 +43,4 @@ await Task.Delay(1000, cts.Token);
 
 ---
 
-[Русский](../cancellation-tokens.md) · [English](cancellation-tokens.md)
+[Next →](async-exception-builder.md) · [Русский](../cancellation-tokens.md) · [English](cancellation-tokens.md)

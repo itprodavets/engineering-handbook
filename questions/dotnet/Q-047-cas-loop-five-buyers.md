@@ -1,6 +1,6 @@
 # Q-047 — CAS-loop
 
-[Русский](./Q-047-cas-loop-five-buyers.md) · [English](en/Q-047-cas-loop-five-buyers.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-047) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-046-two-buyers-stock-three-single-cas.md)
+[Русский](./Q-047-cas-loop-five-buyers.md) · [English](en/Q-047-cas-loop-five-buyers.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-047) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-046-two-buyers-stock-three-single-cas.md) · [Следующий →](Q-048-safe-publication-acquire-release.md)
 
 ## Вопрос
 
@@ -37,4 +37,4 @@ dotnet run --file labs/dotnet/Q-047.cs
 
 ---
 
-[Русский](./Q-047-cas-loop-five-buyers.md) · [English](en/Q-047-cas-loop-five-buyers.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-047) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-046-two-buyers-stock-three-single-cas.md)
+[Русский](./Q-047-cas-loop-five-buyers.md) · [English](en/Q-047-cas-loop-five-buyers.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-047) · [Основная тема](../../topics/dotnet/shared-memory.md) · [← Предыдущий](Q-046-two-buyers-stock-three-single-cas.md) · [Следующий →](Q-048-safe-publication-acquire-release.md)

@@ -142,4 +142,4 @@ Volatile — ограниченные сигналы/ordering с коррект�
 
 ---
 
-[← Назад](race-condition-vs-data-race.md) · [Далее →](compare-exchange-cas-loop.md) · [Русский](atomicity-and-memory-visibility.md) · [English](en/atomicity-and-memory-visibility.md)
+[← Назад](race-condition-vs-data-race.md) · [Далее →](memory-ordering-publication.md) · [Русский](atomicity-and-memory-visibility.md) · [English](en/atomicity-and-memory-visibility.md)

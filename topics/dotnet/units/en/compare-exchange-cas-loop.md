@@ -160,4 +160,4 @@ Volatile.Read; reject at <=0; CAS(old→old-1); success if previous==old; otherw
 
 ---
 
-[← Previous](atomicity-and-memory-visibility.md) · [Next →](mutual-exclusion-and-semaphores.md) · [Русский](../compare-exchange-cas-loop.md) · [English](compare-exchange-cas-loop.md)
+[← Previous](memory-ordering-publication.md) · [Next →](mutual-exclusion-and-semaphores.md) · [Русский](../compare-exchange-cas-loop.md) · [English](compare-exchange-cas-loop.md)

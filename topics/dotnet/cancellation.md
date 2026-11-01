@@ -34,6 +34,9 @@ CancellationToken — кооперативный сигнал. Он не явл�
 ## Закрепление на коде
 
 - [Q-030: Выведет ли программа DONE, если отменить token после запуска делегата?](../../questions/dotnet/Q-030-cancellation-after-start.md)
+- [Q-061: Почему Task.FromException(new OperationCanceledException()) имеет Faulted, а Task.FromCanceled(token) имеет Canceled?](../../questions/dotnet/Q-061-fromexception-oce-vs-fromcanceled.md)
+- [Q-062: Почему async Task с throw OperationCanceledException получает Canceled, а Task.FromException(OCE) — Faulted?](../../questions/dotnet/Q-062-async-task-oce-builder-canceled.md)
+- [Q-063: Выбрасывает ли TestAsync() синхронно InvalidOperationException, если внутри await Task.CompletedTask затем throw?](../../questions/dotnet/Q-063-async-task-throws-after-completed-await.md)
 
 ## Первоисточники
 

@@ -1,6 +1,6 @@
 # Q-047 — Shared memory and synchronization
 
-[Русский](../Q-047-cas-loop-five-buyers.md) · [English](./Q-047-cas-loop-five-buyers.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-047) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-046-two-buyers-stock-three-single-cas.md)
+[Русский](../Q-047-cas-loop-five-buyers.md) · [English](./Q-047-cas-loop-five-buyers.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-047) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-046-two-buyers-stock-three-single-cas.md) · [Next →](Q-048-safe-publication-acquire-release.md)
 
 ## Question
 
@@ -37,4 +37,4 @@ With stock=3/two buyers both succeed and stock=1; a failed CAS rereads the actua
 
 ---
 
-[Русский](../Q-047-cas-loop-five-buyers.md) · [English](./Q-047-cas-loop-five-buyers.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-047) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-046-two-buyers-stock-three-single-cas.md)
+[Русский](../Q-047-cas-loop-five-buyers.md) · [English](./Q-047-cas-loop-five-buyers.md) · [All questions](../README.en.md) · [Interactive handbook](https://itprodavets.github.io/engineering-handbook/#/en/question/Q-047) · [Canonical lesson](../../../topics/dotnet/en/shared-memory.md) · [← Previous](Q-046-two-buyers-stock-three-single-cas.md) · [Next →](Q-048-safe-publication-acquire-release.md)

@@ -42,6 +42,15 @@
 - [Q-026](Q-026-whenany-faulted-output.md): Что напечатает код и выбросит ли await Task.WhenAny исключение? — закрепление
 - [Q-027](Q-027-whenall-exceptions-count.md): Сколько исключений в Exception.InnerExceptions при двух завершившихся с ошибкой Task? — закрепление
 - [Q-033](Q-033-startnew-nested-task.md): Каков тип задачи и ждёт ли один await outer завершения внутренней асинхронной операции? — закрепление
+- [Q-052](Q-052-await-producer-publishes-data.md): Почему после await producer чтение data без volatile даёт 42? — закрепление
+- [Q-053](Q-053-whenall-does-not-order-producer-consumer.md): Можно ли вывести 0 внутри Consumer, хотя в конце вызван await Task.WhenAll(producer,consumer)? — закрепление
+- [Q-054](Q-054-task-delay-is-not-synchronization.md): Почему await Task.Delay(100) не гарантирует, что другая Task завершилась и опубликовала data=42? — закрепление
+- [Q-055](Q-055-whenany-winner-vs-continuation-time.md): Если Task.Delay выиграла WhenAny, обязательно ли Producer остаётся незавершённым к моменту продолжения? — закрепление
+- [Q-056](Q-056-whenany-faulted-winner-exception.md): Выбросит ли await Task.WhenAny исключение из Faulted Task-победителя? Что меняет await completed? — закрепление
+- [Q-057](Q-057-whenall-multiple-exceptions-await-one.md): Сколько исключений в combined.Exception.InnerExceptions при двух Task.FromException и что выбросит await combined? — закрепление
+- [Q-058](Q-058-whenall-faulted-priority-over-canceled.md): Какой статус имеет WhenAll(Faulted,Canceled) и какое исключение распространяет await? — закрепление
+- [Q-059](Q-059-whenany-does-not-cancel-loser.md): Отменяет ли Task.WhenAny проигравшие Task и как они завершаются? — закрепление
+- [Q-060](Q-060-whenall-waits-not-fail-fast.md): Если одна входящая Task уже Faulted, а другая ещё pending, завершится ли немедленно Task.WhenAll? — закрепление
 
 ## Разделяемая память и синхронизация
 
@@ -62,6 +71,10 @@
 - [Q-045](Q-045-two-buyers-single-item-cas.md): Могут ли оба потока успешно выполнить CompareExchange(ref stock,0,1) при stock=1? — закрепление
 - [Q-046](Q-046-two-buyers-stock-three-single-cas.md): Если stock=3, два потока выполняют CompareExchange(ref stock,2,3). Сколько покупок успешны и что возвращают оба CAS? — закрепление
 - [Q-047](Q-047-cas-loop-five-buyers.md): Как CAS-loop ведёт себя при stock=3 и двух покупателях, а затем stock=1 и пяти покупателях? — закрепление
+- [Q-048](Q-048-safe-publication-acquire-release.md): Почему data=42 перед Volatile.Write(ready,1) и Volatile.Read(ready) позволяет вывести 42? — закрепление
+- [Q-049](Q-049-release-before-data-allows-zero.md): Может ли Consumer увидеть data=0, если Producer сначала Volatile.Write(ready,1), потом data=42? — закрепление
+- [Q-050](Q-050-nonvolatile-loop-jit-hoisting.md): Гарантированно ли завершится while(ready==0) без volatile после записи другого потока?
+- [Q-051](Q-051-thread-yield-is-not-memory-fence.md): Почему Thread.Yield() в цикле с обычным чтением ready не заменяет Volatile.Read?
 
 ## Continuation и контексты
 
@@ -80,6 +93,9 @@
 
 - [Q-018](Q-018-cancellationtoken-taskrun.md): Прерывает ли CancellationToken выполняющуюся Task.Run и автоматически ли попадает в делегат?
 - [Q-030](Q-030-cancellation-after-start.md): Выведет ли программа DONE, если отменить token после запуска делегата? — закрепление
+- [Q-061](Q-061-fromexception-oce-vs-fromcanceled.md): Почему Task.FromException(new OperationCanceledException()) имеет Faulted, а Task.FromCanceled(token) имеет Canceled? — закрепление
+- [Q-062](Q-062-async-task-oce-builder-canceled.md): Почему async Task с throw OperationCanceledException получает Canceled, а Task.FromException(OCE) — Faulted? — закрепление
+- [Q-063](Q-063-async-task-throws-after-completed-await.md): Выбрасывает ли TestAsync() синхронно InvalidOperationException, если внутри await Task.CompletedTask затем throw? — закрепление
 
 ## ValueTask<T> и стоимость ожидания
 

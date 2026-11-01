@@ -43,4 +43,4 @@ await inner;
 
 ---
 
-[← Назад](task-aggregation.md) · [Русский](startnew-nested-tasks.md) · [English](en/startnew-nested-tasks.md)
+[← Назад](task-completion-vs-ordering.md) · [Русский](startnew-nested-tasks.md) · [English](en/startnew-nested-tasks.md)

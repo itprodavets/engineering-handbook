@@ -142,4 +142,4 @@ volatile for suitable signaling/ordering protocols; Interlocked for a single ato
 
 ---
 
-[← Previous](race-condition-vs-data-race.md) · [Next →](compare-exchange-cas-loop.md) · [Русский](../atomicity-and-memory-visibility.md) · [English](atomicity-and-memory-visibility.md)
+[← Previous](race-condition-vs-data-race.md) · [Next →](memory-ordering-publication.md) · [Русский](../atomicity-and-memory-visibility.md) · [English](atomicity-and-memory-visibility.md)

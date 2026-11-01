@@ -4,7 +4,7 @@
 
 [Главная](../README.md) · [Интерактивная практика](https://itprodavets.github.io/engineering-handbook/#/ru/practice) · [Запуск кода](../docs/execution.md)
 
-Здесь находятся **21 независимый запускаемый C#-пример**. Каждая лаборатория связана с заданием Q-024–Q-047 и через него с единственной основной темой. Основная теория не дублируется в лабораториях.
+Здесь находятся **35 независимых запускаемых C#-примеров**. Каждая лаборатория связана с заданием Q-024–Q-063 и через него с единственной основной темой. Основная теория не дублируется в лабораториях.
 
 ```bash
 dotnet run --file labs/dotnet/Q-024.cs
@@ -34,5 +34,20 @@ dotnet run --file labs/dotnet/Q-024.cs
 | Q-045 | [C#](dotnet/Q-045.cs) | [Разбор](../questions/dotnet/Q-045-two-buyers-single-item-cas.md) |
 | Q-046 | [C#](dotnet/Q-046.cs) | [Разбор](../questions/dotnet/Q-046-two-buyers-stock-three-single-cas.md) |
 | Q-047 | [C#](dotnet/Q-047.cs) | [Разбор](../questions/dotnet/Q-047-cas-loop-five-buyers.md) |
+
+| Q-048 | [C#](dotnet/Q-048.cs) | [Разбор](../questions/dotnet/Q-048-safe-publication-acquire-release.md) |
+| Q-049 | [C#](dotnet/Q-049.cs) | [Разбор](../questions/dotnet/Q-049-release-before-data-allows-zero.md) |
+| Q-052 | [C#](dotnet/Q-052.cs) | [Разбор](../questions/dotnet/Q-052-await-producer-publishes-data.md) |
+| Q-053 | [C#](dotnet/Q-053.cs) | [Разбор](../questions/dotnet/Q-053-whenall-does-not-order-producer-consumer.md) |
+| Q-054 | [C#](dotnet/Q-054.cs) | [Разбор](../questions/dotnet/Q-054-task-delay-is-not-synchronization.md) |
+| Q-055 | [C#](dotnet/Q-055.cs) | [Разбор](../questions/dotnet/Q-055-whenany-winner-vs-continuation-time.md) |
+| Q-056 | [C#](dotnet/Q-056.cs) | [Разбор](../questions/dotnet/Q-056-whenany-faulted-winner-exception.md) |
+| Q-057 | [C#](dotnet/Q-057.cs) | [Разбор](../questions/dotnet/Q-057-whenall-multiple-exceptions-await-one.md) |
+| Q-058 | [C#](dotnet/Q-058.cs) | [Разбор](../questions/dotnet/Q-058-whenall-faulted-priority-over-canceled.md) |
+| Q-059 | [C#](dotnet/Q-059.cs) | [Разбор](../questions/dotnet/Q-059-whenany-does-not-cancel-loser.md) |
+| Q-060 | [C#](dotnet/Q-060.cs) | [Разбор](../questions/dotnet/Q-060-whenall-waits-not-fail-fast.md) |
+| Q-061 | [C#](dotnet/Q-061.cs) | [Разбор](../questions/dotnet/Q-061-fromexception-oce-vs-fromcanceled.md) |
+| Q-062 | [C#](dotnet/Q-062.cs) | [Разбор](../questions/dotnet/Q-062-async-task-oce-builder-canceled.md) |
+| Q-063 | [C#](dotnet/Q-063.cs) | [Разбор](../questions/dotnet/Q-063-async-task-throws-after-completed-await.md) |
 
 **Код в GitHub Pages:** там можно редактировать пример и проверить предсказание исходного вывода, но настоящий запуск выполняется в Codespaces или Actions. Изменённый в браузере код нужно скопировать в Codespaces.

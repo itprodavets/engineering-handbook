@@ -34,6 +34,8 @@
 - [Q-021: Почему volatile counter++ небезопасен и чем Interlocked.Increment отличается от lock?](../../questions/dotnet/Q-021-volatile-vs-interlocked.md)
 - [Q-039: Чем отличается Race Condition от Data Race и может ли логическая гонка возникнуть без data race?](../../questions/dotnet/Q-039-race-condition-vs-data-race.md)
 - [Q-041: Почему volatile int Value не делает Value++ атомарным и что реально гарантирует volatile в C#?](../../questions/dotnet/Q-041-volatile-does-not-make-plus-plus-atomic.md)
+- [Q-050: Гарантированно ли завершится while(ready==0) без volatile после записи другого потока?](../../questions/dotnet/Q-050-nonvolatile-loop-jit-hoisting.md)
+- [Q-051: Почему Thread.Yield() в цикле с обычным чтением ready не заменяет Volatile.Read?](../../questions/dotnet/Q-051-thread-yield-is-not-memory-fence.md)
 
 ## Закрепление на коде
 
@@ -48,6 +50,8 @@
 - [Q-045: Могут ли оба потока успешно выполнить CompareExchange(ref stock,0,1) при stock=1?](../../questions/dotnet/Q-045-two-buyers-single-item-cas.md)
 - [Q-046: Если stock=3, два потока выполняют CompareExchange(ref stock,2,3). Сколько покупок успешны и что возвращают оба CAS?](../../questions/dotnet/Q-046-two-buyers-stock-three-single-cas.md)
 - [Q-047: Как CAS-loop ведёт себя при stock=3 и двух покупателях, а затем stock=1 и пяти покупателях?](../../questions/dotnet/Q-047-cas-loop-five-buyers.md)
+- [Q-048: Почему data=42 перед Volatile.Write(ready,1) и Volatile.Read(ready) позволяет вывести 42?](../../questions/dotnet/Q-048-safe-publication-acquire-release.md)
+- [Q-049: Может ли Consumer увидеть data=0, если Producer сначала Volatile.Write(ready,1), потом data=42?](../../questions/dotnet/Q-049-release-before-data-allows-zero.md)
 
 ## Первоисточники
 
