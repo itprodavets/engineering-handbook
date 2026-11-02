@@ -1415,8 +1415,8 @@
     }
   },
   {
-    "id": "Q-64",
-    "slug": "Q-64-monitor-exit-after-await",
+    "id": "Q-064",
+    "slug": "Q-064-monitor-exit-after-await",
     "title": "Monitor ownership",
     "q": {
       "ru": "Почему Monitor.Exit после await на другом потоке выбросит исключение?",
@@ -1440,8 +1440,8 @@
     }
   },
   {
-    "id": "Q-65",
-    "slug": "Q-65-semaphore-permits-vs-threads",
+    "id": "Q-065",
+    "slug": "Q-065-semaphore-permits-vs-threads",
     "title": "Semaphore permits",
     "q": {
       "ru": "Что означает SemaphoreSlim(2,2) при двух Task.Delay и ожидании ещё двух задач?",
@@ -1465,8 +1465,8 @@
     }
   },
   {
-    "id": "Q-66",
-    "slug": "Q-66-semaphore-nested-async-deadlock",
+    "id": "Q-066",
+    "slug": "Q-066-semaphore-nested-async-deadlock",
     "title": "Async deadlock",
     "q": {
       "ru": "Что будет, если Outer держит SemaphoreSlim(1,1) и await Inner, который тоже ждёт его?",
@@ -1490,8 +1490,8 @@
     }
   },
   {
-    "id": "Q-67",
-    "slug": "Q-67-semaphore-canceled-wait-overrelease",
+    "id": "Q-067",
+    "slug": "Q-067-semaphore-canceled-wait-overrelease",
     "title": "Canceled WaitAsync",
     "q": {
       "ru": "Почему finally Release после отменённого WaitAsync может повредить счётчик?",
@@ -1515,8 +1515,8 @@
     }
   },
   {
-    "id": "Q-68",
-    "slug": "Q-68-static-semaphore-three-pods",
+    "id": "Q-068",
+    "slug": "Q-068-static-semaphore-three-pods",
     "title": "Kubernetes Pod",
     "q": {
       "ru": "Защитит ли static SemaphoreSlim(1,1) последний SKU от трёх Pod?",
@@ -1540,8 +1540,8 @@
     }
   },
   {
-    "id": "Q-69",
-    "slug": "Q-69-network-await-permit-lifetime",
+    "id": "Q-069",
+    "slug": "Q-069-network-await-permit-lifetime",
     "title": "Async I/O",
     "q": {
       "ru": "Что удерживает CheckoutAsync во время 5-секундного await ChargeAsync: worker или permit?",
@@ -1565,8 +1565,8 @@
     }
   },
   {
-    "id": "Q-70",
-    "slug": "Q-70-three-pods-provider-quota",
+    "id": "Q-070",
+    "slug": "Q-070-three-pods-provider-quota",
     "title": "Distributed concurrency limit",
     "q": {
       "ru": "Сколько одновременно запросов к payment provider при 3 Pod × SemaphoreSlim(5,5)?",
@@ -1586,8 +1586,8 @@
     "terms": ""
   },
   {
-    "id": "Q-71",
-    "slug": "Q-71-payment-timeout-duplicate-charge",
+    "id": "Q-071",
+    "slug": "Q-071-payment-timeout-duplicate-charge",
     "title": "Payment idempotency",
     "q": {
       "ru": "Может ли при потерянном ответе банка повторный ChargeAsync списать деньги дважды?",
@@ -1611,8 +1611,8 @@
     }
   },
   {
-    "id": "Q-72",
-    "slug": "Q-72-outbox-not-charge-idempotency",
+    "id": "Q-072",
+    "slug": "Q-072-outbox-not-charge-idempotency",
     "title": "Outbox vs idempotency",
     "q": {
       "ru": "Почему Transactional Outbox не заменяет идемпотентность платежного провайдера?",
@@ -1632,8 +1632,8 @@
     "terms": ""
   },
   {
-    "id": "Q-73",
-    "slug": "Q-73-remote-timeout-not-rollback",
+    "id": "Q-073",
+    "slug": "Q-073-remote-timeout-not-rollback",
     "title": "Remote partial failure",
     "q": {
       "ru": "Означает ли gRPC DeadlineExceeded или локальный CancellationToken откат успешно списанного платежа?",
@@ -1653,8 +1653,8 @@
     "terms": ""
   },
   {
-    "id": "Q-74",
-    "slug": "Q-74-postgres-read-committed-check-act",
+    "id": "Q-074",
+    "slug": "Q-074-postgres-read-committed-check-act",
     "title": "PostgreSQL isolation",
     "q": {
       "ru": "Могут ли два Pod под READ COMMITTED прочитать available=1 и затем безусловными UPDATE получить -1?",
@@ -1675,8 +1675,8 @@
     "codeLanguage": "sql"
   },
   {
-    "id": "Q-75",
-    "slug": "Q-75-postgres-conditional-update-returning",
+    "id": "Q-075",
+    "slug": "Q-075-postgres-conditional-update-returning",
     "title": "PostgreSQL conditional UPDATE",
     "q": {
       "ru": "Как одним SQL statement защитить последний товар через UPDATE ... RETURNING?",
