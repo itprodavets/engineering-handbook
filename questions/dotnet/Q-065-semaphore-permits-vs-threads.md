@@ -19,7 +19,7 @@ try { await Task.Delay(1000); } finally { sem.Release(); }
 dotnet run --file labs/dotnet/Q-065.cs
 ```
 
-[Q-65.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-065.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
+[Q-065.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-065.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
 <summary>Эталонный ответ — открыть после своего ответа</summary>

@@ -19,7 +19,7 @@ try { await Task.Delay(100); } finally { Monitor.Exit(gate); }
 dotnet run --file labs/dotnet/Q-064.cs
 ```
 
-[Q-64.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-064.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
+[Q-064.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-064.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
 <summary>Эталонный ответ — открыть после своего ответа</summary>
