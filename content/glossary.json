@@ -277,5 +277,77 @@
       "en": "Starting an additional OS thread, distinct from allocating a Task object."
     },
     "example": "new Thread(...).Start(); ThreadPool scales workers"
+  },
+  {
+    "term": "Thread affinity",
+    "translation": "Привязка к потоку",
+    "definition": {
+      "ru": "Monitor.Exit должен исполняться потоком-владельцем.",
+      "en": "Monitor.Exit must execute on the owning thread."
+    },
+    "example": "Monitor.Enter/Exit"
+  },
+  {
+    "term": "Semaphore permit",
+    "translation": "Разрешение семафора",
+    "definition": {
+      "ru": "Разрешение удерживается до Release и не равно потоку.",
+      "en": "A permit remains held until Release; it is not a thread."
+    },
+    "example": "await WaitAsync()"
+  },
+  {
+    "term": "Process-local state",
+    "translation": "Память процесса",
+    "definition": {
+      "ru": "static поля и SemaphoreSlim независимы между Pod.",
+      "en": "Static fields and SemaphoreSlim are independent across Pods."
+    },
+    "example": "static SemaphoreSlim Gate"
+  },
+  {
+    "term": "Unknown payment outcome",
+    "translation": "Неизвестный результат платежа",
+    "definition": {
+      "ru": "Удалённый платёж мог выполниться, а ответ потеряться.",
+      "en": "A remote payment may have committed while its reply was lost."
+    },
+    "example": "ChargeAsync timeout"
+  },
+  {
+    "term": "Idempotency key",
+    "translation": "Ключ идемпотентности",
+    "definition": {
+      "ru": "Стабильный идентификатор одной логической операции, проверяемый принимающей стороной.",
+      "en": "A stable logical operation identifier enforced by the receiver."
+    },
+    "example": "Idempotency-Key"
+  },
+  {
+    "term": "Transactional Outbox",
+    "translation": "Транзакционный Outbox",
+    "definition": {
+      "ru": "Событие и локальное состояние сохраняются в одной транзакции, но delivery может повториться.",
+      "en": "An event and local state are saved atomically, but delivery can repeat."
+    },
+    "example": "orders + outbox"
+  },
+  {
+    "term": "READ COMMITTED",
+    "translation": "Чтение зафиксированных данных",
+    "definition": {
+      "ru": "В PostgreSQL отдельные statements видят свои committed snapshots, а конфликтующий UPDATE проверяет WHERE заново.",
+      "en": "In PostgreSQL each statement gets a committed snapshot; competing UPDATE rechecks WHERE."
+    },
+    "example": "BEGIN ISOLATION LEVEL READ COMMITTED"
+  },
+  {
+    "term": "Conditional UPDATE",
+    "translation": "Условный UPDATE",
+    "definition": {
+      "ru": "SQL проверяет предикат и изменяет значение в одном statement.",
+      "en": "SQL tests the predicate and updates the value in one statement."
+    },
+    "example": "UPDATE ... WHERE available>0 RETURNING"
   }
 ]

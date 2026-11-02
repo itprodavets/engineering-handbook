@@ -1513,5 +1513,187 @@
       "mode": "exact",
       "output": "Canceled=True; UnauthorizedPermitReleased=True; OwnerReleaseThrows=True"
     }
+  },
+  {
+    "id": "Q-68",
+    "slug": "Q-68-static-semaphore-three-pods",
+    "title": "Kubernetes Pod",
+    "q": {
+      "ru": "Защитит ли static SemaphoreSlim(1,1) последний SKU от трёх Pod?",
+      "en": "Does static SemaphoreSlim(1,1) protect a last-item SKU across three Pods?"
+    },
+    "a": {
+      "ru": "Нет: каждый Pod имеет собственное разрешение; защищать SKU нужно в InventoryService/PostgreSQL.",
+      "en": "No: each Pod has its own permit; InventoryService/PostgreSQL must enforce stock."
+    },
+    "code": "private static readonly SemaphoreSlim Gate=new(1,1);",
+    "lab": "labs/dotnet/Q-068.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+    "terms": "",
+    "verify": {
+      "mode": "exact",
+      "output": "ActiveSeparateGates=3; Completed=True"
+    }
+  },
+  {
+    "id": "Q-69",
+    "slug": "Q-69-network-await-permit-lifetime",
+    "title": "Async I/O",
+    "q": {
+      "ru": "Что удерживает CheckoutAsync во время 5-секундного await ChargeAsync: worker или permit?",
+      "en": "During a five-second await ChargeAsync, does CheckoutAsync hold a worker or a permit?"
+    },
+    "a": {
+      "ru": "При корректном pending async I/O worker не закреплён, а permit Gate остаётся занятым до finally Release.",
+      "en": "Proper pending async I/O does not pin a worker, but holds a Gate permit until finally Release."
+    },
+    "code": "await gate.WaitAsync();\ntry { await ChargeAsync(); } finally { gate.Release(); }",
+    "lab": "labs/dotnet/Q-069.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync",
+    "terms": "",
+    "verify": {
+      "mode": "exact",
+      "output": "EnteredBeforeReply=1; PermitCount=0; SecondPending=True\nEnteredAfterReply=2; PermitCount=1"
+    }
+  },
+  {
+    "id": "Q-70",
+    "slug": "Q-70-three-pods-provider-quota",
+    "title": "Distributed concurrency limit",
+    "q": {
+      "ru": "Сколько одновременно запросов к payment provider при 3 Pod × SemaphoreSlim(5,5)?",
+      "en": "How many concurrent payment calls with three Pods each using SemaphoreSlim(5,5)?"
+    },
+    "a": {
+      "ru": "До 15, потому что каждый лимит локальный и не учитывает другие Pod.",
+      "en": "Up to 15: each concurrency limit is local to its Pod."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+    "terms": ""
+  },
+  {
+    "id": "Q-71",
+    "slug": "Q-71-payment-timeout-duplicate-charge",
+    "title": "Payment idempotency",
+    "q": {
+      "ru": "Может ли при потерянном ответе банка повторный ChargeAsync списать деньги дважды?",
+      "en": "Can retrying ChargeAsync after a lost bank reply charge twice?"
+    },
+    "a": {
+      "ru": "Да. Timeout не доказывает rollback; повтор одной логической попытки требует стабильного provider-enforced idempotency key и reconciliation.",
+      "en": "Yes. Timeout does not prove rollback; retry the same logical attempt with a stable provider-enforced idempotency key and reconciliation."
+    },
+    "code": "",
+    "lab": "labs/dotnet/Q-071.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://stripe.com/blog/idempotency",
+    "terms": "",
+    "verify": {
+      "mode": "exact",
+      "output": "WithoutKeyCharges=2; WithSameKeyCharges=1"
+    }
+  },
+  {
+    "id": "Q-72",
+    "slug": "Q-72-outbox-not-charge-idempotency",
+    "title": "Outbox vs idempotency",
+    "q": {
+      "ru": "Почему Transactional Outbox не заменяет идемпотентность платежного провайдера?",
+      "en": "Why does Transactional Outbox not replace payment-provider idempotency?"
+    },
+    "a": {
+      "ru": "Outbox атомарно сохраняет событие с локальным состоянием, но relay допускает повторы; consumer/provider должны дедуплицировать.",
+      "en": "Outbox atomically saves event and local state, but relay may deliver duplicates; consumers/providers must deduplicate."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-out-box-cosmos",
+    "terms": ""
+  },
+  {
+    "id": "Q-73",
+    "slug": "Q-73-remote-timeout-not-rollback",
+    "title": "Remote partial failure",
+    "q": {
+      "ru": "Означает ли gRPC DeadlineExceeded или локальный CancellationToken откат успешно списанного платежа?",
+      "en": "Does gRPC DeadlineExceeded or local CancellationToken roll back an already committed payment?"
+    },
+    "a": {
+      "ru": "Нет. Удалённый side effect мог состояться до сетевого сбоя; нужен status API/webhook и reconciliation.",
+      "en": "No. The remote side effect may have committed before network failure; use status APIs/webhooks and reconciliation."
+    },
+    "code": "",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation",
+    "terms": ""
+  },
+  {
+    "id": "Q-74",
+    "slug": "Q-74-postgres-read-committed-check-act",
+    "title": "PostgreSQL isolation",
+    "q": {
+      "ru": "Могут ли два Pod под READ COMMITTED прочитать available=1 и затем безусловными UPDATE получить -1?",
+      "en": "Can two Pods under READ COMMITTED both read available=1 and then reach -1 via unconditional UPDATE?"
+    },
+    "a": {
+      "ru": "Да. Второй UPDATE ждёт row lock, затем уменьшает новую версию 0→-1, так как WHERE проверяет только sku.",
+      "en": "Yes. The second UPDATE waits for the row lock and then decrements the new row version 0→-1 because WHERE only filters sku."
+    },
+    "code": "BEGIN;\nSELECT available FROM inventory WHERE sku='IPHONE-17';\nUPDATE inventory SET available=available-1 WHERE sku='IPHONE-17';\nCOMMIT;",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://www.postgresql.org/docs/current/transaction-iso.html",
+    "terms": "",
+    "codeLanguage": "sql"
+  },
+  {
+    "id": "Q-75",
+    "slug": "Q-75-postgres-conditional-update-returning",
+    "title": "PostgreSQL conditional UPDATE",
+    "q": {
+      "ru": "Как одним SQL statement защитить последний товар через UPDATE ... RETURNING?",
+      "en": "How can one UPDATE ... RETURNING statement protect the last item?"
+    },
+    "a": {
+      "ru": "UPDATE ... SET available=available-1 WHERE sku=$1 AND available>0 RETURNING available: второй UPDATE после recheck не обновит строк.",
+      "en": "UPDATE ... SET available=available-1 WHERE sku=$1 AND available>0 RETURNING available: the second UPDATE affects zero rows after predicate recheck."
+    },
+    "code": "UPDATE inventory SET available=available-1 WHERE sku='IPHONE-17' AND available>0 RETURNING available;",
+    "lab": null,
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://www.postgresql.org/docs/current/transaction-iso.html",
+    "terms": "",
+    "codeLanguage": "sql"
   }
 ]

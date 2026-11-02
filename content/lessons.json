@@ -664,5 +664,110 @@
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/core/diagnostics/debug-threadpool-starvation"
     ]
+  },
+  {
+    "id": "microservices-concurrency",
+    "stage": "reliability",
+    "title": {
+      "ru": "Микросервисы: синхронизация, сеть, платежи и PostgreSQL",
+      "en": "Microservices: concurrency, networking, payments and PostgreSQL"
+    },
+    "desc": {
+      "ru": "Локальные разрешения в Pod, сетевые partial failures, идемпотентность и конкурентный SQL.",
+      "en": "Process-local Pod permits, network partial failures, idempotency and concurrent SQL."
+    },
+    "overview": {
+      "ru": "SemaphoreSlim синхронизирует только один процесс: три Pod могут одновременно войти в свои секции. Async network wait может не блокировать worker, но удерживает semaphore permit. Timeout не доказывает, что remote side effect отменён. Outbox и идемпотентность решают разные задачи. Общий остаток защищается атомарно в БД.",
+      "en": "SemaphoreSlim synchronizes only within one process: three Pods can independently enter. Async network waits may release workers while holding permits. Timeout does not prove remote effects were rolled back. Outbox and idempotency solve different problems. Shared inventory needs atomic database protection."
+    },
+    "mechanism": [
+      {
+        "ru": "Каждый Pod имеет отдельную память и static SemaphoreSlim Gate.",
+        "en": "Each Pod has independent memory and its own static SemaphoreSlim Gate."
+      },
+      {
+        "ru": "gRPC/HTTPS await может не удерживать worker, но permit остаётся до Release.",
+        "en": "Pending gRPC/HTTPS await need not block a worker, but the permit remains held until Release."
+      },
+      {
+        "ru": "Потерянный ответ означает неизвестный результат; повтор без ключа может списать снова.",
+        "en": "A lost reply causes an unknown outcome; a retry without idempotency may charge again."
+      },
+      {
+        "ru": "Transactional Outbox фиксирует локальное состояние и событие, но возможна повторная доставка.",
+        "en": "Transactional Outbox atomically persists local state and event, but delivery can repeat."
+      },
+      {
+        "ru": "READ COMMITTED допускает гонку между отдельным SELECT и безусловным UPDATE; условный UPDATE может защитить SKU.",
+        "en": "READ COMMITTED permits a race between separate SELECT and unconditional UPDATE; conditional UPDATE can protect a SKU."
+      }
+    ],
+    "resources": [
+      {
+        "name": {
+          "ru": "Память процессов",
+          "en": "Process memory"
+        },
+        "detail": {
+          "ru": "Отдельные Gate, Task и ThreadPool у каждого Pod.",
+          "en": "Independent Gate, Task and ThreadPool per Pod."
+        }
+      },
+      {
+        "name": {
+          "ru": "Сетевой I/O",
+          "en": "Network I/O"
+        },
+        "detail": {
+          "ru": "Socket, connection pool, latency и deadlines внутренних и внешних вызовов.",
+          "en": "Sockets, pools, latency and deadlines across internal and external calls."
+        }
+      },
+      {
+        "name": {
+          "ru": "Общая БД",
+          "en": "Shared DB"
+        },
+        "detail": {
+          "ru": "MVCC PostgreSQL, row locks и транзакции отвечают за глобальную корректность.",
+          "en": "PostgreSQL MVCC, row locks and transactions enforce global consistency."
+        }
+      }
+    ],
+    "risks": [
+      {
+        "ru": "static не означает cluster-global lock.",
+        "en": "static does not imply cluster-global locking."
+      },
+      {
+        "ru": "Task.Run над sync I/O блокирует worker, несмотря на async-обёртку.",
+        "en": "Task.Run around synchronous I/O still blocks a worker."
+      },
+      {
+        "ru": "Outbox не обеспечивает exactly-once external payment.",
+        "en": "Outbox does not ensure exactly-once external payments."
+      },
+      {
+        "ru": "READ COMMITTED не защищает раздельный check-then-act без корректного SQL.",
+        "en": "READ COMMITTED does not fix an unsafe split check-then-act."
+      }
+    ],
+    "questions": [
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://stripe.com/blog/idempotency",
+      "https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-out-box-cosmos",
+      "https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation"
+    ]
   }
 ]
