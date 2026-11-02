@@ -15,10 +15,10 @@ try { await sem.WaitAsync(ct); } finally { sem.Release(); }
 ### Run the actual code
 
 ```bash
-dotnet run --file labs/dotnet/Q-67.cs
+dotnet run --file labs/dotnet/Q-067.cs
 ```
 
-[Q-67.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-67.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
+[Q-67.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-067.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
 <summary>Model answer — reveal after your attempt</summary>

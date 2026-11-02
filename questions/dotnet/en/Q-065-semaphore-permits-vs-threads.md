@@ -16,10 +16,10 @@ try { await Task.Delay(1000); } finally { sem.Release(); }
 ### Run the actual code
 
 ```bash
-dotnet run --file labs/dotnet/Q-65.cs
+dotnet run --file labs/dotnet/Q-065.cs
 ```
 
-[Q-65.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-65.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
+[Q-65.cs](https://github.com/itprodavets/engineering-handbook/blob/main/labs/dotnet/Q-065.cs) · [GitHub Actions](https://github.com/itprodavets/engineering-handbook/actions/workflows/run-lab.yml) · [Codespaces](https://codespaces.new/itprodavets/engineering-handbook)
 
 <details>
 <summary>Model answer — reveal after your attempt</summary>

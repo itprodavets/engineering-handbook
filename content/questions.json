@@ -1427,7 +1427,7 @@
       "en": "Monitor has thread affinity; Exit on another thread throws SynchronizationLockException. await does not release it."
     },
     "code": "Monitor.Enter(gate);\ntry { await Task.Delay(100); } finally { Monitor.Exit(gate); }",
-    "lab": "labs/dotnet/Q-64.cs",
+    "lab": "labs/dotnet/Q-064.cs",
     "expected": "",
     "mechanism": "",
     "risk": "",
@@ -1452,7 +1452,7 @@
       "en": "Two permits remain held until Release, with no dedicated blocked workers; further WaitAsync calls wait asynchronously."
     },
     "code": "await sem.WaitAsync();\ntry { await Task.Delay(1000); } finally { sem.Release(); }",
-    "lab": "labs/dotnet/Q-65.cs",
+    "lab": "labs/dotnet/Q-065.cs",
     "expected": "",
     "mechanism": "",
     "risk": "",
@@ -1477,7 +1477,7 @@
       "en": "Only Outer entered; Inner cannot acquire the permit and Outer cannot release it until Inner completes. Async deadlocks need not block workers."
     },
     "code": "await gate.WaitAsync();\ntry { await InnerAsync(); } finally { gate.Release(); }",
-    "lab": "labs/dotnet/Q-66.cs",
+    "lab": "labs/dotnet/Q-066.cs",
     "expected": "",
     "mechanism": "",
     "risk": "",
@@ -1502,7 +1502,7 @@
       "en": "Canceled wait acquired no permit; unconditional finally Release corrupts the count. Acquire before try/finally."
     },
     "code": "try { await sem.WaitAsync(ct); } finally { sem.Release(); }",
-    "lab": "labs/dotnet/Q-67.cs",
+    "lab": "labs/dotnet/Q-067.cs",
     "expected": "",
     "mechanism": "",
     "risk": "",
