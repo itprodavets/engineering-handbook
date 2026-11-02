@@ -3326,5 +3326,332 @@
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/core/diagnostics/debug-threadpool-starvation"
     ]
+  },
+  {
+    "id": "replica-local-semaphore-scope",
+    "lesson": "microservices-concurrency",
+    "level": "internals",
+    "title": {
+      "ru": "SemaphoreSlim локален для Pod, а остаток общий",
+      "en": "SemaphoreSlim is Pod-local while inventory is shared"
+    },
+    "goal": {
+      "ru": "Объяснять область действия static и причину гонок между репликами.",
+      "en": "Explain the scope of static and the source of races between replicas."
+    },
+    "definition": {
+      "ru": "Три Kubernetes Pod имеют три независимые копии static SemaphoreSlim(1,1): три checkout-запроса могут одновременно пройти локальные gates. Общий инвариант остатка нужно атомарно защищать в InventoryService/PostgreSQL, а не в OrderService.",
+      "en": "Three Kubernetes Pods have three independent copies of static SemaphoreSlim(1,1), so three checkouts can pass local gates simultaneously. Enforce the shared stock invariant in InventoryService/PostgreSQL, not OrderService."
+    },
+    "steps": [
+      {
+        "ru": "Каждый Pod имеет отдельный процесс CLR и собственные static поля.",
+        "en": "Each Pod runs a separate CLR process with its own static fields."
+      },
+      {
+        "ru": "Все три Gate могут независимо перейти 1→0 при WaitAsync.",
+        "en": "All three Gates can independently transition 1→0 upon WaitAsync."
+      },
+      {
+        "ru": "Все три Checkout могут одновременно вызвать общий InventoryService.ReserveAsync.",
+        "en": "All three Checkouts may concurrently call the shared InventoryService.ReserveAsync."
+      },
+      {
+        "ru": "Только владелец общего состояния может защитить SKU атомарным SQL и идемпотентностью брони.",
+        "en": "Only the shared state owner can enforce the SKU invariant using atomic SQL and reservation idempotency."
+      }
+    ],
+    "resources": {
+      "ru": "Три локальных счётчика, ThreadPool и Task state; общая строка PostgreSQL и её транзакции.",
+      "en": "Three independent gate counters, ThreadPools and Task states; one shared PostgreSQL row and its transactions."
+    },
+    "pitfalls": {
+      "ru": "Слово static не делает объект cluster-global. Redis lease lock тоже имеет срок действия/fencing риски и не заменяет атомарный бизнес-предикат.",
+      "en": "static does not make an object cluster-global. Redis lease locks have expiration/fencing hazards and do not replace an atomic business predicate."
+    },
+    "code": "private static readonly SemaphoreSlim Gate = new(1, 1); // one per process",
+    "codeLanguage": "csharp",
+    "questions": [
+      68
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+      "https://www.postgresql.org/docs/current/transaction-iso.html"
+    ],
+    "chapters": [
+      {
+        "id": "replica-memory",
+        "title": {
+          "ru": "Три Pod — три разрешения",
+          "en": "Three Pods — three permits"
+        },
+        "body": {
+          "ru": "В Pod A, B, C каждый `static Gate` существует в отдельном адресном пространстве. Три вызова могут независимо войти в критическую секцию и одновременно вызвать ReserveAsync. Q-068 воспроизводит независимые Gate в одном процессе; это демонстрация области действия, а не настоящий Kubernetes/сетевой тест.",
+          "en": "Pods A/B/C each host a static Gate in a separate address space. All three calls may independently enter their critical sections and call ReserveAsync at once. Q-068 simulates independent gates in one process; it is a scope demonstration, not a live Kubernetes/network test."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "state-owner",
+        "title": {
+          "ru": "Инвариант на стороне InventoryService",
+          "en": "Invariant at the InventoryService boundary"
+        },
+        "body": {
+          "ru": "Именно InventoryService/PostgreSQL владеет `available` и должен атомарно решить, кому достался последний товар. Локальный SemaphoreSlim можно оставить для ограничения нагрузки на один экземпляр, но он не координирует реплики и не обеспечивает exactly-once бронирование.",
+          "en": "InventoryService/PostgreSQL owns available and must atomically decide the last item. A local SemaphoreSlim can bound per-instance load, but cannot coordinate replicas or provide exactly-once reservations."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "lease-warning",
+        "title": {
+          "ru": "Почему Redis lock не автоматически безопаснее",
+          "en": "Why a Redis lease is not automatically safe"
+        },
+        "body": {
+          "ru": "Аренда распределённого lock может истечь при паузе, network partition или длительной операции. Старый владелец иногда продолжает работать после получения lock новым участником; поэтому необходимы атомарные проверки на стороне данных и при необходимости fencing tokens.",
+          "en": "A distributed lease may expire during pauses, partitions or slow work. An old holder can continue after another acquires the lock, requiring atomic state-side checks and possibly fencing tokens."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Сколько static SemaphoreSlim в трёх Pod?",
+          "en": "How many static SemaphoreSlim instances exist in three Pods?"
+        },
+        "rubric": {
+          "ru": "Три, каждый process-local.",
+          "en": "Three, each process-local."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему три запроса могут одновременно вызвать ReserveAsync?",
+          "en": "Why can three requests invoke ReserveAsync simultaneously?"
+        },
+        "rubric": {
+          "ru": "Разрешения независимы, общего Gate нет.",
+          "en": "Each gate is independent; there is no shared Gate."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Защищает ли Gate(1,1) внутри OrderService последний SKU?",
+          "en": "Does Gate(1,1) inside OrderService protect the last SKU?"
+        },
+        "rubric": {
+          "ru": "Нет, только локальный Pod.",
+          "en": "No, only the local Pod."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему oversell возник после scale-out?",
+          "en": "Why did overselling emerge after scaling out?"
+        },
+        "rubric": {
+          "ru": "Проверять local locks, SQL check-then-act и дубли.",
+          "en": "Inspect local locks, SQL check-then-act and retries."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Где расположить глобальную проверку остатка?",
+          "en": "Where should globally safe stock checks be implemented?"
+        },
+        "rubric": {
+          "ru": "InventoryService/PostgreSQL conditional update + business idempotency.",
+          "en": "InventoryService/PostgreSQL conditional update and business idempotency."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-068.cs"
+    ],
+    "prerequisites": [
+      "mutual-exclusion-and-semaphores"
+    ]
+  },
+  {
+    "id": "remote-io-permit-lifetime",
+    "lesson": "microservices-concurrency",
+    "level": "production",
+    "title": {
+      "ru": "Асинхронный сетевой await удерживает permit, но не worker",
+      "en": "An async network await holds a permit, not necessarily a worker"
+    },
+    "goal": {
+      "ru": "Разделять удержание семафора, Task, socket и физический поток.",
+      "en": "Separate held semaphore permits, Tasks, sockets and physical workers."
+    },
+    "definition": {
+      "ru": "После Gate.WaitAsync() permit остаётся занятым до Release даже в течение пяти секунд внешнего HTTPS/gRPC await. Истинно асинхронное pending I/O не удерживает отдельный заблокированный worker, но сохраняет Task, permit, сетевые ресурсы и очередь следующих Checkout.",
+      "en": "After Gate.WaitAsync(), the permit remains held until Release, even throughout a five-second external HTTPS/gRPC await. Genuine pending async I/O need not hold a dedicated blocked worker, but Tasks, permits, network state and queued checkouts remain."
+    },
+    "steps": [
+      {
+        "ru": "Gate.WaitAsync приобретает permit и уменьшает CurrentCount.",
+        "en": "Gate.WaitAsync acquires a permit and decreases CurrentCount."
+      },
+      {
+        "ru": "ChargeAsync запускает сетевой I/O; при незавершённом await метод приостанавливается.",
+        "en": "ChargeAsync starts I/O; an incomplete await suspends the method."
+      },
+      {
+        "ru": "Worker может выполнять другую работу, permit остаётся занятым до Release.",
+        "en": "A worker may execute other work while the permit remains held until Release."
+      },
+      {
+        "ru": "Следующий Checkout того же Pod ждёт WaitAsync; другой Pod независим.",
+        "en": "A subsequent Checkout on the same Pod awaits WaitAsync; another Pod is independent."
+      },
+      {
+        "ru": "Лимиты concurrency должны соответствовать downstream, учитывать timeout/backpressure и суммарные реплики.",
+        "en": "Concurrency limits should target downstream resources and account for timeouts, backpressure and total replicas."
+      }
+    ],
+    "resources": {
+      "ru": "Semaphore permit, pending Task, continuation, connection pools и сетевые буферы. CPU не занят постоянно во время истинного pending I/O.",
+      "en": "Semaphore permit, pending Task, continuation, connection pools and network buffers. CPU is not continuously used during genuine pending I/O."
+    },
+    "pitfalls": {
+      "ru": "Task.Run над синхронным сетевым I/O удерживает worker. Большая критическая секция создаёт очередь и растущий p99 даже при низком CPU; локальный лимит не является глобальной квотой.",
+      "en": "Task.Run wrapping synchronous network I/O consumes a worker. Broad critical sections cause queueing and p99 latency despite low CPU; local limits do not enforce a global quota."
+    },
+    "code": "await Gate.WaitAsync(ct);\ntry { await payments.ChargeAsync(orderId, ct); }\nfinally { Gate.Release(); }",
+    "codeLanguage": "csharp",
+    "questions": [
+      69,
+      70
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync",
+      "https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation"
+    ],
+    "chapters": [
+      {
+        "id": "permit-vs-worker",
+        "title": {
+          "ru": "Await может освободить worker, но не permit",
+          "en": "Await may free the worker but not the permit"
+        },
+        "body": {
+          "ru": "Пятсекундный pending await внешнего API не означает пять секунд CPU time на ASP.NET Core. Однако CurrentCount у Gate остаётся нулевым, пока не отработает finally. В лаборатории Q-069 незавершённый TaskCompletionSource моделирует сетевое ожидание и демонстрирует удержание permit без настоящей сети.",
+          "en": "A five-second pending external await does not consume five seconds of ASP.NET Core CPU. Gate.CurrentCount nevertheless remains zero until finally releases. Q-069 uses an incomplete TaskCompletionSource to model the wait and show permit lifetime without actual networking."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "quotas",
+        "title": {
+          "ru": "Локальные квоты суммируются",
+          "en": "Local quotas add up"
+        },
+        "body": {
+          "ru": "Три Pod с SemaphoreSlim(5,5) могут вместе отправить 15 вызовов провайдеру. Глобальная квота требует согласованной координации или очереди. Внутренняя gRPC сеть и внешний HTTPS имеют разные задержки и ограничения, но обе подвержены timeout и частичным сбоям.",
+          "en": "Three Pods each with SemaphoreSlim(5,5) can generate 15 provider calls in total. A global quota needs coordinated admission or a queue. Internal gRPC and external HTTPS have different latency limits but both experience timeouts and partial failures."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "placement",
+        "title": {
+          "ru": "Изолируй лимит по downstream",
+          "en": "Isolate limits per downstream"
+        },
+        "body": {
+          "ru": "Общий gate вокруг ReserveAsync+ChargeAsync сериализует весь checkout одного Pod, даже если узким местом является только внешний провайдер. Узкий bounded concurrency limiter на конкретном downstream, CancellationToken, таймауты и метрики очереди лучше описывают нагрузку.",
+          "en": "A broad gate around ReserveAsync+ChargeAsync serializes the whole checkout per Pod even if only the external provider needs a limit. A narrow per-downstream limiter with cancellation, timeouts and queue metrics is usually more appropriate."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Что удерживается при async ChargeAsync?",
+          "en": "What remains occupied during an async ChargeAsync?"
+        },
+        "rubric": {
+          "ru": "Permit, Task и сетевое состояние; worker не обязан блокироваться.",
+          "en": "Permit, Task and networking state; worker need not block."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему при низком CPU может расти очередь Checkout?",
+          "en": "Why might checkout queues grow with low CPU?"
+        },
+        "rubric": {
+          "ru": "Permit держится во время внешнего I/O; следующие операции ожидают.",
+          "en": "Permits remain held during remote I/O while later requests wait."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Сколько вызовов при 3 Pod × Gate(5,5)?",
+          "en": "How many calls with three Pods each Gate(5,5)?"
+        },
+        "rubric": {
+          "ru": "До 15.",
+          "en": "Up to 15."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Как найти bottleneck при высоком p99 и пустом CurrentCount?",
+          "en": "How to diagnose high p99 with CurrentCount=0?"
+        },
+        "rubric": {
+          "ru": "Очередь WaitAsync, latency provider, пула соединений и retries.",
+          "en": "WaitAsync queue, provider latency, connection pools and retries."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Где ограничить платёжный API?",
+          "en": "Where should payment API calls be bounded?"
+        },
+        "rubric": {
+          "ru": "У клиента конкретного downstream; для глобальной квоты отдельная координация.",
+          "en": "At the downstream client; coordinate separately for global quotas."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-069.cs"
+    ],
+    "prerequisites": [
+      "replica-local-semaphore-scope"
+    ]
   }
 ]
