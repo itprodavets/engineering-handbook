@@ -32,7 +32,7 @@
 - [volatile, Interlocked и атомарный RMW](atomicity-and-memory-visibility.md) — Различать атомарность одного действия, acquire/release и операции с ref.
 - [Memory Model: видимость, ordering и safe publication](memory-ordering-publication.md) — Проверять гарантии публикации данных через release/acquire, JIT, поток ОС и happens-before.
 - [CompareExchange, CAS-loop и инвариант stock ≥ 0](compare-exchange-cas-loop.md) — Понимать, что меняет CAS через ref, что возвращает previous и почему повторная попытка нужна при конкуренции.
-- [Monitor lock и SemaphoreSlim](mutual-exclusion-and-semaphores.md) — Различать блокировку потока и асинхронное ожидание разрешения.
+- [Monitor, SemaphoreSlim и асинхронный deadlock](mutual-exclusion-and-semaphores.md) — Различать привязку Monitor к потоку, разрешения SemaphoreSlim, async deadlock и ошибки отмены.
 - [Почему Parallel.ForEach(async ...) опасен](parallel-foreach-async-void.md) — Объяснять потерю управления продолжениями async void.
 
 ## [Continuation и контексты](../execution-context.md)
@@ -53,3 +53,10 @@
 ## [Блокировки и sync-over-async](../sync-over-async.md)
 
 - [Deadlock и starvation при .Result/.Wait()](sync-over-async.md) — Различать заблокированный поток, цикл ожидания и отсутствие прогресса.
+
+## [Микросервисы: синхронизация, сеть, платежи и PostgreSQL](../microservices-concurrency.md)
+
+- [SemaphoreSlim локален для Pod, а остаток общий](replica-local-semaphore-scope.md) — Объяснять область действия static и причину гонок между репликами.
+- [Асинхронный сетевой await удерживает permit, но не worker](remote-io-permit-lifetime.md) — Разделять удержание семафора, Task, socket и физический поток.
+- [Потерянный ответ платежа: Outbox и идемпотентность](payment-timeout-idempotency-outbox.md) — Объяснять частичные отказы и защищать финансовые операции от повторов.
+- [PostgreSQL READ COMMITTED: гонка остатков и условный UPDATE](postgres-read-committed-stock.md) — Проверять корректность одного SKU при двух транзакциях на уровне MVCC и row locks.

@@ -75,6 +75,10 @@
 - [Q-049](Q-049-release-before-data-allows-zero.md): Может ли Consumer увидеть data=0, если Producer сначала Volatile.Write(ready,1), потом data=42? — закрепление
 - [Q-050](Q-050-nonvolatile-loop-jit-hoisting.md): Гарантированно ли завершится while(ready==0) без volatile после записи другого потока?
 - [Q-051](Q-051-thread-yield-is-not-memory-fence.md): Почему Thread.Yield() в цикле с обычным чтением ready не заменяет Volatile.Read?
+- [Q-064](Q-064-monitor-exit-after-await.md): Почему Monitor.Exit после await на другом потоке выбросит исключение? — закрепление
+- [Q-065](Q-065-semaphore-permits-vs-threads.md): Что означает SemaphoreSlim(2,2) при двух Task.Delay и ожидании ещё двух задач? — закрепление
+- [Q-066](Q-066-semaphore-nested-async-deadlock.md): Что будет, если Outer держит SemaphoreSlim(1,1) и await Inner, который тоже ждёт его? — закрепление
+- [Q-067](Q-067-semaphore-canceled-wait-overrelease.md): Почему finally Release после отменённого WaitAsync может повредить счётчик? — закрепление
 
 ## Continuation и контексты
 
@@ -108,3 +112,16 @@
 [Основная тема](../../topics/dotnet/sync-over-async.md)
 
 - [Q-016](Q-016-sync-over-async-deadlocks.md): Почему .Result и .Wait() опасны в ASP.NET Core? Будет ли обязательно deadlock?
+
+## Микросервисы: синхронизация, сеть, платежи и PostgreSQL
+
+[Основная тема](../../topics/dotnet/microservices-concurrency.md)
+
+- [Q-068](Q-068-static-semaphore-three-pods.md): Защитит ли static SemaphoreSlim(1,1) последний SKU от трёх Pod? — закрепление
+- [Q-069](Q-069-network-await-permit-lifetime.md): Что удерживает CheckoutAsync во время 5-секундного await ChargeAsync: worker или permit? — закрепление
+- [Q-070](Q-070-three-pods-provider-quota.md): Сколько одновременно запросов к payment provider при 3 Pod × SemaphoreSlim(5,5)?
+- [Q-071](Q-071-payment-timeout-duplicate-charge.md): Может ли при потерянном ответе банка повторный ChargeAsync списать деньги дважды? — закрепление
+- [Q-072](Q-072-outbox-not-charge-idempotency.md): Почему Transactional Outbox не заменяет идемпотентность платежного провайдера?
+- [Q-073](Q-073-remote-timeout-not-rollback.md): Означает ли gRPC DeadlineExceeded или локальный CancellationToken откат успешно списанного платежа?
+- [Q-074](Q-074-postgres-read-committed-check-act.md): Могут ли два Pod под READ COMMITTED прочитать available=1 и затем безусловными UPDATE получить -1?
+- [Q-075](Q-075-postgres-conditional-update-returning.md): Как одним SQL statement защитить последний товар через UPDATE ... RETURNING?

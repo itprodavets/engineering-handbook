@@ -75,6 +75,10 @@ Each question belongs to exactly one canonical lesson; related code challenges s
 - [Q-049](en/Q-049-release-before-data-allows-zero.md): Can the consumer see zero if producer publishes ready before writing data? — reinforcement
 - [Q-050](en/Q-050-nonvolatile-loop-jit-hoisting.md): Does while(ready==0) without volatile necessarily terminate after another thread writes ready=1?
 - [Q-051](en/Q-051-thread-yield-is-not-memory-fence.md): Why does Thread.Yield in an ordinary polling loop not replace Volatile.Read?
+- [Q-064](en/Q-064-monitor-exit-after-await.md): Why does Monitor.Exit after await on another thread throw? — reinforcement
+- [Q-065](en/Q-065-semaphore-permits-vs-threads.md): What does SemaphoreSlim(2,2) mean with two pending delays and two additional tasks? — reinforcement
+- [Q-066](en/Q-066-semaphore-nested-async-deadlock.md): What if Outer holds SemaphoreSlim(1,1) and awaits Inner, which also awaits it? — reinforcement
+- [Q-067](en/Q-067-semaphore-canceled-wait-overrelease.md): Why can finally Release after a canceled WaitAsync corrupt the count? — reinforcement
 
 ## Continuations and execution contexts
 
@@ -108,3 +112,16 @@ Each question belongs to exactly one canonical lesson; related code challenges s
 [Canonical lesson](../../topics/dotnet/en/sync-over-async.md)
 
 - [Q-016](en/Q-016-sync-over-async-deadlocks.md): Why are .Result and .Wait() dangerous in ASP.NET Core? Is a deadlock guaranteed?
+
+## Microservices: concurrency, networking, payments and PostgreSQL
+
+[Canonical lesson](../../topics/dotnet/en/microservices-concurrency.md)
+
+- [Q-068](en/Q-068-static-semaphore-three-pods.md): Does static SemaphoreSlim(1,1) protect a last-item SKU across three Pods? — reinforcement
+- [Q-069](en/Q-069-network-await-permit-lifetime.md): During a five-second await ChargeAsync, does CheckoutAsync hold a worker or a permit? — reinforcement
+- [Q-070](en/Q-070-three-pods-provider-quota.md): How many concurrent payment calls with three Pods each using SemaphoreSlim(5,5)?
+- [Q-071](en/Q-071-payment-timeout-duplicate-charge.md): Can retrying ChargeAsync after a lost bank reply charge twice? — reinforcement
+- [Q-072](en/Q-072-outbox-not-charge-idempotency.md): Why does Transactional Outbox not replace payment-provider idempotency?
+- [Q-073](en/Q-073-remote-timeout-not-rollback.md): Does gRPC DeadlineExceeded or local CancellationToken roll back an already committed payment?
+- [Q-074](en/Q-074-postgres-read-committed-check-act.md): Can two Pods under READ COMMITTED both read available=1 and then reach -1 via unconditional UPDATE?
+- [Q-075](en/Q-075-postgres-conditional-update-returning.md): How can one UPDATE ... RETURNING statement protect the last item?

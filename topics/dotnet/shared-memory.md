@@ -52,6 +52,10 @@
 - [Q-047: Как CAS-loop ведёт себя при stock=3 и двух покупателях, а затем stock=1 и пяти покупателях?](../../questions/dotnet/Q-047-cas-loop-five-buyers.md)
 - [Q-048: Почему data=42 перед Volatile.Write(ready,1) и Volatile.Read(ready) позволяет вывести 42?](../../questions/dotnet/Q-048-safe-publication-acquire-release.md)
 - [Q-049: Может ли Consumer увидеть data=0, если Producer сначала Volatile.Write(ready,1), потом data=42?](../../questions/dotnet/Q-049-release-before-data-allows-zero.md)
+- [Q-064: Почему Monitor.Exit после await на другом потоке выбросит исключение?](../../questions/dotnet/Q-064-monitor-exit-after-await.md)
+- [Q-065: Что означает SemaphoreSlim(2,2) при двух Task.Delay и ожидании ещё двух задач?](../../questions/dotnet/Q-065-semaphore-permits-vs-threads.md)
+- [Q-066: Что будет, если Outer держит SemaphoreSlim(1,1) и await Inner, который тоже ждёт его?](../../questions/dotnet/Q-066-semaphore-nested-async-deadlock.md)
+- [Q-067: Почему finally Release после отменённого WaitAsync может повредить счётчик?](../../questions/dotnet/Q-067-semaphore-canceled-wait-overrelease.md)
 
 ## Первоисточники
 

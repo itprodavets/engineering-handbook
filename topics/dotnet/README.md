@@ -12,3 +12,4 @@
 - [Отмена асинхронных операций](cancellation.md) — Что реально делает CancellationToken и чего он не делает.
 - [ValueTask<T> и стоимость ожидания](valuetask.md) — Точная область применения без правил вроде «всегда быстрее».
 - [Блокировки и sync-over-async](sync-over-async.md) — Почему .Result и .Wait() опасны и откуда берётся deadlock.
+- [Микросервисы: синхронизация, сеть, платежи и PostgreSQL](microservices-concurrency.md) — Локальные разрешения в Pod, сетевые partial failures, идемпотентность и конкурентный SQL.

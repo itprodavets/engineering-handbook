@@ -52,6 +52,10 @@ Concurrent Tasks can mutate the same object. Task.WhenAll only waits for complet
 - [Q-047: How does a CAS loop behave with stock=3/two buyers and stock=1/five buyers?](../../../questions/dotnet/en/Q-047-cas-loop-five-buyers.md)
 - [Q-048: Why does data=42 before release-store and acquire-reading ready safely publish 42?](../../../questions/dotnet/en/Q-048-safe-publication-acquire-release.md)
 - [Q-049: Can the consumer see zero if producer publishes ready before writing data?](../../../questions/dotnet/en/Q-049-release-before-data-allows-zero.md)
+- [Q-064: Why does Monitor.Exit after await on another thread throw?](../../../questions/dotnet/en/Q-064-monitor-exit-after-await.md)
+- [Q-065: What does SemaphoreSlim(2,2) mean with two pending delays and two additional tasks?](../../../questions/dotnet/en/Q-065-semaphore-permits-vs-threads.md)
+- [Q-066: What if Outer holds SemaphoreSlim(1,1) and awaits Inner, which also awaits it?](../../../questions/dotnet/en/Q-066-semaphore-nested-async-deadlock.md)
+- [Q-067: Why can finally Release after a canceled WaitAsync corrupt the count?](../../../questions/dotnet/en/Q-067-semaphore-canceled-wait-overrelease.md)
 
 ## Primary references
 

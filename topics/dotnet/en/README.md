@@ -12,3 +12,4 @@ Core mechanisms have one home; related challenges reinforce them instead of repe
 - [Cancellation of asynchronous work](cancellation.md) — What CancellationToken actually does and does not do.
 - [ValueTask<T> and allocation trade-offs](valuetask.md) — When it helps—and why it is not always faster.
 - [Blocking and sync-over-async](sync-over-async.md) — Why .Result and .Wait() are risky and where deadlocks come from.
+- [Microservices: concurrency, networking, payments and PostgreSQL](microservices-concurrency.md) — Process-local Pod permits, network partial failures, idempotency and concurrent SQL.

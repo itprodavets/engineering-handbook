@@ -32,7 +32,7 @@ One mechanism, one canonical explanation; questions reinforce it.
 - [volatile, Interlocked and atomic read-modify-write](atomicity-and-memory-visibility.md) — Distinguish single-operation atomicity, acquire/release and by-reference updates.
 - [Memory model: visibility, ordering and safe publication](memory-ordering-publication.md) — Reason about release/acquire publication, JIT, OS scheduling and happens-before.
 - [CompareExchange, CAS loops and the stock ≥ 0 invariant](compare-exchange-cas-loop.md) — Understand what CAS changes via ref, what previous returns and why contention requires retries.
-- [Monitor locks and SemaphoreSlim](mutual-exclusion-and-semaphores.md) — Distinguish thread blocking from asynchronous permit waiting.
+- [Monitor, SemaphoreSlim and asynchronous deadlocks](mutual-exclusion-and-semaphores.md) — Distinguish Monitor thread ownership, SemaphoreSlim permits, async deadlocks and cancellation errors.
 - [Why Parallel.ForEach(async ...) is dangerous](parallel-foreach-async-void.md) — Explain why async void continuations escape loop completion.
 
 ## [Continuations and execution contexts](../../en/execution-context.md)
@@ -53,3 +53,10 @@ One mechanism, one canonical explanation; questions reinforce it.
 ## [Blocking and sync-over-async](../../en/sync-over-async.md)
 
 - [Deadlocks and starvation with .Result/.Wait()](sync-over-async.md) — Distinguish a blocked worker, cyclic waits, and lack of progress.
+
+## [Microservices: concurrency, networking, payments and PostgreSQL](../../en/microservices-concurrency.md)
+
+- [SemaphoreSlim is Pod-local while inventory is shared](replica-local-semaphore-scope.md) — Explain the scope of static and the source of races between replicas.
+- [An async network await holds a permit, not necessarily a worker](remote-io-permit-lifetime.md) — Separate held semaphore permits, Tasks, sockets and physical workers.
+- [Lost payment responses: Outbox and idempotency](payment-timeout-idempotency-outbox.md) — Explain partial failures and protect financial operations against duplicate effects.
+- [PostgreSQL READ COMMITTED: stock races and conditional UPDATE](postgres-read-committed-stock.md) — Prove one-SKU correctness across two transactions using MVCC and row locks.

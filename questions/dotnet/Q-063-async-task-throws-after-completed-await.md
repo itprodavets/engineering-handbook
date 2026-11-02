@@ -1,6 +1,6 @@
 # Q-063 — Async exception capture
 
-[Русский](./Q-063-async-task-throws-after-completed-await.md) · [English](en/Q-063-async-task-throws-after-completed-await.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-063) · [Основная тема](../../topics/dotnet/cancellation.md) · [← Предыдущий](Q-062-async-task-oce-builder-canceled.md)
+[Русский](./Q-063-async-task-throws-after-completed-await.md) · [English](en/Q-063-async-task-throws-after-completed-await.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-063) · [Основная тема](../../topics/dotnet/cancellation.md) · [← Предыдущий](Q-062-async-task-oce-builder-canceled.md) · [Следующий →](Q-064-monitor-exit-after-await.md)
 
 ## Вопрос
 
@@ -34,4 +34,4 @@ dotnet run --file labs/dotnet/Q-063.cs
 
 ---
 
-[Русский](./Q-063-async-task-throws-after-completed-await.md) · [English](en/Q-063-async-task-throws-after-completed-await.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-063) · [Основная тема](../../topics/dotnet/cancellation.md) · [← Предыдущий](Q-062-async-task-oce-builder-canceled.md)
+[Русский](./Q-063-async-task-throws-after-completed-await.md) · [English](en/Q-063-async-task-throws-after-completed-await.md) · [Все вопросы](README.md) · [Учебная платформа](https://itprodavets.github.io/engineering-handbook/#/ru/question/Q-063) · [Основная тема](../../topics/dotnet/cancellation.md) · [← Предыдущий](Q-062-async-task-oce-builder-canceled.md) · [Следующий →](Q-064-monitor-exit-after-await.md)
