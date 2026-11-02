@@ -1536,7 +1536,7 @@
     "terms": "",
     "verify": {
       "mode": "exact",
-      "output": "ActiveSeparateGates=3; Completed=True"
+      "output": "ActiveSeparateGates=3\nCompleted=True"
     }
   },
   {
