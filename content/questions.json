@@ -1413,5 +1413,105 @@
       "mode": "exact",
       "output": "AfterCall=Faulted\nExceptionThrownOnAwait=True"
     }
+  },
+  {
+    "id": "Q-64",
+    "slug": "Q-64-monitor-exit-after-await",
+    "title": "Monitor ownership",
+    "q": {
+      "ru": "Почему Monitor.Exit после await на другом потоке выбросит исключение?",
+      "en": "Why does Monitor.Exit after await on another thread throw?"
+    },
+    "a": {
+      "ru": "Monitor имеет thread affinity; Exit с другого потока выбросит SynchronizationLockException. await не освобождает монитор.",
+      "en": "Monitor has thread affinity; Exit on another thread throws SynchronizationLockException. await does not release it."
+    },
+    "code": "Monitor.Enter(gate);\ntry { await Task.Delay(100); } finally { Monitor.Exit(gate); }",
+    "lab": "labs/dotnet/Q-64.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor.exit",
+    "terms": "",
+    "verify": {
+      "mode": "exact",
+      "output": "WrongOwnerThrows=True"
+    }
+  },
+  {
+    "id": "Q-65",
+    "slug": "Q-65-semaphore-permits-vs-threads",
+    "title": "Semaphore permits",
+    "q": {
+      "ru": "Что означает SemaphoreSlim(2,2) при двух Task.Delay и ожидании ещё двух задач?",
+      "en": "What does SemaphoreSlim(2,2) mean with two pending delays and two additional tasks?"
+    },
+    "a": {
+      "ru": "Два permit заняты до Release, но dedicated workers не требуются; следующие WaitAsync ожидают асинхронно.",
+      "en": "Two permits remain held until Release, with no dedicated blocked workers; further WaitAsync calls wait asynchronously."
+    },
+    "code": "await sem.WaitAsync();\ntry { await Task.Delay(1000); } finally { sem.Release(); }",
+    "lab": "labs/dotnet/Q-65.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+    "terms": "",
+    "verify": {
+      "mode": "exact",
+      "output": "EnteredBeforeRelease=2; PermitCount=0; ThirdPending=True\nEnteredAfterRelease=4; PermitCount=2"
+    }
+  },
+  {
+    "id": "Q-66",
+    "slug": "Q-66-semaphore-nested-async-deadlock",
+    "title": "Async deadlock",
+    "q": {
+      "ru": "Что будет, если Outer держит SemaphoreSlim(1,1) и await Inner, который тоже ждёт его?",
+      "en": "What if Outer holds SemaphoreSlim(1,1) and awaits Inner, which also awaits it?"
+    },
+    "a": {
+      "ru": "Только Outer entered; Inner не может получить permit, Outer не отпускает его до Inner. Async deadlock не требует блокировки ThreadPool.",
+      "en": "Only Outer entered; Inner cannot acquire the permit and Outer cannot release it until Inner completes. Async deadlocks need not block workers."
+    },
+    "code": "await gate.WaitAsync();\ntry { await InnerAsync(); } finally { gate.Release(); }",
+    "lab": "labs/dotnet/Q-66.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://devblogs.microsoft.com/dotnet/are-deadlocks-still-possible-with-await/",
+    "terms": "",
+    "verify": {
+      "mode": "exact",
+      "output": "OuterEntered=True; InnerEntered=False; Pending=True\nCanceled=True; RestoredCount=1"
+    }
+  },
+  {
+    "id": "Q-67",
+    "slug": "Q-67-semaphore-canceled-wait-overrelease",
+    "title": "Canceled WaitAsync",
+    "q": {
+      "ru": "Почему finally Release после отменённого WaitAsync может повредить счётчик?",
+      "en": "Why can finally Release after a canceled WaitAsync corrupt the count?"
+    },
+    "a": {
+      "ru": "Отменённое ожидание не получило permit; finally нельзя освобождать чужой permit. wait должен быть до try/finally.",
+      "en": "Canceled wait acquired no permit; unconditional finally Release corrupts the count. Acquire before try/finally."
+    },
+    "code": "try { await sem.WaitAsync(ct); } finally { sem.Release(); }",
+    "lab": "labs/dotnet/Q-67.cs",
+    "expected": "",
+    "mechanism": "",
+    "risk": "",
+    "guarantee": "",
+    "source": "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync",
+    "terms": "",
+    "verify": {
+      "mode": "exact",
+      "output": "Canceled=True; UnauthorizedPermitReleased=True; OwnerReleaseThrows=True"
+    }
   }
 ]

@@ -2594,52 +2594,192 @@
     "lesson": "shared-memory",
     "level": "fundamentals",
     "title": {
-      "ru": "Monitor lock и SemaphoreSlim",
-      "en": "Monitor locks and SemaphoreSlim"
+      "ru": "Monitor, SemaphoreSlim и асинхронный deadlock",
+      "en": "Monitor, SemaphoreSlim and asynchronous deadlocks"
     },
     "goal": {
-      "ru": "Различать блокировку потока и асинхронное ожидание разрешения.",
-      "en": "Distinguish thread blocking from asynchronous permit waiting."
+      "ru": "Различать привязку Monitor к потоку, разрешения SemaphoreSlim, async deadlock и ошибки отмены.",
+      "en": "Distinguish Monitor thread ownership, SemaphoreSlim permits, async deadlocks and cancellation errors."
     },
     "definition": {
-      "ru": "lock обеспечивает взаимное исключение между потоками, захватывающими один и тот же объект. SemaphoreSlim.WaitAsync позволяет асинхронно ждать разрешение, не блокируя вызывающий worker на время ожидания.",
-      "en": "lock enforces mutual exclusion only for threads synchronizing on the same object. SemaphoreSlim.WaitAsync can await a permit without blocking the caller thread while pending."
+      "ru": "Monitor привязан к потоку: Exit должен выполнить владелец Enter. Вручную написанный Monitor.Enter через await компилируется, но может упасть на Monitor.Exit с другого потока. SemaphoreSlim(2,2) даёт два разрешения, а не два потока; WaitAsync не обязан блокировать worker. Вложенный захват одного SemaphoreSlim(1,1) даёт async deadlock без обязательного блокирования worker.",
+      "en": "Monitor is thread-affine: Exit must run on the thread that entered. Manual Monitor.Enter across await compiles but may throw on cross-thread Exit. SemaphoreSlim(2,2) represents two permits, not two threads; WaitAsync need not block a worker. Nested waiting on one SemaphoreSlim(1,1) can deadlock asynchronously without blocked workers."
     },
     "steps": [
       {
-        "ru": "lock(new object()) создаёт отдельный объект для каждого исполнения и не защищает общую переменную.",
-        "en": "lock(new object()) creates a distinct object for each execution and does not protect shared state."
+        "ru": "Monitor.Enter захватывает монитор, который не освобождается автоматически при await.",
+        "en": "Monitor.Enter acquires a monitor that await does not release."
       },
       {
-        "ru": "Компилятор запрещает await внутри тела lock (CS1996), потому что блокировка привязана к синхронной критической секции.",
-        "en": "The compiler disallows await inside lock (CS1996) because that lock scopes a synchronous critical section."
+        "ru": "Monitor.Exit на другом worker выбрасывает SynchronizationLockException; await внутри обычного C# lock запрещён.",
+        "en": "Monitor.Exit from another worker throws SynchronizationLockException; await inside normal C# lock is prohibited."
       },
       {
-        "ru": "SemaphoreSlim уменьшает счётчик при WaitAsync, а Release возвращает разрешение; это не рекурсивная блокировка.",
-        "en": "SemaphoreSlim decrements the permit count on WaitAsync, and Release returns a permit; it is not a reentrant mutex."
+        "ru": "SemaphoreSlim.WaitAsync при отсутствии permit возвращает незавершённую Task; поток может выполнять другую работу.",
+        "en": "SemaphoreSlim.WaitAsync with no available permit yields an incomplete Task; the worker can do other work."
       },
       {
-        "ru": "Release размещай в finally, чтобы исключения и отмена после успешного захвата не приводили к утечке разрешения.",
-        "en": "Place Release in finally so exceptions or cancellation after acquisition do not leak permits."
+        "ru": "Пока Task.Delay/сетевой I/O ожидается, ранее полученное разрешение остаётся занятым до Release.",
+        "en": "While a Task.Delay or network operation is awaited, the acquired permit remains held until Release."
+      },
+      {
+        "ru": "Outer ждёт Inner, Inner ждёт permit Outer: циклическая асинхронная зависимость — deadlock.",
+        "en": "Outer awaits Inner; Inner awaits Outer’s permit: a circular asynchronous deadlock."
+      },
+      {
+        "ru": "После отменённого WaitAsync permit не получен; безусловный Release в finally, охватывающем WaitAsync, увеличит счётчик неправильно.",
+        "en": "After a canceled WaitAsync no permit was acquired; unconditional Release in a finally around the wait corrupts the count."
       }
     ],
     "resources": {
-      "ru": "Lock contention и очереди ожидания; заблокированные Monitor workers vs async-ожидание семафора.",
-      "en": "Lock contention and waiter queues; blocked Monitor workers versus asynchronous semaphore waits."
+      "ru": "Monitor thread affinity; SemaphoreSlim permits, wait queues, Task continuations and CPU only when executing. A pending await does not require a dedicated blocked worker.",
+      "en": "Monitor thread affinity; SemaphoreSlim permits, wait queues, Task continuations and CPU when executing. Pending await does not require a dedicated blocked worker."
     },
     "pitfalls": {
-      "ru": "Повторный WaitAsync(1,1) без Release может навсегда остановить данную операцию.",
-      "en": "A second WaitAsync(1,1) without Release can stall the same flow indefinitely."
+      "ru": "Не использовать Monitor через await; SemaphoreSlim не реентерабелен, не гарантирует FIFO и не является distributed lock. WaitAsync до try/finally; Release только после успешного приобретения.",
+      "en": "Do not hold Monitor across await. SemaphoreSlim is not reentrant, promises no FIFO and is not a distributed lock. Await acquisition before try/finally; Release only after successful acquisition."
     },
-    "code": "using var semaphore = new SemaphoreSlim(1, 1);\nawait semaphore.WaitAsync();\ntry { /* protected async work */ }\nfinally { semaphore.Release(); }",
+    "code": "await semaphore.WaitAsync(ct);\ntry { await WorkAsync(ct); }\nfinally { semaphore.Release(); }",
     "codeLanguage": "csharp",
     "questions": [
       20,
       29,
-      34
+      34,
+      64,
+      65,
+      66,
+      67
     ],
     "refs": [
-      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync"
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor.exit",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+      "https://devblogs.microsoft.com/dotnet/are-deadlocks-still-possible-with-await/"
+    ],
+    "chapters": [
+      {
+        "id": "monitor-affinity",
+        "title": {
+          "ru": "Monitor.Enter и await",
+          "en": "Monitor.Enter across await"
+        },
+        "body": {
+          "ru": "Monitor привязан к потоку, вызвавшему Enter. При реальном async-suspension продолжение может выполниться на другом worker, и Monitor.Exit выбросит SynchronizationLockException. finally выполняется, но не меняет владельца. Компилятор запрещает await внутри обычного lock, однако ручные вызовы Enter/Exit обходят эту защиту.",
+          "en": "Monitor belongs to the thread that called Enter. After a real suspension, the continuation may run on another worker; Monitor.Exit then throws SynchronizationLockException. finally does not transfer ownership. The compiler disallows await inside normal lock, but manual Enter/Exit bypass that protection."
+        },
+        "code": "Monitor.Enter(gate);\ntry { await Task.Delay(100); }\nfinally { Monitor.Exit(gate); } // unsafe",
+        "language": "csharp"
+      },
+      {
+        "id": "permits-not-workers",
+        "title": {
+          "ru": "Два разрешения не равны двум потокам",
+          "en": "Two permits are not two workers"
+        },
+        "body": {
+          "ru": "SemaphoreSlim(2,2) допускает одновременно двух держателей permit. Пока они await Task.Delay(1000), оба разрешения заняты, но отдельные worker-потоки не обязаны ожидать. Последующие WaitAsync при счётчике 0 остаются pending; Wait() в таком положении блокирует поток. FIFO-порядок выдачи разрешений не гарантируется.",
+          "en": "SemaphoreSlim(2,2) permits two holders at once. While both await Task.Delay, both permits remain held but no dedicated worker is blocked. Further WaitAsync calls are pending when count is zero; Wait() would block. FIFO admission is not guaranteed."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "deadlock",
+        "title": {
+          "ru": "Асинхронный deadlock без блокировки потоков",
+          "en": "Async deadlock without blocked threads"
+        },
+        "body": {
+          "ru": "OuterAsync захватывает единственный permit, печатает Outer entered и вызывает await InnerAsync. InnerAsync ждёт тот же permit, не доходя до Inner entered; Outer не вызовет finally пока Inner не завершится. Это deadlock, хотя ThreadPool worker может быть свободен. В лаборатории ожидающую часть отменяем, чтобы не зависал CI.",
+          "en": "OuterAsync acquires the sole permit, prints Outer entered and awaits InnerAsync. InnerAsync waits on that permit before reaching Inner entered, while Outer cannot finally-release before Inner completes. This is deadlock even with free workers. The lab cancels the pending wait to avoid hanging CI."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "cancel-release",
+        "title": {
+          "ru": "Отмена не даёт право вызвать Release",
+          "en": "Cancellation does not grant a release right"
+        },
+        "body": {
+          "ru": "Если WaitAsync(ct) отменён до получения разрешения, await выбросит OperationCanceledException. try/finally, охватывающий ожидание, всё равно вызовет Release, увеличивая разрешения без захвата. Помещай await WaitAsync ДО try/finally либо явно учитывай успешность захвата.",
+          "en": "If WaitAsync(ct) is canceled before acquisition, awaiting it throws OperationCanceledException. A try/finally wrapping the wait still releases, inflating the count. Place await WaitAsync before try/finally or track acquisition explicitly."
+        },
+        "code": "await sem.WaitAsync(ct);\ntry { await WorkAsync(); }\nfinally { sem.Release(); }",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Как отличаются thread affinity Monitor и permit SemaphoreSlim?",
+          "en": "How do Monitor thread ownership and SemaphoreSlim permits differ?"
+        },
+        "rubric": {
+          "ru": "Monitor.Exit требует того же потока; SemaphoreSlim Release не проверяет owner, но требует корректного парного вызова.",
+          "en": "Monitor.Exit requires the owning thread; SemaphoreSlim Release does not check owner but must be balanced."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему при await Task.Delay permit занят, а worker может быть свободен?",
+          "en": "Why is a permit held while the worker is free during Task.Delay?"
+        },
+        "rubric": {
+          "ru": "Permit сохраняется до Release; pending Task не блокирует worker.",
+          "en": "Permit stays until Release; pending Task does not block a worker."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Что выведет OuterAsync с вложенным InnerAsync на одном SemaphoreSlim(1,1)?",
+          "en": "What prints for nested OuterAsync/InnerAsync on one SemaphoreSlim(1,1)?"
+        },
+        "rubric": {
+          "ru": "Только Outer entered, затем pending deadlock.",
+          "en": "Only Outer entered, then a pending deadlock."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему после отмены WaitAsync CurrentCount стал больше ожидаемого?",
+          "en": "Why did CurrentCount increase after WaitAsync cancellation?"
+        },
+        "rubric": {
+          "ru": "finally Release выполнен после неуспешного WaitAsync.",
+          "en": "finally Release ran without acquiring a permit."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как правильно писать CancellationToken + WaitAsync + finally?",
+          "en": "How should CancellationToken, WaitAsync and finally be composed?"
+        },
+        "rubric": {
+          "ru": "await WaitAsync(ct) перед try; Release в finally только после успешного приобретения.",
+          "en": "await WaitAsync(ct) before try; Release in finally only after successful acquisition."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-064.cs",
+      "labs/dotnet/Q-065.cs",
+      "labs/dotnet/Q-066.cs",
+      "labs/dotnet/Q-067.cs"
+    ],
+    "prerequisites": [
+      "race-condition-vs-data-race"
     ]
   },
   {
