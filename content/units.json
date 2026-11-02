@@ -3653,5 +3653,341 @@
     "prerequisites": [
       "replica-local-semaphore-scope"
     ]
+  },
+  {
+    "id": "payment-timeout-idempotency-outbox",
+    "lesson": "microservices-concurrency",
+    "level": "production",
+    "title": {
+      "ru": "Потерянный ответ платежа: Outbox и идемпотентность",
+      "en": "Lost payment responses: Outbox and idempotency"
+    },
+    "goal": {
+      "ru": "Объяснять частичные отказы и защищать финансовые операции от повторов.",
+      "en": "Explain partial failures and protect financial operations against duplicate effects."
+    },
+    "definition": {
+      "ru": "Timeout после ChargeAsync не доказывает отката: удалённый банк мог списать деньги до потери ответа. Повтор с новым ключом может списать ещё раз. Стабильный idempotency key должен обрабатываться на стороне провайдера. Transactional Outbox обеспечивает локальную атомарность состояния+события, но допускает повторную доставку.",
+      "en": "A ChargeAsync timeout does not prove rollback: the bank may have debited funds before losing the reply. Retrying with a new identity may debit again. A stable idempotency key must be enforced by the provider. Transactional Outbox atomically saves local state plus an event but does not prevent redelivery."
+    },
+    "steps": [
+      {
+        "ru": "OrderService посылает ChargeAsync внешнему провайдеру.",
+        "en": "OrderService sends ChargeAsync to the external provider."
+      },
+      {
+        "ru": "Провайдер делает списание, но ответ теряется по сети.",
+        "en": "The provider commits the debit, but the reply is lost."
+      },
+      {
+        "ru": "Timeout оставляет outcome неизвестным; CancellationToken не отменяет уже выполненный удалённый эффект.",
+        "en": "Timeout leaves an unknown outcome; CancellationToken cannot undo a committed remote side effect."
+      },
+      {
+        "ru": "Повторы одной логической попытки используют тот же сохранённый idempotency key.",
+        "en": "Retries of one logical attempt must reuse its persisted idempotency key."
+      },
+      {
+        "ru": "Outbox записывает локальный факт и событие в одной транзакции, relay может отправить его повторно, потребитель обязан дедуплицировать.",
+        "en": "Outbox persists state and event atomically, relays may redeliver, and consumers must deduplicate."
+      },
+      {
+        "ru": "Неизвестный результат нужно сверять через provider status API/webhook и журнал попыток.",
+        "en": "Unknown outcomes must be reconciled via provider status APIs/webhooks and durable attempt records."
+      }
+    ],
+    "resources": {
+      "ru": "Внешние соединения, идемпотентные ключи, payment attempt ID, outbox/inbox таблицы и доставка событий.",
+      "en": "External connections, idempotency keys, payment-attempt IDs, outbox/inbox tables and event delivery."
+    },
+    "pitfalls": {
+      "ru": "Локальный SemaphoreSlim не сохраняет состояние после рестарта и не координирует Pod. Outbox не гарантирует exactly once у платёжного API; semantics и TTL ключа зависят от контракта провайдера.",
+      "en": "Local SemaphoreSlim does not survive restarts or coordinate Pods. Outbox does not guarantee exactly-once external payments; key semantics and TTL depend on provider policy."
+    },
+    "code": "await provider.ChargeAsync(orderId, amount, stableIdempotencyKey, ct);",
+    "codeLanguage": "csharp",
+    "questions": [
+      71,
+      72,
+      73
+    ],
+    "refs": [
+      "https://stripe.com/blog/idempotency",
+      "https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-out-box-cosmos",
+      "https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation"
+    ],
+    "chapters": [
+      {
+        "id": "unknown-outcome",
+        "title": {
+          "ru": "Списание совершено, но ответ не дошёл",
+          "en": "Debit committed but response lost"
+        },
+        "body": {
+          "ru": "Transport timeout сигнализирует о неудаче получения ответа, а не об откате платежа. Провайдер мог завершить side effect. Локальный CancellationToken не способен атомарно откатить удалённую транзакцию. Храни paymentAttemptId, состояния Unknown/Pending/Succeeded/Failed и сверяй результат, а не запускай новый независимый charge.",
+          "en": "A transport timeout indicates failure to receive the response, not payment rollback. The provider may have completed its side effect. Local cancellation cannot atomically undo a remote transaction. Persist paymentAttemptId and states Unknown/Pending/Succeeded/Failed and reconcile instead of blindly charging again."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "stable-key",
+        "title": {
+          "ru": "Один платёж — один стабильный ключ для повторов",
+          "en": "One logical payment, one stable retry key"
+        },
+        "body": {
+          "ru": "Создай идентификатор для одной логической попытки и храни его устойчиво. При сетевых повторах передавай тот же key и те же параметры. Принимающая сторона должна атомарно дедуплицировать. Лаборатория Q-071 — последовательная in-memory симуляция; она не демонстрирует сетевую или межпроцессную дедупликацию банка.",
+          "en": "Persist a stable ID for one logical attempt. Reuse the same key and parameters for transport retries. The receiving provider must deduplicate atomically. Q-071 is a sequential in-memory illustration, not a network or cross-process bank test."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "outbox-difference",
+        "title": {
+          "ru": "Outbox гарантирует сохранение события, не уникальность платежа",
+          "en": "Outbox persists events, not unique payments"
+        },
+        "body": {
+          "ru": "Transactional Outbox сохраняет изменение локального Order и запись outbox в одной транзакции. Relay может опубликовать событие, упасть до отметки delivered и опубликовать его повторно. Для PaymentRequested требуется inbox/deduplication, а для внешнего платежа — provider idempotency key и reconciliation.",
+          "en": "Transactional Outbox saves the local Order change with its outbox event in one transaction. A relay can publish, crash before marking delivered, and publish again. PaymentRequested needs consumer inbox/deduplication, while the external charge needs a provider idempotency key and reconciliation."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Почему timeout не доказывает, что банк не списал деньги?",
+          "en": "Why does a timeout not prove the bank did not debit?"
+        },
+        "rubric": {
+          "ru": "Ответ может потеряться после успешного списания.",
+          "en": "The reply may be lost after a successful debit."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Чем Outbox отличается от provider idempotency key?",
+          "en": "How does Outbox differ from a provider idempotency key?"
+        },
+        "rubric": {
+          "ru": "Outbox — локальная атомарность события и state; ключ — дедуп удалённого side effect.",
+          "en": "Outbox protects local state+event atomicity; the key deduplicates remote side effects."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Может ли повтор с новым ключом привести к двум списаниям?",
+          "en": "Can a retry with a new key cause duplicate debits?"
+        },
+        "rubric": {
+          "ru": "Да, при неопределённом результате исходного платежа.",
+          "en": "Yes, when the first charge outcome is unknown."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Как установить факт платежа после timeout?",
+          "en": "How to reconcile payment after timeout?"
+        },
+        "rubric": {
+          "ru": "Payment attempt ID, provider status API/webhook, telemetry, audit.",
+          "en": "Payment-attempt ID, provider status API/webhook, telemetry and audit."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как спроектировать Order→Payment при повторной доставке Outbox?",
+          "en": "How to design Order→Payment under outbox redelivery?"
+        },
+        "rubric": {
+          "ru": "Outbox+Inbox, стабильный provider key, сохранение попыток, reconciliation.",
+          "en": "Outbox+Inbox, stable provider key, persisted attempts and reconciliation."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-071.cs"
+    ],
+    "prerequisites": [
+      "remote-io-permit-lifetime"
+    ]
+  },
+  {
+    "id": "postgres-read-committed-stock",
+    "lesson": "microservices-concurrency",
+    "level": "production",
+    "title": {
+      "ru": "PostgreSQL READ COMMITTED: гонка остатков и условный UPDATE",
+      "en": "PostgreSQL READ COMMITTED: stock races and conditional UPDATE"
+    },
+    "goal": {
+      "ru": "Проверять корректность одного SKU при двух транзакциях на уровне MVCC и row locks.",
+      "en": "Prove one-SKU correctness across two transactions using MVCC and row locks."
+    },
+    "definition": {
+      "ru": "Два Pod при READ COMMITTED могут оба прочитать available=1 обычным SELECT. Если оба затем выполнят UPDATE SET available=available-1 WHERE sku=..., второй UPDATE дождётся lock, но применится к новой версии со значением 0 и может создать -1. Атомарный условный UPDATE ... WHERE available>0 RETURNING available повторно проверит предикат и не допустит отрицательного остатка.",
+      "en": "At READ COMMITTED two Pods can both read available=1 with ordinary SELECT. Both later performing UPDATE SET available=available-1 WHERE sku=... can produce -1: the second UPDATE waits for the row lock then applies to the updated zero value. A conditional UPDATE ... WHERE available>0 RETURNING available rechecks the predicate and prevents negative stock."
+    },
+    "steps": [
+      {
+        "ru": "Оба отдельные SELECT могут увидеть available=1.",
+        "en": "Both independent SELECTs may observe available=1."
+      },
+      {
+        "ru": "Первый UPDATE получает row lock, записывает 0 и коммитится.",
+        "en": "The first UPDATE obtains the row lock, writes zero and commits."
+      },
+      {
+        "ru": "Второй UPDATE ждёт, затем уменьшает текущую версию 0→-1, если WHERE только по sku.",
+        "en": "The second UPDATE waits and then decrements the current 0→-1 row version if WHERE only filters sku."
+      },
+      {
+        "ru": "Условие WHERE available>0 нужно включить в тот же UPDATE; PostgreSQL rechecks WHERE после ожидания конкурентного UPDATE.",
+        "en": "Place WHERE available>0 inside the UPDATE; PostgreSQL rechecks it after a concurrent update."
+      },
+      {
+        "ru": "Если второй statement не обновил строк, это out-of-stock. Дополнительный CHECK available>=0 защищает инвариант от иных писателей.",
+        "en": "If the second statement updates zero rows, the item is out of stock. A CHECK available>=0 adds defense against other writers."
+      }
+    ],
+    "resources": {
+      "ru": "PostgreSQL MVCC row versions, row-level locks, транзакции и соединения; бизнес-состояние живёт вне Pod.",
+      "en": "PostgreSQL MVCC row versions, row locks, transactions and connections; business state is outside Pod processes."
+    },
+    "pitfalls": {
+      "ru": "READ COMMITTED не SERIALIZABLE. SELECT FOR UPDATE в корректной транзакции тоже может защищать read-then-update, но удерживать row lock во время внешнего ChargeAsync обычно рискованно. SQL для одного SKU не превращает Payment/Order в общую ACID-транзакцию.",
+      "en": "READ COMMITTED is not SERIALIZABLE. SELECT FOR UPDATE in a proper transaction can protect read-then-update, but holding a row lock over a remote ChargeAsync is risky. One-SKU SQL does not make Payment/Order part of a single ACID transaction."
+    },
+    "code": "UPDATE inventory\nSET available=available-1\nWHERE sku='IPHONE-17' AND available>0\nRETURNING available;",
+    "codeLanguage": "sql",
+    "questions": [
+      74,
+      75
+    ],
+    "refs": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://www.postgresql.org/docs/current/sql-update.html"
+    ],
+    "chapters": [
+      {
+        "id": "select-window",
+        "title": {
+          "ru": "SELECT + безусловный UPDATE — окно гонки",
+          "en": "SELECT + unconditional UPDATE leaves a race"
+        },
+        "body": {
+          "ru": "Два SELECT получают 1. Первый UPDATE записывает 0. Второй ждёт row lock и после commit первого выполняет обновление новой версии 0→-1, так как его WHERE не содержит available>0. Row lock сериализует физические записи, но не гарантирует бизнес-условие, которое проверялось отдельно.",
+          "en": "Two SELECTs read 1. The first UPDATE writes 0. The second waits for the row lock and after the first commits updates the new version 0→-1, because its WHERE lacks available>0. Row locks serialize physical writes but cannot enforce a predicate checked earlier in a separate statement."
+        },
+        "code": "BEGIN;\nSELECT available FROM inventory WHERE sku='IPHONE-17';\nUPDATE inventory SET available=available-1 WHERE sku='IPHONE-17';\nCOMMIT;",
+        "language": "sql"
+      },
+      {
+        "id": "atomic-update",
+        "title": {
+          "ru": "Условный UPDATE и результат по RETURNING",
+          "en": "Conditional UPDATE and RETURNING"
+        },
+        "body": {
+          "ru": "В одном statement записывай SET available=available-1 при WHERE available>0. В READ COMMITTED конкурентный второй UPDATE ждёт row lock, затем повторно проверяет WHERE на обновлённой версии: после первого decrement до 0 он обновляет ноль строк. RETURNING возвращает новое значение только победителю; можно добавить CHECK(available>=0).",
+          "en": "Put SET available=available-1 and WHERE available>0 into one statement. Under READ COMMITTED a competing UPDATE waits then rechecks WHERE on the updated row version: after the first decrements to zero the second updates zero rows. RETURNING yields the new value only for the winner; CHECK available>=0 is useful defense in depth."
+        },
+        "code": "UPDATE inventory SET available=available-1\nWHERE sku='IPHONE-17' AND available>0\nRETURNING available;",
+        "language": "sql"
+      },
+      {
+        "id": "boundary",
+        "title": {
+          "ru": "Резервирование — отдельная операция от оплаты",
+          "en": "Reservation is separate from payment"
+        },
+        "body": {
+          "ru": "Транзакция резервирования может быть короткой и атомарной, а внешний провайдер находится вне PostgreSQL. Для полного заказа требуются reservationId, дедупликация по orderId, expiration/release, payment workflow и компенсация при частичном отказе. Это отдельная тема для дальнейшего обсуждения.",
+          "en": "Reservation can be a short atomic transaction, while the provider is outside PostgreSQL. A complete checkout needs reservation IDs, orderId deduplication, expiration/release, a payment workflow and compensation for partial failures; this is a deeper follow-up topic."
+        },
+        "code": "",
+        "language": "sql"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Что означает READ COMMITTED для двух SELECT?",
+          "en": "What does READ COMMITTED mean for two SELECT statements?"
+        },
+        "rubric": {
+          "ru": "Каждое отдельное statement видит committed snapshot.",
+          "en": "Each statement sees its own committed snapshot."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему второй UPDATE может уменьшить остаток до -1 даже с row lock?",
+          "en": "Why can the second UPDATE cause -1 despite row locking?"
+        },
+        "rubric": {
+          "ru": "После ожидания работает с новой версией и без available>0 в WHERE.",
+          "en": "After waiting it uses the updated row version with no available>0 predicate."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Что вернёт второй UPDATE ... WHERE available>0 RETURNING?",
+          "en": "What does the second UPDATE ... WHERE available>0 RETURNING return?"
+        },
+        "rubric": {
+          "ru": "Ноль обновлённых строк после recheck.",
+          "en": "Zero updated rows after predicate recheck."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Что проверять при oversell после scale-out?",
+          "en": "What to inspect for oversell after scale-out?"
+        },
+        "rubric": {
+          "ru": "SQL WHERE, isolation, row waits, отсутствие CHECK, повторы.",
+          "en": "SQL WHERE, isolation, row waits, missing CHECK and retries."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как зарезервировать SKU без Redis lock и не держать транзакцию через оплату?",
+          "en": "How to reserve SKU without Redis locks or a transaction spanning payment?"
+        },
+        "rubric": {
+          "ru": "Короткий условный UPDATE, reservation idempotency и отдельный payment workflow.",
+          "en": "Short conditional UPDATE, reservation idempotency and separate payment workflow."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [],
+    "prerequisites": [
+      "replica-local-semaphore-scope"
+    ]
   }
 ]
