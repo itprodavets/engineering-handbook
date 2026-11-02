@@ -191,3 +191,51 @@ Example: `ThreadPool worker executing Task.Run`
 Starting an additional OS thread, distinct from allocating a Task object.
 
 Example: `new Thread(...).Start(); ThreadPool scales workers`
+
+## Thread affinity
+
+Monitor.Exit must execute on the owning thread.
+
+Example: `Monitor.Enter/Exit`
+
+## Semaphore permit
+
+A permit remains held until Release; it is not a thread.
+
+Example: `await WaitAsync()`
+
+## Process-local state
+
+Static fields and SemaphoreSlim are independent across Pods.
+
+Example: `static SemaphoreSlim Gate`
+
+## Unknown payment outcome
+
+A remote payment may have committed while its reply was lost.
+
+Example: `ChargeAsync timeout`
+
+## Idempotency key
+
+A stable logical operation identifier enforced by the receiver.
+
+Example: `Idempotency-Key`
+
+## Transactional Outbox
+
+An event and local state are saved atomically, but delivery can repeat.
+
+Example: `orders + outbox`
+
+## READ COMMITTED
+
+In PostgreSQL each statement gets a committed snapshot; competing UPDATE rechecks WHERE.
+
+Example: `BEGIN ISOLATION LEVEL READ COMMITTED`
+
+## Conditional UPDATE
+
+SQL tests the predicate and updates the value in one statement.
+
+Example: `UPDATE ... WHERE available>0 RETURNING`

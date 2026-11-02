@@ -4,7 +4,7 @@
 
 [Главная](../README.md) · [Интерактивная практика](https://itprodavets.github.io/engineering-handbook/#/ru/practice) · [Запуск кода](../docs/execution.md)
 
-Здесь находятся **35 независимых запускаемых C#-примеров**. Каждая лаборатория связана с заданием Q-024–Q-063 и через него с единственной основной темой. Основная теория не дублируется в лабораториях.
+Здесь находятся **42 независимых запускаемых C#-примера**. Каждая лаборатория связана с заданием Q-024–Q-075 и через него с единственной основной темой. Основная теория не дублируется в лабораториях.
 
 ```bash
 dotnet run --file labs/dotnet/Q-024.cs
@@ -49,5 +49,13 @@ dotnet run --file labs/dotnet/Q-024.cs
 | Q-061 | [C#](dotnet/Q-061.cs) | [Разбор](../questions/dotnet/Q-061-fromexception-oce-vs-fromcanceled.md) |
 | Q-062 | [C#](dotnet/Q-062.cs) | [Разбор](../questions/dotnet/Q-062-async-task-oce-builder-canceled.md) |
 | Q-063 | [C#](dotnet/Q-063.cs) | [Разбор](../questions/dotnet/Q-063-async-task-throws-after-completed-await.md) |
+
+| Q-064 | [C#](dotnet/Q-064.cs) | [Разбор](../questions/dotnet/Q-064-monitor-exit-after-await.md) |
+| Q-065 | [C#](dotnet/Q-065.cs) | [Разбор](../questions/dotnet/Q-065-semaphore-permits-vs-threads.md) |
+| Q-066 | [C#](dotnet/Q-066.cs) | [Разбор](../questions/dotnet/Q-066-semaphore-nested-async-deadlock.md) |
+| Q-067 | [C#](dotnet/Q-067.cs) | [Разбор](../questions/dotnet/Q-067-semaphore-canceled-wait-overrelease.md) |
+| Q-068 | [C#](dotnet/Q-068.cs) | [Разбор](../questions/dotnet/Q-068-static-semaphore-three-pods.md) |
+| Q-069 | [C#](dotnet/Q-069.cs) | [Разбор](../questions/dotnet/Q-069-network-await-permit-lifetime.md) |
+| Q-071 | [C#](dotnet/Q-071.cs) | [Разбор](../questions/dotnet/Q-071-payment-timeout-duplicate-charge.md) |
 
 **Код в GitHub Pages:** там можно редактировать пример и проверить предсказание исходного вывода, но настоящий запуск выполняется в Codespaces или Actions. Изменённый в браузере код нужно скопировать в Codespaces.

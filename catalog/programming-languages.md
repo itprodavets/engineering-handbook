@@ -18,6 +18,7 @@
 - [Отмена асинхронных операций](../topics/dotnet/cancellation.md)
 - [ValueTask<T> и стоимость ожидания](../topics/dotnet/valuetask.md)
 - [Блокировки и sync-over-async](../topics/dotnet/sync-over-async.md)
+- [Микросервисы: синхронизация, сеть, платежи и PostgreSQL](../topics/dotnet/microservices-concurrency.md)
 
 ### Go
 

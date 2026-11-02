@@ -2594,52 +2594,192 @@
     "lesson": "shared-memory",
     "level": "fundamentals",
     "title": {
-      "ru": "Monitor lock и SemaphoreSlim",
-      "en": "Monitor locks and SemaphoreSlim"
+      "ru": "Monitor, SemaphoreSlim и асинхронный deadlock",
+      "en": "Monitor, SemaphoreSlim and asynchronous deadlocks"
     },
     "goal": {
-      "ru": "Различать блокировку потока и асинхронное ожидание разрешения.",
-      "en": "Distinguish thread blocking from asynchronous permit waiting."
+      "ru": "Различать привязку Monitor к потоку, разрешения SemaphoreSlim, async deadlock и ошибки отмены.",
+      "en": "Distinguish Monitor thread ownership, SemaphoreSlim permits, async deadlocks and cancellation errors."
     },
     "definition": {
-      "ru": "lock обеспечивает взаимное исключение между потоками, захватывающими один и тот же объект. SemaphoreSlim.WaitAsync позволяет асинхронно ждать разрешение, не блокируя вызывающий worker на время ожидания.",
-      "en": "lock enforces mutual exclusion only for threads synchronizing on the same object. SemaphoreSlim.WaitAsync can await a permit without blocking the caller thread while pending."
+      "ru": "Monitor привязан к потоку: Exit должен выполнить владелец Enter. Вручную написанный Monitor.Enter через await компилируется, но может упасть на Monitor.Exit с другого потока. SemaphoreSlim(2,2) даёт два разрешения, а не два потока; WaitAsync не обязан блокировать worker. Вложенный захват одного SemaphoreSlim(1,1) даёт async deadlock без обязательного блокирования worker.",
+      "en": "Monitor is thread-affine: Exit must run on the thread that entered. Manual Monitor.Enter across await compiles but may throw on cross-thread Exit. SemaphoreSlim(2,2) represents two permits, not two threads; WaitAsync need not block a worker. Nested waiting on one SemaphoreSlim(1,1) can deadlock asynchronously without blocked workers."
     },
     "steps": [
       {
-        "ru": "lock(new object()) создаёт отдельный объект для каждого исполнения и не защищает общую переменную.",
-        "en": "lock(new object()) creates a distinct object for each execution and does not protect shared state."
+        "ru": "Monitor.Enter захватывает монитор, который не освобождается автоматически при await.",
+        "en": "Monitor.Enter acquires a monitor that await does not release."
       },
       {
-        "ru": "Компилятор запрещает await внутри тела lock (CS1996), потому что блокировка привязана к синхронной критической секции.",
-        "en": "The compiler disallows await inside lock (CS1996) because that lock scopes a synchronous critical section."
+        "ru": "Monitor.Exit на другом worker выбрасывает SynchronizationLockException; await внутри обычного C# lock запрещён.",
+        "en": "Monitor.Exit from another worker throws SynchronizationLockException; await inside normal C# lock is prohibited."
       },
       {
-        "ru": "SemaphoreSlim уменьшает счётчик при WaitAsync, а Release возвращает разрешение; это не рекурсивная блокировка.",
-        "en": "SemaphoreSlim decrements the permit count on WaitAsync, and Release returns a permit; it is not a reentrant mutex."
+        "ru": "SemaphoreSlim.WaitAsync при отсутствии permit возвращает незавершённую Task; поток может выполнять другую работу.",
+        "en": "SemaphoreSlim.WaitAsync with no available permit yields an incomplete Task; the worker can do other work."
       },
       {
-        "ru": "Release размещай в finally, чтобы исключения и отмена после успешного захвата не приводили к утечке разрешения.",
-        "en": "Place Release in finally so exceptions or cancellation after acquisition do not leak permits."
+        "ru": "Пока Task.Delay/сетевой I/O ожидается, ранее полученное разрешение остаётся занятым до Release.",
+        "en": "While a Task.Delay or network operation is awaited, the acquired permit remains held until Release."
+      },
+      {
+        "ru": "Outer ждёт Inner, Inner ждёт permit Outer: циклическая асинхронная зависимость — deadlock.",
+        "en": "Outer awaits Inner; Inner awaits Outer’s permit: a circular asynchronous deadlock."
+      },
+      {
+        "ru": "После отменённого WaitAsync permit не получен; безусловный Release в finally, охватывающем WaitAsync, увеличит счётчик неправильно.",
+        "en": "After a canceled WaitAsync no permit was acquired; unconditional Release in a finally around the wait corrupts the count."
       }
     ],
     "resources": {
-      "ru": "Lock contention и очереди ожидания; заблокированные Monitor workers vs async-ожидание семафора.",
-      "en": "Lock contention and waiter queues; blocked Monitor workers versus asynchronous semaphore waits."
+      "ru": "Monitor thread affinity; SemaphoreSlim permits, wait queues, Task continuations and CPU only when executing. A pending await does not require a dedicated blocked worker.",
+      "en": "Monitor thread affinity; SemaphoreSlim permits, wait queues, Task continuations and CPU when executing. Pending await does not require a dedicated blocked worker."
     },
     "pitfalls": {
-      "ru": "Повторный WaitAsync(1,1) без Release может навсегда остановить данную операцию.",
-      "en": "A second WaitAsync(1,1) without Release can stall the same flow indefinitely."
+      "ru": "Не использовать Monitor через await; SemaphoreSlim не реентерабелен, не гарантирует FIFO и не является distributed lock. WaitAsync до try/finally; Release только после успешного приобретения.",
+      "en": "Do not hold Monitor across await. SemaphoreSlim is not reentrant, promises no FIFO and is not a distributed lock. Await acquisition before try/finally; Release only after successful acquisition."
     },
-    "code": "using var semaphore = new SemaphoreSlim(1, 1);\nawait semaphore.WaitAsync();\ntry { /* protected async work */ }\nfinally { semaphore.Release(); }",
+    "code": "await semaphore.WaitAsync(ct);\ntry { await WorkAsync(ct); }\nfinally { semaphore.Release(); }",
     "codeLanguage": "csharp",
     "questions": [
       20,
       29,
-      34
+      34,
+      64,
+      65,
+      66,
+      67
     ],
     "refs": [
-      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync"
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor.exit",
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+      "https://devblogs.microsoft.com/dotnet/are-deadlocks-still-possible-with-await/"
+    ],
+    "chapters": [
+      {
+        "id": "monitor-affinity",
+        "title": {
+          "ru": "Monitor.Enter и await",
+          "en": "Monitor.Enter across await"
+        },
+        "body": {
+          "ru": "Monitor привязан к потоку, вызвавшему Enter. При реальном async-suspension продолжение может выполниться на другом worker, и Monitor.Exit выбросит SynchronizationLockException. finally выполняется, но не меняет владельца. Компилятор запрещает await внутри обычного lock, однако ручные вызовы Enter/Exit обходят эту защиту.",
+          "en": "Monitor belongs to the thread that called Enter. After a real suspension, the continuation may run on another worker; Monitor.Exit then throws SynchronizationLockException. finally does not transfer ownership. The compiler disallows await inside normal lock, but manual Enter/Exit bypass that protection."
+        },
+        "code": "Monitor.Enter(gate);\ntry { await Task.Delay(100); }\nfinally { Monitor.Exit(gate); } // unsafe",
+        "language": "csharp"
+      },
+      {
+        "id": "permits-not-workers",
+        "title": {
+          "ru": "Два разрешения не равны двум потокам",
+          "en": "Two permits are not two workers"
+        },
+        "body": {
+          "ru": "SemaphoreSlim(2,2) допускает одновременно двух держателей permit. Пока они await Task.Delay(1000), оба разрешения заняты, но отдельные worker-потоки не обязаны ожидать. Последующие WaitAsync при счётчике 0 остаются pending; Wait() в таком положении блокирует поток. FIFO-порядок выдачи разрешений не гарантируется.",
+          "en": "SemaphoreSlim(2,2) permits two holders at once. While both await Task.Delay, both permits remain held but no dedicated worker is blocked. Further WaitAsync calls are pending when count is zero; Wait() would block. FIFO admission is not guaranteed."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "deadlock",
+        "title": {
+          "ru": "Асинхронный deadlock без блокировки потоков",
+          "en": "Async deadlock without blocked threads"
+        },
+        "body": {
+          "ru": "OuterAsync захватывает единственный permit, печатает Outer entered и вызывает await InnerAsync. InnerAsync ждёт тот же permit, не доходя до Inner entered; Outer не вызовет finally пока Inner не завершится. Это deadlock, хотя ThreadPool worker может быть свободен. В лаборатории ожидающую часть отменяем, чтобы не зависал CI.",
+          "en": "OuterAsync acquires the sole permit, prints Outer entered and awaits InnerAsync. InnerAsync waits on that permit before reaching Inner entered, while Outer cannot finally-release before Inner completes. This is deadlock even with free workers. The lab cancels the pending wait to avoid hanging CI."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "cancel-release",
+        "title": {
+          "ru": "Отмена не даёт право вызвать Release",
+          "en": "Cancellation does not grant a release right"
+        },
+        "body": {
+          "ru": "Если WaitAsync(ct) отменён до получения разрешения, await выбросит OperationCanceledException. try/finally, охватывающий ожидание, всё равно вызовет Release, увеличивая разрешения без захвата. Помещай await WaitAsync ДО try/finally либо явно учитывай успешность захвата.",
+          "en": "If WaitAsync(ct) is canceled before acquisition, awaiting it throws OperationCanceledException. A try/finally wrapping the wait still releases, inflating the count. Place await WaitAsync before try/finally or track acquisition explicitly."
+        },
+        "code": "await sem.WaitAsync(ct);\ntry { await WorkAsync(); }\nfinally { sem.Release(); }",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Как отличаются thread affinity Monitor и permit SemaphoreSlim?",
+          "en": "How do Monitor thread ownership and SemaphoreSlim permits differ?"
+        },
+        "rubric": {
+          "ru": "Monitor.Exit требует того же потока; SemaphoreSlim Release не проверяет owner, но требует корректного парного вызова.",
+          "en": "Monitor.Exit requires the owning thread; SemaphoreSlim Release does not check owner but must be balanced."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему при await Task.Delay permit занят, а worker может быть свободен?",
+          "en": "Why is a permit held while the worker is free during Task.Delay?"
+        },
+        "rubric": {
+          "ru": "Permit сохраняется до Release; pending Task не блокирует worker.",
+          "en": "Permit stays until Release; pending Task does not block a worker."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Что выведет OuterAsync с вложенным InnerAsync на одном SemaphoreSlim(1,1)?",
+          "en": "What prints for nested OuterAsync/InnerAsync on one SemaphoreSlim(1,1)?"
+        },
+        "rubric": {
+          "ru": "Только Outer entered, затем pending deadlock.",
+          "en": "Only Outer entered, then a pending deadlock."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему после отмены WaitAsync CurrentCount стал больше ожидаемого?",
+          "en": "Why did CurrentCount increase after WaitAsync cancellation?"
+        },
+        "rubric": {
+          "ru": "finally Release выполнен после неуспешного WaitAsync.",
+          "en": "finally Release ran without acquiring a permit."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как правильно писать CancellationToken + WaitAsync + finally?",
+          "en": "How should CancellationToken, WaitAsync and finally be composed?"
+        },
+        "rubric": {
+          "ru": "await WaitAsync(ct) перед try; Release в finally только после успешного приобретения.",
+          "en": "await WaitAsync(ct) before try; Release in finally only after successful acquisition."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-064.cs",
+      "labs/dotnet/Q-065.cs",
+      "labs/dotnet/Q-066.cs",
+      "labs/dotnet/Q-067.cs"
+    ],
+    "prerequisites": [
+      "race-condition-vs-data-race"
     ]
   },
   {
@@ -3185,6 +3325,669 @@
     ],
     "refs": [
       "https://learn.microsoft.com/en-us/dotnet/core/diagnostics/debug-threadpool-starvation"
+    ]
+  },
+  {
+    "id": "replica-local-semaphore-scope",
+    "lesson": "microservices-concurrency",
+    "level": "internals",
+    "title": {
+      "ru": "SemaphoreSlim локален для Pod, а остаток общий",
+      "en": "SemaphoreSlim is Pod-local while inventory is shared"
+    },
+    "goal": {
+      "ru": "Объяснять область действия static и причину гонок между репликами.",
+      "en": "Explain the scope of static and the source of races between replicas."
+    },
+    "definition": {
+      "ru": "Три Kubernetes Pod имеют три независимые копии static SemaphoreSlim(1,1): три checkout-запроса могут одновременно пройти локальные gates. Общий инвариант остатка нужно атомарно защищать в InventoryService/PostgreSQL, а не в OrderService.",
+      "en": "Three Kubernetes Pods have three independent copies of static SemaphoreSlim(1,1), so three checkouts can pass local gates simultaneously. Enforce the shared stock invariant in InventoryService/PostgreSQL, not OrderService."
+    },
+    "steps": [
+      {
+        "ru": "Каждый Pod имеет отдельный процесс CLR и собственные static поля.",
+        "en": "Each Pod runs a separate CLR process with its own static fields."
+      },
+      {
+        "ru": "Все три Gate могут независимо перейти 1→0 при WaitAsync.",
+        "en": "All three Gates can independently transition 1→0 upon WaitAsync."
+      },
+      {
+        "ru": "Все три Checkout могут одновременно вызвать общий InventoryService.ReserveAsync.",
+        "en": "All three Checkouts may concurrently call the shared InventoryService.ReserveAsync."
+      },
+      {
+        "ru": "Только владелец общего состояния может защитить SKU атомарным SQL и идемпотентностью брони.",
+        "en": "Only the shared state owner can enforce the SKU invariant using atomic SQL and reservation idempotency."
+      }
+    ],
+    "resources": {
+      "ru": "Три локальных счётчика, ThreadPool и Task state; общая строка PostgreSQL и её транзакции.",
+      "en": "Three independent gate counters, ThreadPools and Task states; one shared PostgreSQL row and its transactions."
+    },
+    "pitfalls": {
+      "ru": "Слово static не делает объект cluster-global. Redis lease lock тоже имеет срок действия/fencing риски и не заменяет атомарный бизнес-предикат.",
+      "en": "static does not make an object cluster-global. Redis lease locks have expiration/fencing hazards and do not replace an atomic business predicate."
+    },
+    "code": "private static readonly SemaphoreSlim Gate = new(1, 1); // one per process",
+    "codeLanguage": "csharp",
+    "questions": [
+      68
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim",
+      "https://www.postgresql.org/docs/current/transaction-iso.html"
+    ],
+    "chapters": [
+      {
+        "id": "replica-memory",
+        "title": {
+          "ru": "Три Pod — три разрешения",
+          "en": "Three Pods — three permits"
+        },
+        "body": {
+          "ru": "В Pod A, B, C каждый `static Gate` существует в отдельном адресном пространстве. Три вызова могут независимо войти в критическую секцию и одновременно вызвать ReserveAsync. Q-068 воспроизводит независимые Gate в одном процессе; это демонстрация области действия, а не настоящий Kubernetes/сетевой тест.",
+          "en": "Pods A/B/C each host a static Gate in a separate address space. All three calls may independently enter their critical sections and call ReserveAsync at once. Q-068 simulates independent gates in one process; it is a scope demonstration, not a live Kubernetes/network test."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "state-owner",
+        "title": {
+          "ru": "Инвариант на стороне InventoryService",
+          "en": "Invariant at the InventoryService boundary"
+        },
+        "body": {
+          "ru": "Именно InventoryService/PostgreSQL владеет `available` и должен атомарно решить, кому достался последний товар. Локальный SemaphoreSlim можно оставить для ограничения нагрузки на один экземпляр, но он не координирует реплики и не обеспечивает exactly-once бронирование.",
+          "en": "InventoryService/PostgreSQL owns available and must atomically decide the last item. A local SemaphoreSlim can bound per-instance load, but cannot coordinate replicas or provide exactly-once reservations."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "lease-warning",
+        "title": {
+          "ru": "Почему Redis lock не автоматически безопаснее",
+          "en": "Why a Redis lease is not automatically safe"
+        },
+        "body": {
+          "ru": "Аренда распределённого lock может истечь при паузе, network partition или длительной операции. Старый владелец иногда продолжает работать после получения lock новым участником; поэтому необходимы атомарные проверки на стороне данных и при необходимости fencing tokens.",
+          "en": "A distributed lease may expire during pauses, partitions or slow work. An old holder can continue after another acquires the lock, requiring atomic state-side checks and possibly fencing tokens."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Сколько static SemaphoreSlim в трёх Pod?",
+          "en": "How many static SemaphoreSlim instances exist in three Pods?"
+        },
+        "rubric": {
+          "ru": "Три, каждый process-local.",
+          "en": "Three, each process-local."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему три запроса могут одновременно вызвать ReserveAsync?",
+          "en": "Why can three requests invoke ReserveAsync simultaneously?"
+        },
+        "rubric": {
+          "ru": "Разрешения независимы, общего Gate нет.",
+          "en": "Each gate is independent; there is no shared Gate."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Защищает ли Gate(1,1) внутри OrderService последний SKU?",
+          "en": "Does Gate(1,1) inside OrderService protect the last SKU?"
+        },
+        "rubric": {
+          "ru": "Нет, только локальный Pod.",
+          "en": "No, only the local Pod."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Почему oversell возник после scale-out?",
+          "en": "Why did overselling emerge after scaling out?"
+        },
+        "rubric": {
+          "ru": "Проверять local locks, SQL check-then-act и дубли.",
+          "en": "Inspect local locks, SQL check-then-act and retries."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Где расположить глобальную проверку остатка?",
+          "en": "Where should globally safe stock checks be implemented?"
+        },
+        "rubric": {
+          "ru": "InventoryService/PostgreSQL conditional update + business idempotency.",
+          "en": "InventoryService/PostgreSQL conditional update and business idempotency."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-068.cs"
+    ],
+    "prerequisites": [
+      "mutual-exclusion-and-semaphores"
+    ]
+  },
+  {
+    "id": "remote-io-permit-lifetime",
+    "lesson": "microservices-concurrency",
+    "level": "production",
+    "title": {
+      "ru": "Асинхронный сетевой await удерживает permit, но не worker",
+      "en": "An async network await holds a permit, not necessarily a worker"
+    },
+    "goal": {
+      "ru": "Разделять удержание семафора, Task, socket и физический поток.",
+      "en": "Separate held semaphore permits, Tasks, sockets and physical workers."
+    },
+    "definition": {
+      "ru": "После Gate.WaitAsync() permit остаётся занятым до Release даже в течение пяти секунд внешнего HTTPS/gRPC await. Истинно асинхронное pending I/O не удерживает отдельный заблокированный worker, но сохраняет Task, permit, сетевые ресурсы и очередь следующих Checkout.",
+      "en": "After Gate.WaitAsync(), the permit remains held until Release, even throughout a five-second external HTTPS/gRPC await. Genuine pending async I/O need not hold a dedicated blocked worker, but Tasks, permits, network state and queued checkouts remain."
+    },
+    "steps": [
+      {
+        "ru": "Gate.WaitAsync приобретает permit и уменьшает CurrentCount.",
+        "en": "Gate.WaitAsync acquires a permit and decreases CurrentCount."
+      },
+      {
+        "ru": "ChargeAsync запускает сетевой I/O; при незавершённом await метод приостанавливается.",
+        "en": "ChargeAsync starts I/O; an incomplete await suspends the method."
+      },
+      {
+        "ru": "Worker может выполнять другую работу, permit остаётся занятым до Release.",
+        "en": "A worker may execute other work while the permit remains held until Release."
+      },
+      {
+        "ru": "Следующий Checkout того же Pod ждёт WaitAsync; другой Pod независим.",
+        "en": "A subsequent Checkout on the same Pod awaits WaitAsync; another Pod is independent."
+      },
+      {
+        "ru": "Лимиты concurrency должны соответствовать downstream, учитывать timeout/backpressure и суммарные реплики.",
+        "en": "Concurrency limits should target downstream resources and account for timeouts, backpressure and total replicas."
+      }
+    ],
+    "resources": {
+      "ru": "Semaphore permit, pending Task, continuation, connection pools и сетевые буферы. CPU не занят постоянно во время истинного pending I/O.",
+      "en": "Semaphore permit, pending Task, continuation, connection pools and network buffers. CPU is not continuously used during genuine pending I/O."
+    },
+    "pitfalls": {
+      "ru": "Task.Run над синхронным сетевым I/O удерживает worker. Большая критическая секция создаёт очередь и растущий p99 даже при низком CPU; локальный лимит не является глобальной квотой.",
+      "en": "Task.Run wrapping synchronous network I/O consumes a worker. Broad critical sections cause queueing and p99 latency despite low CPU; local limits do not enforce a global quota."
+    },
+    "code": "await Gate.WaitAsync(ct);\ntry { await payments.ChargeAsync(orderId, ct); }\nfinally { Gate.Release(); }",
+    "codeLanguage": "csharp",
+    "questions": [
+      69,
+      70
+    ],
+    "refs": [
+      "https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync",
+      "https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation"
+    ],
+    "chapters": [
+      {
+        "id": "permit-vs-worker",
+        "title": {
+          "ru": "Await может освободить worker, но не permit",
+          "en": "Await may free the worker but not the permit"
+        },
+        "body": {
+          "ru": "Пятсекундный pending await внешнего API не означает пять секунд CPU time на ASP.NET Core. Однако CurrentCount у Gate остаётся нулевым, пока не отработает finally. В лаборатории Q-069 незавершённый TaskCompletionSource моделирует сетевое ожидание и демонстрирует удержание permit без настоящей сети.",
+          "en": "A five-second pending external await does not consume five seconds of ASP.NET Core CPU. Gate.CurrentCount nevertheless remains zero until finally releases. Q-069 uses an incomplete TaskCompletionSource to model the wait and show permit lifetime without actual networking."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "quotas",
+        "title": {
+          "ru": "Локальные квоты суммируются",
+          "en": "Local quotas add up"
+        },
+        "body": {
+          "ru": "Три Pod с SemaphoreSlim(5,5) могут вместе отправить 15 вызовов провайдеру. Глобальная квота требует согласованной координации или очереди. Внутренняя gRPC сеть и внешний HTTPS имеют разные задержки и ограничения, но обе подвержены timeout и частичным сбоям.",
+          "en": "Three Pods each with SemaphoreSlim(5,5) can generate 15 provider calls in total. A global quota needs coordinated admission or a queue. Internal gRPC and external HTTPS have different latency limits but both experience timeouts and partial failures."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "placement",
+        "title": {
+          "ru": "Изолируй лимит по downstream",
+          "en": "Isolate limits per downstream"
+        },
+        "body": {
+          "ru": "Общий gate вокруг ReserveAsync+ChargeAsync сериализует весь checkout одного Pod, даже если узким местом является только внешний провайдер. Узкий bounded concurrency limiter на конкретном downstream, CancellationToken, таймауты и метрики очереди лучше описывают нагрузку.",
+          "en": "A broad gate around ReserveAsync+ChargeAsync serializes the whole checkout per Pod even if only the external provider needs a limit. A narrow per-downstream limiter with cancellation, timeouts and queue metrics is usually more appropriate."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Что удерживается при async ChargeAsync?",
+          "en": "What remains occupied during an async ChargeAsync?"
+        },
+        "rubric": {
+          "ru": "Permit, Task и сетевое состояние; worker не обязан блокироваться.",
+          "en": "Permit, Task and networking state; worker need not block."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему при низком CPU может расти очередь Checkout?",
+          "en": "Why might checkout queues grow with low CPU?"
+        },
+        "rubric": {
+          "ru": "Permit держится во время внешнего I/O; следующие операции ожидают.",
+          "en": "Permits remain held during remote I/O while later requests wait."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Сколько вызовов при 3 Pod × Gate(5,5)?",
+          "en": "How many calls with three Pods each Gate(5,5)?"
+        },
+        "rubric": {
+          "ru": "До 15.",
+          "en": "Up to 15."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Как найти bottleneck при высоком p99 и пустом CurrentCount?",
+          "en": "How to diagnose high p99 with CurrentCount=0?"
+        },
+        "rubric": {
+          "ru": "Очередь WaitAsync, latency provider, пула соединений и retries.",
+          "en": "WaitAsync queue, provider latency, connection pools and retries."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Где ограничить платёжный API?",
+          "en": "Where should payment API calls be bounded?"
+        },
+        "rubric": {
+          "ru": "У клиента конкретного downstream; для глобальной квоты отдельная координация.",
+          "en": "At the downstream client; coordinate separately for global quotas."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-069.cs"
+    ],
+    "prerequisites": [
+      "replica-local-semaphore-scope"
+    ]
+  },
+  {
+    "id": "payment-timeout-idempotency-outbox",
+    "lesson": "microservices-concurrency",
+    "level": "production",
+    "title": {
+      "ru": "Потерянный ответ платежа: Outbox и идемпотентность",
+      "en": "Lost payment responses: Outbox and idempotency"
+    },
+    "goal": {
+      "ru": "Объяснять частичные отказы и защищать финансовые операции от повторов.",
+      "en": "Explain partial failures and protect financial operations against duplicate effects."
+    },
+    "definition": {
+      "ru": "Timeout после ChargeAsync не доказывает отката: удалённый банк мог списать деньги до потери ответа. Повтор с новым ключом может списать ещё раз. Стабильный idempotency key должен обрабатываться на стороне провайдера. Transactional Outbox обеспечивает локальную атомарность состояния+события, но допускает повторную доставку.",
+      "en": "A ChargeAsync timeout does not prove rollback: the bank may have debited funds before losing the reply. Retrying with a new identity may debit again. A stable idempotency key must be enforced by the provider. Transactional Outbox atomically saves local state plus an event but does not prevent redelivery."
+    },
+    "steps": [
+      {
+        "ru": "OrderService посылает ChargeAsync внешнему провайдеру.",
+        "en": "OrderService sends ChargeAsync to the external provider."
+      },
+      {
+        "ru": "Провайдер делает списание, но ответ теряется по сети.",
+        "en": "The provider commits the debit, but the reply is lost."
+      },
+      {
+        "ru": "Timeout оставляет outcome неизвестным; CancellationToken не отменяет уже выполненный удалённый эффект.",
+        "en": "Timeout leaves an unknown outcome; CancellationToken cannot undo a committed remote side effect."
+      },
+      {
+        "ru": "Повторы одной логической попытки используют тот же сохранённый idempotency key.",
+        "en": "Retries of one logical attempt must reuse its persisted idempotency key."
+      },
+      {
+        "ru": "Outbox записывает локальный факт и событие в одной транзакции, relay может отправить его повторно, потребитель обязан дедуплицировать.",
+        "en": "Outbox persists state and event atomically, relays may redeliver, and consumers must deduplicate."
+      },
+      {
+        "ru": "Неизвестный результат нужно сверять через provider status API/webhook и журнал попыток.",
+        "en": "Unknown outcomes must be reconciled via provider status APIs/webhooks and durable attempt records."
+      }
+    ],
+    "resources": {
+      "ru": "Внешние соединения, идемпотентные ключи, payment attempt ID, outbox/inbox таблицы и доставка событий.",
+      "en": "External connections, idempotency keys, payment-attempt IDs, outbox/inbox tables and event delivery."
+    },
+    "pitfalls": {
+      "ru": "Локальный SemaphoreSlim не сохраняет состояние после рестарта и не координирует Pod. Outbox не гарантирует exactly once у платёжного API; semantics и TTL ключа зависят от контракта провайдера.",
+      "en": "Local SemaphoreSlim does not survive restarts or coordinate Pods. Outbox does not guarantee exactly-once external payments; key semantics and TTL depend on provider policy."
+    },
+    "code": "await provider.ChargeAsync(orderId, amount, stableIdempotencyKey, ct);",
+    "codeLanguage": "csharp",
+    "questions": [
+      71,
+      72,
+      73
+    ],
+    "refs": [
+      "https://stripe.com/blog/idempotency",
+      "https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-out-box-cosmos",
+      "https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation"
+    ],
+    "chapters": [
+      {
+        "id": "unknown-outcome",
+        "title": {
+          "ru": "Списание совершено, но ответ не дошёл",
+          "en": "Debit committed but response lost"
+        },
+        "body": {
+          "ru": "Transport timeout сигнализирует о неудаче получения ответа, а не об откате платежа. Провайдер мог завершить side effect. Локальный CancellationToken не способен атомарно откатить удалённую транзакцию. Храни paymentAttemptId, состояния Unknown/Pending/Succeeded/Failed и сверяй результат, а не запускай новый независимый charge.",
+          "en": "A transport timeout indicates failure to receive the response, not payment rollback. The provider may have completed its side effect. Local cancellation cannot atomically undo a remote transaction. Persist paymentAttemptId and states Unknown/Pending/Succeeded/Failed and reconcile instead of blindly charging again."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "stable-key",
+        "title": {
+          "ru": "Один платёж — один стабильный ключ для повторов",
+          "en": "One logical payment, one stable retry key"
+        },
+        "body": {
+          "ru": "Создай идентификатор для одной логической попытки и храни его устойчиво. При сетевых повторах передавай тот же key и те же параметры. Принимающая сторона должна атомарно дедуплицировать. Лаборатория Q-071 — последовательная in-memory симуляция; она не демонстрирует сетевую или межпроцессную дедупликацию банка.",
+          "en": "Persist a stable ID for one logical attempt. Reuse the same key and parameters for transport retries. The receiving provider must deduplicate atomically. Q-071 is a sequential in-memory illustration, not a network or cross-process bank test."
+        },
+        "code": "",
+        "language": "csharp"
+      },
+      {
+        "id": "outbox-difference",
+        "title": {
+          "ru": "Outbox гарантирует сохранение события, не уникальность платежа",
+          "en": "Outbox persists events, not unique payments"
+        },
+        "body": {
+          "ru": "Transactional Outbox сохраняет изменение локального Order и запись outbox в одной транзакции. Relay может опубликовать событие, упасть до отметки delivered и опубликовать его повторно. Для PaymentRequested требуется inbox/deduplication, а для внешнего платежа — provider idempotency key и reconciliation.",
+          "en": "Transactional Outbox saves the local Order change with its outbox event in one transaction. A relay can publish, crash before marking delivered, and publish again. PaymentRequested needs consumer inbox/deduplication, while the external charge needs a provider idempotency key and reconciliation."
+        },
+        "code": "",
+        "language": "csharp"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Почему timeout не доказывает, что банк не списал деньги?",
+          "en": "Why does a timeout not prove the bank did not debit?"
+        },
+        "rubric": {
+          "ru": "Ответ может потеряться после успешного списания.",
+          "en": "The reply may be lost after a successful debit."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Чем Outbox отличается от provider idempotency key?",
+          "en": "How does Outbox differ from a provider idempotency key?"
+        },
+        "rubric": {
+          "ru": "Outbox — локальная атомарность события и state; ключ — дедуп удалённого side effect.",
+          "en": "Outbox protects local state+event atomicity; the key deduplicates remote side effects."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Может ли повтор с новым ключом привести к двум списаниям?",
+          "en": "Can a retry with a new key cause duplicate debits?"
+        },
+        "rubric": {
+          "ru": "Да, при неопределённом результате исходного платежа.",
+          "en": "Yes, when the first charge outcome is unknown."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Как установить факт платежа после timeout?",
+          "en": "How to reconcile payment after timeout?"
+        },
+        "rubric": {
+          "ru": "Payment attempt ID, provider status API/webhook, telemetry, audit.",
+          "en": "Payment-attempt ID, provider status API/webhook, telemetry and audit."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как спроектировать Order→Payment при повторной доставке Outbox?",
+          "en": "How to design Order→Payment under outbox redelivery?"
+        },
+        "rubric": {
+          "ru": "Outbox+Inbox, стабильный provider key, сохранение попыток, reconciliation.",
+          "en": "Outbox+Inbox, stable provider key, persisted attempts and reconciliation."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [
+      "labs/dotnet/Q-071.cs"
+    ],
+    "prerequisites": [
+      "remote-io-permit-lifetime"
+    ]
+  },
+  {
+    "id": "postgres-read-committed-stock",
+    "lesson": "microservices-concurrency",
+    "level": "production",
+    "title": {
+      "ru": "PostgreSQL READ COMMITTED: гонка остатков и условный UPDATE",
+      "en": "PostgreSQL READ COMMITTED: stock races and conditional UPDATE"
+    },
+    "goal": {
+      "ru": "Проверять корректность одного SKU при двух транзакциях на уровне MVCC и row locks.",
+      "en": "Prove one-SKU correctness across two transactions using MVCC and row locks."
+    },
+    "definition": {
+      "ru": "Два Pod при READ COMMITTED могут оба прочитать available=1 обычным SELECT. Если оба затем выполнят UPDATE SET available=available-1 WHERE sku=..., второй UPDATE дождётся lock, но применится к новой версии со значением 0 и может создать -1. Атомарный условный UPDATE ... WHERE available>0 RETURNING available повторно проверит предикат и не допустит отрицательного остатка.",
+      "en": "At READ COMMITTED two Pods can both read available=1 with ordinary SELECT. Both later performing UPDATE SET available=available-1 WHERE sku=... can produce -1: the second UPDATE waits for the row lock then applies to the updated zero value. A conditional UPDATE ... WHERE available>0 RETURNING available rechecks the predicate and prevents negative stock."
+    },
+    "steps": [
+      {
+        "ru": "Оба отдельные SELECT могут увидеть available=1.",
+        "en": "Both independent SELECTs may observe available=1."
+      },
+      {
+        "ru": "Первый UPDATE получает row lock, записывает 0 и коммитится.",
+        "en": "The first UPDATE obtains the row lock, writes zero and commits."
+      },
+      {
+        "ru": "Второй UPDATE ждёт, затем уменьшает текущую версию 0→-1, если WHERE только по sku.",
+        "en": "The second UPDATE waits and then decrements the current 0→-1 row version if WHERE only filters sku."
+      },
+      {
+        "ru": "Условие WHERE available>0 нужно включить в тот же UPDATE; PostgreSQL rechecks WHERE после ожидания конкурентного UPDATE.",
+        "en": "Place WHERE available>0 inside the UPDATE; PostgreSQL rechecks it after a concurrent update."
+      },
+      {
+        "ru": "Если второй statement не обновил строк, это out-of-stock. Дополнительный CHECK available>=0 защищает инвариант от иных писателей.",
+        "en": "If the second statement updates zero rows, the item is out of stock. A CHECK available>=0 adds defense against other writers."
+      }
+    ],
+    "resources": {
+      "ru": "PostgreSQL MVCC row versions, row-level locks, транзакции и соединения; бизнес-состояние живёт вне Pod.",
+      "en": "PostgreSQL MVCC row versions, row locks, transactions and connections; business state is outside Pod processes."
+    },
+    "pitfalls": {
+      "ru": "READ COMMITTED не SERIALIZABLE. SELECT FOR UPDATE в корректной транзакции тоже может защищать read-then-update, но удерживать row lock во время внешнего ChargeAsync обычно рискованно. SQL для одного SKU не превращает Payment/Order в общую ACID-транзакцию.",
+      "en": "READ COMMITTED is not SERIALIZABLE. SELECT FOR UPDATE in a proper transaction can protect read-then-update, but holding a row lock over a remote ChargeAsync is risky. One-SKU SQL does not make Payment/Order part of a single ACID transaction."
+    },
+    "code": "UPDATE inventory\nSET available=available-1\nWHERE sku='IPHONE-17' AND available>0\nRETURNING available;",
+    "codeLanguage": "sql",
+    "questions": [
+      74,
+      75
+    ],
+    "refs": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://www.postgresql.org/docs/current/sql-update.html"
+    ],
+    "chapters": [
+      {
+        "id": "select-window",
+        "title": {
+          "ru": "SELECT + безусловный UPDATE — окно гонки",
+          "en": "SELECT + unconditional UPDATE leaves a race"
+        },
+        "body": {
+          "ru": "Два SELECT получают 1. Первый UPDATE записывает 0. Второй ждёт row lock и после commit первого выполняет обновление новой версии 0→-1, так как его WHERE не содержит available>0. Row lock сериализует физические записи, но не гарантирует бизнес-условие, которое проверялось отдельно.",
+          "en": "Two SELECTs read 1. The first UPDATE writes 0. The second waits for the row lock and after the first commits updates the new version 0→-1, because its WHERE lacks available>0. Row locks serialize physical writes but cannot enforce a predicate checked earlier in a separate statement."
+        },
+        "code": "BEGIN;\nSELECT available FROM inventory WHERE sku='IPHONE-17';\nUPDATE inventory SET available=available-1 WHERE sku='IPHONE-17';\nCOMMIT;",
+        "language": "sql"
+      },
+      {
+        "id": "atomic-update",
+        "title": {
+          "ru": "Условный UPDATE и результат по RETURNING",
+          "en": "Conditional UPDATE and RETURNING"
+        },
+        "body": {
+          "ru": "В одном statement записывай SET available=available-1 при WHERE available>0. В READ COMMITTED конкурентный второй UPDATE ждёт row lock, затем повторно проверяет WHERE на обновлённой версии: после первого decrement до 0 он обновляет ноль строк. RETURNING возвращает новое значение только победителю; можно добавить CHECK(available>=0).",
+          "en": "Put SET available=available-1 and WHERE available>0 into one statement. Under READ COMMITTED a competing UPDATE waits then rechecks WHERE on the updated row version: after the first decrements to zero the second updates zero rows. RETURNING yields the new value only for the winner; CHECK available>=0 is useful defense in depth."
+        },
+        "code": "UPDATE inventory SET available=available-1\nWHERE sku='IPHONE-17' AND available>0\nRETURNING available;",
+        "language": "sql"
+      },
+      {
+        "id": "boundary",
+        "title": {
+          "ru": "Резервирование — отдельная операция от оплаты",
+          "en": "Reservation is separate from payment"
+        },
+        "body": {
+          "ru": "Транзакция резервирования может быть короткой и атомарной, а внешний провайдер находится вне PostgreSQL. Для полного заказа требуются reservationId, дедупликация по orderId, expiration/release, payment workflow и компенсация при частичном отказе. Это отдельная тема для дальнейшего обсуждения.",
+          "en": "Reservation can be a short atomic transaction, while the provider is outside PostgreSQL. A complete checkout needs reservation IDs, orderId deduplication, expiration/release, a payment workflow and compensation for partial failures; this is a deeper follow-up topic."
+        },
+        "code": "",
+        "language": "sql"
+      }
+    ],
+    "checks": [
+      {
+        "level": "recall",
+        "prompt": {
+          "ru": "Что означает READ COMMITTED для двух SELECT?",
+          "en": "What does READ COMMITTED mean for two SELECT statements?"
+        },
+        "rubric": {
+          "ru": "Каждое отдельное statement видит committed snapshot.",
+          "en": "Each statement sees its own committed snapshot."
+        },
+        "code": ""
+      },
+      {
+        "level": "explain",
+        "prompt": {
+          "ru": "Почему второй UPDATE может уменьшить остаток до -1 даже с row lock?",
+          "en": "Why can the second UPDATE cause -1 despite row locking?"
+        },
+        "rubric": {
+          "ru": "После ожидания работает с новой версией и без available>0 в WHERE.",
+          "en": "After waiting it uses the updated row version with no available>0 predicate."
+        },
+        "code": ""
+      },
+      {
+        "level": "predict",
+        "prompt": {
+          "ru": "Что вернёт второй UPDATE ... WHERE available>0 RETURNING?",
+          "en": "What does the second UPDATE ... WHERE available>0 RETURNING return?"
+        },
+        "rubric": {
+          "ru": "Ноль обновлённых строк после recheck.",
+          "en": "Zero updated rows after predicate recheck."
+        },
+        "code": ""
+      },
+      {
+        "level": "diagnose",
+        "prompt": {
+          "ru": "Что проверять при oversell после scale-out?",
+          "en": "What to inspect for oversell after scale-out?"
+        },
+        "rubric": {
+          "ru": "SQL WHERE, isolation, row waits, отсутствие CHECK, повторы.",
+          "en": "SQL WHERE, isolation, row waits, missing CHECK and retries."
+        },
+        "code": ""
+      },
+      {
+        "level": "design",
+        "prompt": {
+          "ru": "Как зарезервировать SKU без Redis lock и не держать транзакцию через оплату?",
+          "en": "How to reserve SKU without Redis locks or a transaction spanning payment?"
+        },
+        "rubric": {
+          "ru": "Короткий условный UPDATE, reservation idempotency и отдельный payment workflow.",
+          "en": "Short conditional UPDATE, reservation idempotency and separate payment workflow."
+        },
+        "code": ""
+      }
+    ],
+    "labFiles": [],
+    "prerequisites": [
+      "replica-local-semaphore-scope"
     ]
   }
 ]

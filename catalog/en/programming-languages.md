@@ -18,6 +18,7 @@ Syntax, types, memory, concurrency, and developer tooling.
 - [Cancellation of asynchronous work](../../topics/dotnet/en/cancellation.md)
 - [ValueTask<T> and allocation trade-offs](../../topics/dotnet/en/valuetask.md)
 - [Blocking and sync-over-async](../../topics/dotnet/en/sync-over-async.md)
+- [Microservices: concurrency, networking, payments and PostgreSQL](../../topics/dotnet/en/microservices-concurrency.md)
 
 ### Go
 

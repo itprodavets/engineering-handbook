@@ -191,3 +191,51 @@
 Создание дополнительного потока ОС; не то же, что создание объекта Task.
 
 Пример: `new Thread(...).Start(); ThreadPool scales workers`
+
+## Thread affinity
+
+Monitor.Exit должен исполняться потоком-владельцем.
+
+Пример: `Monitor.Enter/Exit`
+
+## Semaphore permit
+
+Разрешение удерживается до Release и не равно потоку.
+
+Пример: `await WaitAsync()`
+
+## Process-local state
+
+static поля и SemaphoreSlim независимы между Pod.
+
+Пример: `static SemaphoreSlim Gate`
+
+## Unknown payment outcome
+
+Удалённый платёж мог выполниться, а ответ потеряться.
+
+Пример: `ChargeAsync timeout`
+
+## Idempotency key
+
+Стабильный идентификатор одной логической операции, проверяемый принимающей стороной.
+
+Пример: `Idempotency-Key`
+
+## Transactional Outbox
+
+Событие и локальное состояние сохраняются в одной транзакции, но delivery может повториться.
+
+Пример: `orders + outbox`
+
+## READ COMMITTED
+
+В PostgreSQL отдельные statements видят свои committed snapshots, а конфликтующий UPDATE проверяет WHERE заново.
+
+Пример: `BEGIN ISOLATION LEVEL READ COMMITTED`
+
+## Conditional UPDATE
+
+SQL проверяет предикат и изменяет значение в одном statement.
+
+Пример: `UPDATE ... WHERE available>0 RETURNING`

@@ -4,7 +4,7 @@
 
 [Home](../README.en.md) · [Interactive practice](https://itprodavets.github.io/engineering-handbook/#/en/practice) · [Execution guide](../docs/execution.en.md)
 
-This folder contains **35 standalone runnable C# examples**. Each lab is linked to a challenge Q-024–Q-063, and each challenge belongs to exactly one canonical lesson. Theory is not duplicated across labs.
+This folder contains **42 standalone runnable C# examples**. Each lab is linked to a challenge Q-024–Q-075, and each challenge belongs to exactly one canonical lesson. Theory is not duplicated across labs.
 
 ```bash
 dotnet run --file labs/dotnet/Q-024.cs
@@ -49,5 +49,13 @@ dotnet run --file labs/dotnet/Q-024.cs
 | Q-061 | [C#](dotnet/Q-061.cs) | [Explanation](../questions/dotnet/en/Q-061-fromexception-oce-vs-fromcanceled.md) |
 | Q-062 | [C#](dotnet/Q-062.cs) | [Explanation](../questions/dotnet/en/Q-062-async-task-oce-builder-canceled.md) |
 | Q-063 | [C#](dotnet/Q-063.cs) | [Explanation](../questions/dotnet/en/Q-063-async-task-throws-after-completed-await.md) |
+
+| Q-064 | [C#](dotnet/Q-064.cs) | [Explanation](../questions/dotnet/en/Q-064-monitor-exit-after-await.md) |
+| Q-065 | [C#](dotnet/Q-065.cs) | [Explanation](../questions/dotnet/en/Q-065-semaphore-permits-vs-threads.md) |
+| Q-066 | [C#](dotnet/Q-066.cs) | [Explanation](../questions/dotnet/en/Q-066-semaphore-nested-async-deadlock.md) |
+| Q-067 | [C#](dotnet/Q-067.cs) | [Explanation](../questions/dotnet/en/Q-067-semaphore-canceled-wait-overrelease.md) |
+| Q-068 | [C#](dotnet/Q-068.cs) | [Explanation](../questions/dotnet/en/Q-068-static-semaphore-three-pods.md) |
+| Q-069 | [C#](dotnet/Q-069.cs) | [Explanation](../questions/dotnet/en/Q-069-network-await-permit-lifetime.md) |
+| Q-071 | [C#](dotnet/Q-071.cs) | [Explanation](../questions/dotnet/en/Q-071-payment-timeout-duplicate-charge.md) |
 
 **GitHub Pages editing:** The website offers an editable example and reference-output prediction, not actual C# execution. Run code in Codespaces or Actions. To run a browser-modified snippet, copy it into your Codespaces lab file.
