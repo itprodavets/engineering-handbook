@@ -860,10 +860,10 @@
       "en": "Why does volatile int Value not make Value++ atomic, and what ordering does C# volatile provide?"
     },
     "a": {
-      "ru": "Volatile read имеет acquire, volatile write — release семантику. Они не создают глобальный последовательный порядок всех операций и не объединяют read/modify/write в неделимую транзакцию: два потока могут записать 1 вместо 2.",
-      "en": "Volatile reads have acquire, writes have release semantics. This is not a single global sequential order or an atomic composite read-modify-write: both workers may write 1 rather than 2."
+      "ru": "`volatile`/`Volatile.Read` обеспечивают acquire-семантику чтения, а `volatile`/`Volatile.Write` — release-семантику записи. Это ограничения на переупорядочивание обращений к памяти, а не атомарность выражения. `Value++` логически состоит из read → add → write. Два потока могут оба прочитать 5 и оба записать 6: lost update. `volatile` не гарантирует чтение самого нового значения по реальному времени и не устанавливает глобальный total order.",
+      "en": "`volatile`/`Volatile.Read` provide acquire reads; `volatile`/`Volatile.Write` provide release writes. These constrain memory ordering, not composite-operation atomicity. `Value++` consists logically of read → add → write: two workers may both read 5 and write 6 (lost update). `volatile` neither promises the chronologically newest value on every read nor establishes a global total order."
     },
-    "code": "sealed class Counter { public volatile int Value; }\n// Two unsynchronized Value++ operations can lose an update.",
+    "code": "sealed class Counter { public volatile int Value; }\n// Two concurrent Value++ operations can both read 5 and write 6.",
     "lab": null,
     "expected": "",
     "mechanism": "",
@@ -881,8 +881,8 @@
       "en": "What does Interlocked.Increment(ref int) guarantee, and why is ref unrelated to Counter being a reference type?"
     },
     "a": {
-      "ru": "Атомарный read-modify-write одного int: два успешных инкремента из 0 дают 2. ref передаёт саму ячейку int даже если это локальная value-type переменная. Не захватывает C# Monitor lock для всей секции; обычно аппаратные атомарные инструкции.",
-      "en": "Atomic read-modify-write of one int: two completed increments from 0 result in 2. ref passes the variable location even for a local value-type int. It does not acquire a C# Monitor over an entire section; runtime typically uses CPU atomic instructions."
+      "ru": "`Interlocked.Increment(ref value)` — атомарная операция read-modify-write над одной адресуемой переменной `int`, возвращающая новое значение. `ref` передаёт саму переменную независимо от того, является ли содержащий её объект ссылочным типом. Десять потоков по 1000 инкрементов дают 10000 при старте с нуля, отсутствии других записей и без значимого переполнения. Операция предоставляет гарантии упорядочивания памяти, но не защищает другие поля или отдельный check-then-act. Это не C# `lock`/`Monitor` для целого блока.",
+      "en": "`Interlocked.Increment(ref value)` is an atomic read-modify-write on one addressable `int`, returning the updated value. `ref` passes the variable itself, irrespective of whether its container is a class. Ten workers each making 1,000 increments yield 10,000 from zero if there are no other writes or relevant overflow. It also provides memory-ordering guarantees, but cannot protect other fields or a separate check-then-act sequence; it is not a C# `Monitor` critical section."
     },
     "code": "int counter = 0;\nInterlocked.Increment(ref counter);",
     "lab": "labs/dotnet/Q-042.cs",
@@ -1031,10 +1031,10 @@
       "en": "Why does data=42 before release-store and acquire-reading ready safely publish 42?"
     },
     "a": {
-      "ru": "Release-публикация флага идёт после записи data, acquire-чтение увидело ready=1; последующее чтение data видит 42 (при отсутствии других записей). Это не гарантия срока завершения цикла.",
-      "en": "Release stores the flag after data; acquire observes ready=1, and the later data read sees 42 absent interfering writers. It does not guarantee bounded polling time."
+      "ru": "При начальных `data=0`, `ready=0` и отсутствии других писателей: Producer выполняет `data=42`, затем `Volatile.Write(ref ready,1)` (release). Consumer читает `Volatile.Read(ref ready)` (acquire) и, если увидел 1 от этой публикации, последующее чтение `data` получает 42. Release охватывает предшествующую запись, acquire не допускает переноса последующего чтения данных перед проверкой флага. `Interlocked.Increment` здесь не требуется: нужен корректный протокол публикации, а не атомарный инкремент. Гарантии ограниченного времени ожидания флага нет.",
+      "en": "Assuming initial `data=ready=0` and no interfering writers, producer writes `data=42` before `Volatile.Write(ref ready,1)` (release). If the consumer's `Volatile.Read(ref ready)` (acquire) observes this publication, a subsequent `data` read observes 42. Release covers preceding stores; acquire prevents moving subsequent data reads before the flag read. `Interlocked.Increment` is unnecessary: this is safe publication, not a counter update. No bounded waiting time is promised."
     },
-    "code": "data=42;\nVolatile.Write(ref ready, 1);\n// Consumer polls Volatile.Read(ref ready) and then reads data",
+    "code": "int data = 0, ready = 0;\n// Producer: data = 42; Volatile.Write(ref ready, 1);\n// Consumer: if (Volatile.Read(ref ready) == 1) Console.WriteLine(data);",
     "lab": "labs/dotnet/Q-048.cs",
     "expected": "",
     "mechanism": "",
@@ -1056,10 +1056,10 @@
       "en": "Can the consumer see zero if producer publishes ready before writing data?"
     },
     "a": {
-      "ru": "Да. Consumer видит 1 и читает data до поздней записи; volatile не может опубликовать последующую запись. Лаборатория детерминированно задаёт такой порядок.",
-      "en": "Yes. The consumer can observe flag 1 and read data before the later data store. Release does not publish subsequent writes. The lab forces that order."
+      "ru": "Да, Consumer может вывести 0 даже без переупорядочивания JIT или CPU. Допустимое чередование: Producer делает `Volatile.Write(ref ready,1)` → Consumer видит `ready==1` → читает старое `data==0` → Producer позже пишет `data=42`. Release не публикует будущие записи. Исправление — поменять порядок: сначала данные, затем release-флаг; Consumer должен читать флаг с acquire. Лаборатория воспроизводит это чередование детерминированно.",
+      "en": "Yes: zero is possible even with no JIT/CPU reordering. Valid interleaving: producer release-stores `ready=1` → consumer observes 1 → reads old `data=0` → producer later writes `data=42`. Release does not publish future stores. Fix the protocol by writing data first, then release-storing the flag; consumer acquire-reads the flag. The lab deterministically reproduces this ordering."
     },
-    "code": "Volatile.Write(ref ready,1);\ndata=42; // consumer might read old data",
+    "code": "int data = 0, ready = 0;\n// Producer: Volatile.Write(ref ready, 1); data = 42;\n// Consumer may observe ready==1 while data is still 0.",
     "lab": "labs/dotnet/Q-049.cs",
     "expected": "",
     "mechanism": "",
@@ -1081,8 +1081,8 @@
       "en": "Does while(ready==0) without volatile necessarily terminate after another thread writes ready=1?"
     },
     "a": {
-      "ru": "Нет. Обычное чтение не образует нужного протокола; допустимы оптимизации вроде hoisting. Конкретный JIT не обязан делать именно эту оптимизацию; в CI не запускаем бесконечный loop.",
-      "en": "No. Ordinary reads do not establish synchronization; optimizations such as load hoisting may be permitted. A particular JIT need not do so; do not run unbounded unsafe loops in CI."
+      "ru": "Без `volatile` и другого механизма синхронизации чтение `ready` не образует acquire-операцию и не устанавливает гарантированную публикацию предшествующих записей `data`. Даже если Consumer увидел `ready==1`, чтение `data==42` нельзя выводить из такого флага как из корректного release/acquire-протокола. В цикле `while(ready==0)` JIT может, при допустимых условиях, вынести чтение за цикл; конкретная оптимизация не обязательна. Нельзя принимать типичное поведение x86/конкретного запуска за гарантию C#/.NET Memory Model.",
+      "en": "Without `volatile` or another synchronization mechanism, reading `ready` is not an acquire operation and does not establish safe publication of prior `data` writes. Observing ordinary `ready==1` is not a valid release/acquire proof that a following `data` read sees 42. In `while(ready==0)`, JIT may hoist a normal load where permitted, but a particular optimization is not required. Typical behavior on x86 or in one test run is not a C#/.NET memory-model guarantee."
     },
     "code": "while (ready == 0) { } // ordinary unsynchronized read",
     "lab": null,
