@@ -10,6 +10,7 @@ on:
       - 'topics/**'
       - 'docs/glossary.md'
       - 'scripts/build_site.py'
+      - 'scripts/build_units.py'
       - 'scripts/check_site.py'
       - 'scripts/check_links.py'
       - '.github/workflows/pages.yml'
