@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -35,6 +35,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Regenerate bilingual content and site data
+        run: |
+          python3 scripts/build_site.py
+          python3 scripts/build_units.py
       - name: Verify localization, links and source structure
         run: |
           python3 scripts/build_site.py --check
@@ -42,6 +46,13 @@ jobs:
           python3 scripts/check_site.py
           python3 scripts/check_links.py
           node --test tests/mastery.test.mjs
+      - name: Commit generated outputs
+        run: |
+          git add -A -- questions topics site README.md README.en.md
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'docs: regenerate handbook outputs [skip ci]'
+            git push origin HEAD:main
+          fi
       - name: Set up Pages
         uses: actions/configure-pages@v6
       - name: Upload static site
