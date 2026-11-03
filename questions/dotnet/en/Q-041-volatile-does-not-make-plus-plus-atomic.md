@@ -10,13 +10,13 @@ Why does volatile int Value not make Value++ atomic, and what ordering does C# v
 
 ```csharp
 sealed class Counter { public volatile int Value; }
-// Two unsynchronized Value++ operations can lose an update.
+// Two concurrent Value++ operations can both read 5 and write 6.
 ```
 
 <details>
 <summary>Model answer — reveal after your attempt</summary>
 
-Volatile reads have acquire, writes have release semantics. This is not a single global sequential order or an atomic composite read-modify-write: both workers may write 1 rather than 2.
+`volatile`/`Volatile.Read` provide acquire reads; `volatile`/`Volatile.Write` provide release writes. These constrain memory ordering, not composite-operation atomicity. `Value++` consists logically of read → add → write: two workers may both read 5 and write 6 (lost update). `volatile` neither promises the chronologically newest value on every read nor establishes a global total order.
 
 </details>
 

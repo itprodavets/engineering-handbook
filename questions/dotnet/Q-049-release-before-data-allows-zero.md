@@ -9,8 +9,9 @@
 ## Фрагмент .NET / C# — попробуйте предсказать результат
 
 ```csharp
-Volatile.Write(ref ready,1);
-data=42; // consumer might read old data
+int data = 0, ready = 0;
+// Producer: Volatile.Write(ref ready, 1); data = 42;
+// Consumer may observe ready==1 while data is still 0.
 ```
 
 ### Запустить настоящий код
@@ -24,7 +25,7 @@ dotnet run --file labs/dotnet/Q-049.cs
 <details>
 <summary>Эталонный ответ — открыть после своего ответа</summary>
 
-Да. Consumer видит 1 и читает data до поздней записи; volatile не может опубликовать последующую запись. Лаборатория детерминированно задаёт такой порядок.
+Да, Consumer может вывести 0 даже без переупорядочивания JIT или CPU. Допустимое чередование: Producer делает `Volatile.Write(ref ready,1)` → Consumer видит `ready==1` → читает старое `data==0` → Producer позже пишет `data=42`. Release не публикует будущие записи. Исправление — поменять порядок: сначала данные, затем release-флаг; Consumer должен читать флаг с acquire. Лаборатория воспроизводит это чередование детерминированно.
 
 </details>
 

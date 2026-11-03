@@ -26,7 +26,7 @@ Atomicity means an operation is indivisible; visibility concerns observations ac
 
 ### What volatile guarantees
 
-C# volatile reads have acquire semantics and writes have release semantics. This restricts certain reorderings across those accesses; it is NOT a global sequential order and does not make Value++ atomic. Two volatile increments can still lose an update.
+`Volatile.Read(ref value)` is an acquire read; `Volatile.Write(ref value, next)` is a release write. Acquire constrains moving subsequent memory operations before the read; release constrains moving preceding memory operations past the write. Neither creates a global sequential order nor makes read-modify-write atomic. `Value++` comprises read → calculate → write: two threads may both read 5 and write 6, losing an update. Volatile reads do not promise the chronologically newest value on every access.
 
 ```csharp
 sealed class Counter { public volatile int Value; }
@@ -35,7 +35,7 @@ sealed class Counter { public volatile int Value; }
 
 ### How ref passes the original variable
 
-Interlocked.Increment(ref int location) receives the int variable by reference. It directly updates a local int, an int field, or an array element when valid ref usage permits. It typically uses CPU atomics instead of Monitor.Enter/Exit.
+`Interlocked.Increment(ref int location)` atomically reads, increments and writes one `int`, returning the updated value. `ref` refers to the original variable—local, field or array element—not the reference-type nature of its container. Ten concurrent workers each incrementing 1,000 times from zero produce 10,000 if no other writers or relevant overflow are involved. Interlocked also supplies memory-ordering guarantees, but does not atomically cover other fields or a separate condition check. CLR typically uses hardware atomic operations instead of a `Monitor`-protected statement block.
 
 ```csharp
 int counter=0;

@@ -15,7 +15,7 @@ while (ready == 0) { } // ordinary unsynchronized read
 <details>
 <summary>Model answer — reveal after your attempt</summary>
 
-No. Ordinary reads do not establish synchronization; optimizations such as load hoisting may be permitted. A particular JIT need not do so; do not run unbounded unsafe loops in CI.
+Without `volatile` or another synchronization mechanism, reading `ready` is not an acquire operation and does not establish safe publication of prior `data` writes. Observing ordinary `ready==1` is not a valid release/acquire proof that a following `data` read sees 42. In `while(ready==0)`, JIT may hoist a normal load where permitted, but a particular optimization is not required. Typical behavior on x86 or in one test run is not a C#/.NET memory-model guarantee.
 
 </details>
 

@@ -59,6 +59,21 @@ while (ready == 0) { } // no synchronization contract
 while (ready == 0) { Thread.Yield(); } // not a synchronization fix
 ```
 
+### Почему обычный ready=1 не заменяет release/acquire
+
+Сравни два варианта. (1) Producer: `data=42; Volatile.Write(ref ready,1);` Consumer: `if (Volatile.Read(ref ready)==1) Console.WriteLine(data);` — при единственном Producer и без конкурирующих записей в data значение 42 опубликовано корректно. (2) Producer: `data=42; ready=1;` Consumer: `if (ready==1) Console.WriteLine(data);` — обычные обращения к ready не создают необходимой синхронизации; наблюдение 1 не доказывает видимость data=42 по контракту C#/.NET. Различай допустимые оптимизации JIT, работу CPU/cache и фактическое чередование потоков. Конкретная реализация может часто выводить 42, но это не нормативная гарантия. Для production предпочитай `Task<T>`, `Channel<T>` либо корректный release/acquire-протокол.
+
+```csharp
+// Safe publication
+int data = 0, ready = 0;
+// Producer: data = 42; Volatile.Write(ref ready, 1);
+// Consumer: if (Volatile.Read(ref ready) == 1) Console.WriteLine(data);
+
+// Unsafe publication: ordinary accesses to ready
+// Producer: data = 42; ready = 1;
+// Consumer: if (ready == 1) Console.WriteLine(data);
+```
+
 
 ## Потребляемые ресурсы
 
@@ -117,12 +132,12 @@ Atomicity — неделимость; visibility — наблюдаемость 
 
 ### 3. Predict
 
-Может ли Consumer вывести 0, если Producer сначала публикует ready=1, а потом пишет data=42?
+Два варианта: (A) Producer пишет data=42, затем Volatile.Write(ready,1), Consumer использует Volatile.Read; (B) Producer сначала Volatile.Write(ready,1), потом data=42. Может ли каждый вывести 0 и почему?
 
 <details>
 <summary>Критерии ответа</summary>
 
-Да. Consumer читает 1 и data=0 до поздней записи. Это допустимый interleaving.
+В (A) при отсутствии других записей и наблюдении опубликованного флага data=42; в (B) возможен 0 даже без CPU/JIT reordering: потребитель читает флаг до поздней записи данных. Атомарный инкремент не решает задачу публикации.
 
 </details>
 

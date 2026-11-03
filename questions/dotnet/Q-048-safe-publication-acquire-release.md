@@ -9,9 +9,9 @@
 ## Фрагмент .NET / C# — попробуйте предсказать результат
 
 ```csharp
-data=42;
-Volatile.Write(ref ready, 1);
-// Consumer polls Volatile.Read(ref ready) and then reads data
+int data = 0, ready = 0;
+// Producer: data = 42; Volatile.Write(ref ready, 1);
+// Consumer: if (Volatile.Read(ref ready) == 1) Console.WriteLine(data);
 ```
 
 ### Запустить настоящий код
@@ -25,7 +25,7 @@ dotnet run --file labs/dotnet/Q-048.cs
 <details>
 <summary>Эталонный ответ — открыть после своего ответа</summary>
 
-Release-публикация флага идёт после записи data, acquire-чтение увидело ready=1; последующее чтение data видит 42 (при отсутствии других записей). Это не гарантия срока завершения цикла.
+При начальных `data=0`, `ready=0` и отсутствии других писателей: Producer выполняет `data=42`, затем `Volatile.Write(ref ready,1)` (release). Consumer читает `Volatile.Read(ref ready)` (acquire) и, если увидел 1 от этой публикации, последующее чтение `data` получает 42. Release охватывает предшествующую запись, acquire не допускает переноса последующего чтения данных перед проверкой флага. `Interlocked.Increment` здесь не требуется: нужен корректный протокол публикации, а не атомарный инкремент. Гарантии ограниченного времени ожидания флага нет.
 
 </details>
 

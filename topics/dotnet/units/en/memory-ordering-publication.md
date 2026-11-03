@@ -59,6 +59,21 @@ Thread.Yield offers the current time slice to another runnable thread. It is not
 while (ready == 0) { Thread.Yield(); } // not a synchronization fix
 ```
 
+### Why ordinary ready=1 is not safe publication
+
+Compare (1) producer `data=42; Volatile.Write(ref ready,1);` and consumer `if (Volatile.Read(ref ready)==1) Console.WriteLine(data);`—with a single producer and no competing data writers, 42 is safely published—with (2) producer `data=42; ready=1;` and consumer `if (ready==1) Console.WriteLine(data);`. Ordinary flag accesses do not establish the required synchronization; observing 1 is not proof of safely published data under the C#/.NET contract. Distinguish permitted JIT optimization, CPU/cache behavior and OS interleavings. A particular runtime may often print 42 without a normative guarantee. Prefer `Task<T>`, `Channel<T>`, or a correct release/acquire protocol in production.
+
+```csharp
+// Safe publication
+int data = 0, ready = 0;
+// Producer: data = 42; Volatile.Write(ref ready, 1);
+// Consumer: if (Volatile.Read(ref ready) == 1) Console.WriteLine(data);
+
+// Unsafe publication: ordinary accesses to ready
+// Producer: data = 42; ready = 1;
+// Consumer: if (ready == 1) Console.WriteLine(data);
+```
+
 
 ## Resources
 
@@ -117,12 +132,12 @@ Correct publication protocol: observing 1 makes prior data stores visible. No bo
 
 ### 3. Predict
 
-Can a consumer print 0 if the producer publishes ready=1 before writing data=42?
+Compare (A) producer data=42 then release flag, consumer acquire-reads; and (B) producer release-stores flag before data=42. Can each consumer print zero, and why?
 
 <details>
 <summary>Answer criteria</summary>
 
-Yes. Consumer can see the flag then read zero before the later data write.
+In (A), absent interfering writers, observing the published flag implies data=42. In (B), zero is possible without any CPU/JIT reordering: the consumer runs after the flag but before the data write. Atomic increment does not solve publication ordering.
 
 </details>
 

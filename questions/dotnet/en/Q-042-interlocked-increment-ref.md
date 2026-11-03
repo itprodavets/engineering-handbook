@@ -24,7 +24,7 @@ dotnet run --file labs/dotnet/Q-042.cs
 <details>
 <summary>Model answer — reveal after your attempt</summary>
 
-Atomic read-modify-write of one int: two completed increments from 0 result in 2. ref passes the variable location even for a local value-type int. It does not acquire a C# Monitor over an entire section; runtime typically uses CPU atomic instructions.
+`Interlocked.Increment(ref value)` is an atomic read-modify-write on one addressable `int`, returning the updated value. `ref` passes the variable itself, irrespective of whether its container is a class. Ten workers each making 1,000 increments yield 10,000 from zero if there are no other writes or relevant overflow. It also provides memory-ordering guarantees, but cannot protect other fields or a separate check-then-act sequence; it is not a C# `Monitor` critical section.
 
 </details>
 

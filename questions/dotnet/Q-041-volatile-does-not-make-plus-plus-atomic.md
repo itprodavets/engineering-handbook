@@ -10,13 +10,13 @@
 
 ```csharp
 sealed class Counter { public volatile int Value; }
-// Two unsynchronized Value++ operations can lose an update.
+// Two concurrent Value++ operations can both read 5 and write 6.
 ```
 
 <details>
 <summary>Эталонный ответ — открыть после своего ответа</summary>
 
-Volatile read имеет acquire, volatile write — release семантику. Они не создают глобальный последовательный порядок всех операций и не объединяют read/modify/write в неделимую транзакцию: два потока могут записать 1 вместо 2.
+`volatile`/`Volatile.Read` обеспечивают acquire-семантику чтения, а `volatile`/`Volatile.Write` — release-семантику записи. Это ограничения на переупорядочивание обращений к памяти, а не атомарность выражения. `Value++` логически состоит из read → add → write. Два потока могут оба прочитать 5 и оба записать 6: lost update. `volatile` не гарантирует чтение самого нового значения по реальному времени и не устанавливает глобальный total order.
 
 </details>
 

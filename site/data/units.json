@@ -2086,8 +2086,8 @@
           "en": "What volatile guarantees"
         },
         "body": {
-          "ru": "В C# volatile-чтение имеет acquire-семантику; volatile-запись — release. Это ограничивает определённые перемещения memory accesses через операции. Это НЕ полная глобальная последовательность всех обращений и НЕ атомарность выражения Value++. Даже volatile int может потерять обновление при двух инкрементах.",
-          "en": "C# volatile reads have acquire semantics and writes have release semantics. This restricts certain reorderings across those accesses; it is NOT a global sequential order and does not make Value++ atomic. Two volatile increments can still lose an update."
+          "ru": "`Volatile.Read(ref value)` выполняет acquire-чтение, а `Volatile.Write(ref value, next)` — release-запись. Acquire запрещает перенос последующих memory operations перед чтением; release не позволяет предшествующим memory operations перейти за запись в нарушение этих гарантий. Это не глобальная последовательная согласованность и не атомарность read-modify-write. В частности, `Value++` состоит из read → calculate → write: при двух потоках оба могут прочитать 5 и оба записать 6, потеряв обновление. Volatile-чтение также не обещает в каждый момент возвращать хронологически самое новое значение.",
+          "en": "`Volatile.Read(ref value)` is an acquire read; `Volatile.Write(ref value, next)` is a release write. Acquire constrains moving subsequent memory operations before the read; release constrains moving preceding memory operations past the write. Neither creates a global sequential order nor makes read-modify-write atomic. `Value++` comprises read → calculate → write: two threads may both read 5 and write 6, losing an update. Volatile reads do not promise the chronologically newest value on every access."
         },
         "code": "sealed class Counter { public volatile int Value; }\n// Value++ still reads, computes and writes separately",
         "language": "csharp"
@@ -2099,8 +2099,8 @@
           "en": "How ref passes the original variable"
         },
         "body": {
-          "ru": "Сигнатура Interlocked.Increment(ref int location) принимает ссылку на саму переменную int. Например int counter=0; Interlocked.Increment(ref counter) изменяет локальную переменную counter. Не имеет значения, находится ли int в классе, массиве или локальной переменной (при соблюдении правил ref). Механизм обычно использует атомарную инструкцию CPU, а не Monitor.Enter/Exit.",
-          "en": "Interlocked.Increment(ref int location) receives the int variable by reference. It directly updates a local int, an int field, or an array element when valid ref usage permits. It typically uses CPU atomics instead of Monitor.Enter/Exit."
+          "ru": "`Interlocked.Increment(ref int location)` атомарно читает, увеличивает и записывает один `int`, затем возвращает новое значение. `ref` относится к исходной переменной, будь то локальный `int`, поле или элемент массива; это не характеристика ссылочного класса. При 10 потоках, каждый из которых делает по 1000 инкрементов из нуля, итог равен 10000 при отсутствии других записей и значимого переполнения. Interlocked также обеспечивает гарантии порядка памяти, но не делает атомарными другие поля или отдельную проверку условия. CLR обычно использует аппаратные атомарные операции, а не `Monitor` для блока инструкций.",
+          "en": "`Interlocked.Increment(ref int location)` atomically reads, increments and writes one `int`, returning the updated value. `ref` refers to the original variable—local, field or array element—not the reference-type nature of its container. Ten concurrent workers each incrementing 1,000 times from zero produce 10,000 if no other writers or relevant overflow are involved. Interlocked also supplies memory-ordering guarantees, but does not atomically cover other fields or a separate condition check. CLR typically uses hardware atomic operations instead of a `Monitor`-protected statement block."
         },
         "code": "int counter=0;\nint updated=Interlocked.Increment(ref counter);\n// updated=1; counter=1",
         "language": "csharp"
@@ -2312,6 +2312,19 @@
         },
         "code": "while (ready == 0) { Thread.Yield(); } // not a synchronization fix",
         "language": "csharp"
+      },
+      {
+        "id": "ordinary-stores-not-safe-publication",
+        "title": {
+          "ru": "Почему обычный ready=1 не заменяет release/acquire",
+          "en": "Why ordinary ready=1 is not safe publication"
+        },
+        "body": {
+          "ru": "Сравни два варианта. (1) Producer: `data=42; Volatile.Write(ref ready,1);` Consumer: `if (Volatile.Read(ref ready)==1) Console.WriteLine(data);` — при единственном Producer и без конкурирующих записей в data значение 42 опубликовано корректно. (2) Producer: `data=42; ready=1;` Consumer: `if (ready==1) Console.WriteLine(data);` — обычные обращения к ready не создают необходимой синхронизации; наблюдение 1 не доказывает видимость data=42 по контракту C#/.NET. Различай допустимые оптимизации JIT, работу CPU/cache и фактическое чередование потоков. Конкретная реализация может часто выводить 42, но это не нормативная гарантия. Для production предпочитай `Task<T>`, `Channel<T>` либо корректный release/acquire-протокол.",
+          "en": "Compare (1) producer `data=42; Volatile.Write(ref ready,1);` and consumer `if (Volatile.Read(ref ready)==1) Console.WriteLine(data);`—with a single producer and no competing data writers, 42 is safely published—with (2) producer `data=42; ready=1;` and consumer `if (ready==1) Console.WriteLine(data);`. Ordinary flag accesses do not establish the required synchronization; observing 1 is not proof of safely published data under the C#/.NET contract. Distinguish permitted JIT optimization, CPU/cache behavior and OS interleavings. A particular runtime may often print 42 without a normative guarantee. Prefer `Task<T>`, `Channel<T>`, or a correct release/acquire protocol in production."
+        },
+        "code": "// Safe publication\nint data = 0, ready = 0;\n// Producer: data = 42; Volatile.Write(ref ready, 1);\n// Consumer: if (Volatile.Read(ref ready) == 1) Console.WriteLine(data);\n\n// Unsafe publication: ordinary accesses to ready\n// Producer: data = 42; ready = 1;\n// Consumer: if (ready == 1) Console.WriteLine(data);",
+        "language": "csharp"
       }
     ],
     "checks": [
@@ -2342,12 +2355,12 @@
       {
         "level": "predict",
         "prompt": {
-          "ru": "Может ли Consumer вывести 0, если Producer сначала публикует ready=1, а потом пишет data=42?",
-          "en": "Can a consumer print 0 if the producer publishes ready=1 before writing data=42?"
+          "ru": "Два варианта: (A) Producer пишет data=42, затем Volatile.Write(ready,1), Consumer использует Volatile.Read; (B) Producer сначала Volatile.Write(ready,1), потом data=42. Может ли каждый вывести 0 и почему?",
+          "en": "Compare (A) producer data=42 then release flag, consumer acquire-reads; and (B) producer release-stores flag before data=42. Can each consumer print zero, and why?"
         },
         "rubric": {
-          "ru": "Да. Consumer читает 1 и data=0 до поздней записи. Это допустимый interleaving.",
-          "en": "Yes. Consumer can see the flag then read zero before the later data write."
+          "ru": "В (A) при отсутствии других записей и наблюдении опубликованного флага data=42; в (B) возможен 0 даже без CPU/JIT reordering: потребитель читает флаг до поздней записи данных. Атомарный инкремент не решает задачу публикации.",
+          "en": "In (A), absent interfering writers, observing the published flag implies data=42. In (B), zero is possible without any CPU/JIT reordering: the consumer runs after the flag but before the data write. Atomic increment does not solve publication ordering."
         },
         "code": ""
       },

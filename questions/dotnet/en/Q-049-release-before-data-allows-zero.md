@@ -9,8 +9,9 @@ Can the consumer see zero if producer publishes ready before writing data?
 ## .NET / C# challenge — predict the outcome first
 
 ```csharp
-Volatile.Write(ref ready,1);
-data=42; // consumer might read old data
+int data = 0, ready = 0;
+// Producer: Volatile.Write(ref ready, 1); data = 42;
+// Consumer may observe ready==1 while data is still 0.
 ```
 
 ### Run the actual code
@@ -24,7 +25,7 @@ dotnet run --file labs/dotnet/Q-049.cs
 <details>
 <summary>Model answer — reveal after your attempt</summary>
 
-Yes. The consumer can observe flag 1 and read data before the later data store. Release does not publish subsequent writes. The lab forces that order.
+Yes: zero is possible even with no JIT/CPU reordering. Valid interleaving: producer release-stores `ready=1` → consumer observes 1 → reads old `data=0` → producer later writes `data=42`. Release does not publish future stores. Fix the protocol by writing data first, then release-storing the flag; consumer acquire-reads the flag. The lab deterministically reproduces this ordering.
 
 </details>
 
