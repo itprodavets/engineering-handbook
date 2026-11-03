@@ -122,10 +122,10 @@ def main(check):
             expected = ["recall", "explain", "predict", "diagnose", "design"]
             if [c["level"] for c in u["checks"]] != expected:
                 raise ValueError("Five checks must follow Recall→Design")
-            for check in u["checks"]:
+            for assessment in u["checks"]:
                 for key in ("prompt", "rubric"):
-                    tr(check[key], "ru")
-                    tr(check[key], "en")
+                    tr(assessment[key], "ru")
+                    tr(assessment[key], "en")
         for path in u.get("labFiles", []):
             if not (ROOT / path).is_file():
                 raise ValueError("Missing lab file: " + path)
